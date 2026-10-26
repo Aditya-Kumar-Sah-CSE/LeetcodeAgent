@@ -22,6 +22,7 @@ import {
   Smartphone,
   ChevronDown,
   ChevronUp,
+  GripVertical,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -131,6 +132,65 @@ export default function WorkspacePage() {
   const [isSolved, setIsSolved] = useState<boolean>(() =>
     passedProblem?.slug ? isProblemSolved(passedProblem.slug) : false
   );
+
+  // Resizable split ratio between left pane (AI / Chat) and right pane (Editor)
+  const [splitRatio, setSplitRatio] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("lca-workspace-split-ratio");
+      if (saved) {
+        const val = parseFloat(saved);
+        if (!isNaN(val) && val >= 25 && val <= 75) return val;
+      }
+    } catch {}
+    return 50; // default 50% split (wider chat window than the previous 41.6%)
+  });
+  const [isDraggingSplit, setIsDraggingSplit] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true
+  );
+  const workspaceContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const handleSplitMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingSplit(true);
+  };
+
+  useEffect(() => {
+    if (!isDraggingSplit) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!workspaceContainerRef.current) return;
+      const rect = workspaceContainerRef.current.getBoundingClientRect();
+      const rawPercent = ((e.clientX - rect.left) / rect.width) * 100;
+      const clamped = Math.min(75, Math.max(25, rawPercent));
+      setSplitRatio(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingSplit(false);
+      try {
+        localStorage.setItem("lca-workspace-split-ratio", splitRatio.toFixed(1));
+      } catch {}
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isDraggingSplit, splitRatio]);
 
   useEffect(() => {
     if (problem) {
@@ -622,13 +682,20 @@ export default function WorkspacePage() {
         ))}
       </div>
 
-      {/* Main Workspace Layout: Responsive Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0">
-        {/* Left Column (5 cols): Problem / Reasoning / Research */}
+      {/* Main Workspace Layout: Responsive Resizable Flex Container */}
+      <div
+        ref={workspaceContainerRef}
+        className="flex flex-col lg:flex-row gap-0 flex-1 min-h-0 w-full relative"
+      >
+        {/* Left Column: Problem / Reasoning / AI Assistant */}
         <div
-          className={`lg:col-span-5 flex-col card p-0 overflow-hidden h-[500px] lg:h-auto ${
+          className={`flex-col card p-0 overflow-hidden min-h-[460px] lg:min-h-0 h-full ${
             mobileTab !== "editor" ? "flex" : "hidden lg:flex"
           }`}
+          style={{
+            width: isDesktop ? `${splitRatio}%` : "100%",
+            transition: isDraggingSplit ? "none" : "width 0.12s ease-out",
+          }}
         >
           {/* Desktop Left Tab Bar */}
           <div
@@ -673,6 +740,34 @@ export default function WorkspacePage() {
               <span>AI Assistant</span>
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             </button>
+
+            {/* Quick Split Presets on Desktop */}
+            <div className="ml-auto hidden xl:flex items-center gap-1 text-[10px] text-muted pr-1">
+              <span className="font-mono text-gray-500">Split:</span>
+              {[
+                { label: "40%", val: 40, title: "40% Chat / 60% Code" },
+                { label: "50%", val: 50, title: "50% Chat / 50% Code (Balanced)" },
+                { label: "65%", val: 65, title: "65% Chat / 35% Code (Wide Chat)" },
+              ].map((preset) => (
+                <button
+                  key={preset.val}
+                  onClick={() => {
+                    setSplitRatio(preset.val);
+                    try {
+                      localStorage.setItem("lca-workspace-split-ratio", preset.val.toString());
+                    } catch {}
+                  }}
+                  className={`px-1.5 py-0.5 rounded cursor-pointer font-mono transition-colors ${
+                    Math.round(splitRatio) === preset.val
+                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                      : "hover:bg-white/10 text-gray-400"
+                  }`}
+                  title={preset.title}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Left Content Area */}
@@ -799,11 +894,54 @@ export default function WorkspacePage() {
           </div>
         </div>
 
-        {/* Right Column (7 cols): Code Editor with Mobile Optimization */}
+        {/* Draggable Resizer Slider Bar (Visible on Desktop) */}
         <div
-          className={`lg:col-span-7 flex flex-col card p-0 overflow-hidden min-h-[420px] lg:min-h-0 h-full ${
+          onMouseDown={handleSplitMouseDown}
+          onDoubleClick={() => {
+            setSplitRatio(50);
+            try {
+              localStorage.setItem("lca-workspace-split-ratio", "50");
+            } catch {}
+          }}
+          className={`hidden lg:flex items-center justify-center w-3 hover:w-3.5 cursor-col-resize select-none relative group z-10 transition-all shrink-0 ${
+            isDraggingSplit ? "w-3.5" : ""
+          }`}
+          title="Drag left/right to resize panels • Double-click to reset 50/50"
+        >
+          {/* Vertical divider line with glow on hover/drag */}
+          <div
+            className={`w-[2px] h-[98%] rounded transition-all ${
+              isDraggingSplit
+                ? "bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)]"
+                : "bg-[var(--color-border-subtle)] group-hover:bg-cyan-400/80 group-hover:shadow-[0_0_8px_rgba(34,211,238,0.4)]"
+            }`}
+          />
+          {/* Central Grip Handle Pill */}
+          <div
+            className={`absolute top-1/2 -translate-y-1/2 w-4 h-9 rounded-full bg-[var(--color-bg-secondary)] border shadow-md flex items-center justify-center transition-all ${
+              isDraggingSplit
+                ? "border-cyan-400 bg-cyan-950 scale-110 shadow-cyan-500/30"
+                : "border-[var(--color-border)] group-hover:border-cyan-400/80 group-hover:scale-105"
+            }`}
+          >
+            <GripVertical
+              size={12}
+              className={`transition-colors ${
+                isDraggingSplit ? "text-cyan-300" : "text-gray-400 group-hover:text-cyan-300"
+              }`}
+            />
+          </div>
+        </div>
+
+        {/* Right Column: Code Editor */}
+        <div
+          className={`flex flex-col card p-0 overflow-hidden min-h-[420px] lg:min-h-0 h-full ${
             mobileTab === "editor" ? "flex" : "hidden lg:flex"
           }`}
+          style={{
+            width: isDesktop ? `${100 - splitRatio}%` : "100%",
+            transition: isDraggingSplit ? "none" : "width 0.12s ease-out",
+          }}
         >
           {/* Editor Action Header */}
           <div

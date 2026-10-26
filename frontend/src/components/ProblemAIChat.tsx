@@ -63,12 +63,56 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({});
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Smooth 60fps streaming buffer & render loop
+  const streamBufferRef = useRef({ text: "", id: "", dirty: false });
+  const animFrameRef = useRef<number | null>(null);
 
   const problemSlug = problem?.slug || "general-dsa";
   const problemTitle = problem?.title || "DSA Practice";
   const codeLinesCount = (code || "").split("\n").length;
+
+  // Jitter-free auto-scroll helper
+  const scrollToBottom = (force = false) => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 180;
+    if (isNearBottom || force) {
+      el.scrollTop = el.scrollHeight;
+    }
+  };
+
+  const startStreamLoop = (targetId: string) => {
+    streamBufferRef.current = { text: "", id: targetId, dirty: false };
+
+    const loop = () => {
+      if (streamBufferRef.current.dirty) {
+        const text = streamBufferRef.current.text;
+        const id = streamBufferRef.current.id;
+        streamBufferRef.current.dirty = false;
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === id ? { ...m, content: text, status: "streaming" } : m
+          )
+        );
+        scrollToBottom();
+      }
+      animFrameRef.current = requestAnimationFrame(loop);
+    };
+
+    animFrameRef.current = requestAnimationFrame(loop);
+  };
+
+  const stopStreamLoop = () => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+  };
 
   // Load models on mount
   useEffect(() => {
@@ -90,6 +134,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
       if (localSession && localSession.messages.length > 0 && !isCancelled) {
         setMessages(localSession.messages);
         setSyncedToGithub(!!localSession.synced_to_github);
+        setTimeout(() => scrollToBottom(true), 80);
         return;
       }
 
@@ -102,6 +147,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
             setMessages(data.messages);
             setSyncedToGithub(true);
             await saveChatSessionLocal(problemSlug, data.messages, problemTitle, true);
+            setTimeout(() => scrollToBottom(true), 80);
             return;
           }
         }
@@ -119,16 +165,12 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
 
     return () => {
       isCancelled = true;
+      stopStreamLoop();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
   }, [problemSlug, problemTitle]);
-
-  // Auto scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isStreaming]);
 
   // Handle model change
   const handleModelChange = (id: string) => {
@@ -189,6 +231,9 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
     let streamedReasoning = "";
     const collectedTools: ToolCallItem[] = [];
 
+    // Start 60fps smooth render loop
+    startStreamLoop(assistantMessageId);
+
     try {
       await streamChatMessage({
         slug: problemSlug,
@@ -208,6 +253,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                 : m
             )
           );
+          scrollToBottom();
         },
         onToolCall: (tool) => {
           collectedTools.push(tool);
@@ -218,22 +264,15 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                 : m
             )
           );
+          scrollToBottom();
         },
         onDelta: (chunk) => {
           streamedText += chunk;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantMessageId
-                ? {
-                    ...m,
-                    content: streamedText,
-                    status: "streaming",
-                  }
-                : m
-            )
-          );
+          streamBufferRef.current.text = streamedText;
+          streamBufferRef.current.dirty = true;
         },
         onDone: async (finalContent, finalReasoning, finalTools, modelUsed) => {
+          stopStreamLoop();
           const finalMessages = updatedMessages.map((m) =>
             m.id === assistantMessageId
               ? {
@@ -250,12 +289,14 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           setMessages(finalMessages);
           setIsStreaming(false);
           abortControllerRef.current = null;
+          scrollToBottom(true);
 
           // Save to local storage
           await saveChatSessionLocal(problemSlug, finalMessages, problemTitle, false);
           setSyncedToGithub(false);
         },
         onError: (err) => {
+          stopStreamLoop();
           console.error("Streaming chat error:", err);
           setMessages((prev) =>
             prev.map((m) =>
@@ -272,9 +313,11 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           );
           setIsStreaming(false);
           abortControllerRef.current = null;
+          scrollToBottom(true);
         },
       });
     } catch (err: any) {
+      stopStreamLoop();
       if (!abortController.signal.aborted) {
         setIsStreaming(false);
       }
@@ -283,6 +326,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
 
   // Stop streaming
   const handleStopGenerating = () => {
+    stopStreamLoop();
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -469,7 +513,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
       </div>
 
       {/* ─── Message Stream Area ─── */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-3.5 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center space-y-3 px-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-cyan-400 shadow-inner">

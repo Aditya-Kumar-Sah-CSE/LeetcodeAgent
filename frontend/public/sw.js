@@ -3,7 +3,7 @@
  * Provides offline caching, lightning-fast loads, and PWA installation support.
  */
 
-const CACHE_NAME = "leetcode-agent-v1";
+const CACHE_NAME = "leetcode-agent-v3";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
@@ -43,6 +43,14 @@ self.addEventListener("fetch", (event) => {
   // Skip non-GET requests and external API calls (e.g. OpenRouter or LeetCode GraphQL)
   if (event.request.method !== "GET") return;
   if (url.origin.includes("openrouter.ai") || url.origin.includes("leetcode.com")) {
+    return;
+  }
+
+  // On localhost / development, always use network-first strategy so changes are immediate
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
     return;
   }
 

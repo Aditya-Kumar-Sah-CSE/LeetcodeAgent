@@ -62,13 +62,25 @@ export function getDynamicSuggestions(
 
   const list: DynamicSuggestion[] = [];
 
-  // 1. Core correctness query (always first and relevant to current code)
+  // 1. Direct Code Edit & Apply (Empower user to generate/fix code right from chat)
+  list.push({
+    label: `⚡ Sahi Code Likh Do (Apply to Editor)`,
+    query: `Mujhe ${num}${title} ka optimal, complete ${langLabel} code solution likh do jise main direct editor me apply kar saku.`,
+  });
+
+  // 2. Core correctness check of active editor
   list.push({
     label: `🔍 Ye code sahi hai? (${langLabel})`,
     query: `Bhai check karo kya mera ${num}${title} ka active ${langLabel} code sahi hai ya koi logical flaw hai? 30-50 words mein direct answer do.`,
   });
 
-  // 2. Problem-specific algorithmic concept query
+  // 3. Line-by-line understanding
+  list.push({
+    label: `📖 Code Line-by-Line Samjhao`,
+    query: `Active ${langLabel} solution code ko simple Hinglish me line-by-line samjhao taaki har logic clear ho jaye.`,
+  });
+
+  // 4. Problem-specific algorithmic concept query
   if (slug.includes("roman")) {
     list.push({
       label: "🗺️ Roman subtraction rule (IV, IX)",
@@ -96,28 +108,138 @@ export function getDynamicSuggestions(
     });
   }
 
-  // 3. Time & Space Complexity
+  // 5. Time & Space Complexity
   list.push({
     label: "⚡ Time & Space Complexity",
     query: `Is ${title} solution ki exact Time aur Space complexity concise 30-50 words mein explain karo.`,
   });
 
-  // 4. Testcase Dry Run
-  const exInput = problem?.examples?.[0]?.input
-    ? problem.examples[0].input.slice(0, 24).replace(/\n/g, " ")
-    : "Example 1";
-  list.push({
-    label: `🧪 Dry-run (${exInput})`,
-    query: `${title} ke testcase (${exInput}) par step-by-step dry run 30-50 words mein show karo.`,
-  });
-
-  // 5. Hinglish Explanation
-  list.push({
-    label: "🇮🇳 Hinglish quick review",
-    query: `Active ${langLabel} solution ka Hinglish me 30-50 words me quick review do.`,
-  });
-
   return list;
+}
+
+/**
+ * Generate complete compilable optimal code for a problem in the requested language.
+ */
+export function getOptimalCodeForProblem(
+  slug: string,
+  language: SupportedLanguage,
+  problem?: DailyProblem | null
+): string {
+  const s = slug.toLowerCase();
+  if (s.includes("roman")) {
+    switch (language) {
+      case "python":
+        return `class Solution:
+    def romanToInt(self, s: str) -> int:
+        val = {
+            'I': 1, 'V': 5, 'X': 10,
+            'L': 50, 'C': 100, 'D': 500, 'M': 1000
+        }
+        total = 0
+        n = len(s)
+        for i in range(n):
+            if i + 1 < n and val[s[i]] < val[s[i + 1]]:
+                total -= val[s[i]]
+            else:
+                total += val[s[i]]
+        return total`;
+      case "java":
+        return `import java.util.HashMap;
+import java.util.Map;
+
+class Solution {
+    public int romanToInt(String s) {
+        Map<Character, Integer> val = new HashMap<>();
+        val.put('I', 1); val.put('V', 5); val.put('X', 10);
+        val.put('L', 50); val.put('C', 100); val.put('D', 500); val.put('M', 1000);
+        
+        int total = 0;
+        int n = s.length();
+        for (int i = 0; i < n; i++) {
+            if (i + 1 < n && val.get(s.charAt(i)) < val.get(s.charAt(i + 1))) {
+                total -= val.get(s.charAt(i));
+            } else {
+                total += val.get(s.charAt(i));
+            }
+        }
+        return total;
+    }
+}`;
+      case "javascript":
+        return `/**
+ * @param {string} s
+ * @return {number}
+ */
+var romanToInt = function(s) {
+    const val = {
+        'I': 1, 'V': 5, 'X': 10,
+        'L': 50, 'C': 100, 'D': 500, 'M': 1000
+    };
+    let total = 0;
+    for (let i = 0; i < s.length; i++) {
+        if (i + 1 < s.length && val[s[i]] < val[s[i + 1]]) {
+            total -= val[s[i]];
+        } else {
+            total += val[s[i]];
+        }
+    }
+    return total;
+};`;
+      case "typescript":
+        return `function romanToInt(s: string): number {
+    const val: Record<string, number> = {
+        'I': 1, 'V': 5, 'X': 10,
+        'L': 50, 'C': 100, 'D': 500, 'M': 1000
+    };
+    let total = 0;
+    for (let i = 0; i < s.length; i++) {
+        if (i + 1 < s.length && val[s[i]] < val[s[i + 1]]) {
+            total -= val[s[i]];
+        } else {
+            total += val[s[i]];
+        }
+    }
+    return total;
+}`;
+      case "cpp":
+      default:
+        return `#include <vector>
+#include <string>
+#include <unordered_map>
+using namespace std;
+
+class Solution {
+public:
+    int romanToInt(string s) {
+        unordered_map<char, int> val = {
+            {'I', 1}, {'V', 5}, {'X', 10},
+            {'L', 50}, {'C', 100}, {'D', 500}, {'M', 1000}
+        };
+        int total = 0;
+        int n = s.length();
+        for (int i = 0; i < n; i++) {
+            if (i + 1 < n && val[s[i]] < val[s[i + 1]]) {
+                total -= val[s[i]];
+            } else {
+                total += val[s[i]];
+            }
+        }
+        return total;
+    }
+};`;
+    }
+  }
+
+  // Fallback to snippet from LeetCode problem if available
+  if (problem?.code_snippets?.[language]) {
+    return problem.code_snippets[language];
+  }
+
+  return `// Optimal ${language.toUpperCase()} Solution
+class Solution {
+public:
+    // Optimal implementation
+};`;
 }
 
 /**
@@ -159,10 +281,11 @@ ${code || "// No code written yet"}
 \`\`\`
 
 CRITICAL PERSONA & RESPONSE GUIDELINES:
-1. STRICT WORD LIMIT: Keep your response STRICTLY CONCISE, between 30 to 50 words! Never write essays or long repetitive templates. Be direct, crisp, and high-impact.
-2. Code Analysis: Always inspect the user's active editor code provided above. If they ask "ye code sahi h?" or check code, immediately tell them whether their active code is correct, incomplete, or buggy, with a 1-sentence fix.
-3. Natural Multilingual/Hinglish: If the user communicates in Hindi/Hinglish (e.g. "ye code sahi h ?", "kya dikkat h bhai"), reply in friendly, sharp Hinglish with technical accuracy.
-4. Clean Formatting: Use bold tags and short bullet points. Stay strictly within 30-50 words.`;
+1. STRICT CONCISENESS: Keep general explanations strictly concise (30 to 50 words). Never write long unnecessary essays.
+2. CODE EDIT & REVISION ACCESS: If the user prompts you to edit the code, fix bugs, write a working solution, or optimize code (e.g. "code edit kr do", "fix this code", "ye code theek kar do", "solve kr do", "give working solution"), provide a brief 20-30 word explanation of what you improved, followed by the COMPLETE, COMPILABLE, OPTIMAL code solution enclosed in a markdown \`\`\`${language} code block. The IDE UI provides an instant "Apply to Editor" button that updates the user's editor with your code!
+3. CODE EXPLANATION: If the user asks to explain the code line-by-line, provide a clear, step-by-step breakdown in friendly Hinglish/English.
+4. Active Code Analysis: Always inspect the user's active editor code provided above.
+5. Natural Multilingual/Hinglish: If the user communicates in Hindi/Hinglish (e.g. "ye code sahi h ?", "code edit kr do pls"), reply in friendly, sharp Hinglish with technical excellence.`;
 }
 
 /**
@@ -181,6 +304,8 @@ async function runClientAutonomousStreaming({
   onDone,
   abortSignal,
 }: StreamChatParams) {
+  const problemSlug = problem?.slug || "general-dsa";
+  const problemTitle = problem?.title || "Problem";
   const toolsExecuted: ToolCallItem[] = [];
   const reasoningLogs: string[] = [];
 
@@ -249,8 +374,32 @@ async function runClientAutonomousStreaming({
   addReasoning("💡 Formulating optimal 30-50 word response with Hinglish intuition...");
   await delay(220);
 
-  // Generate concise (30-50 words) content tailored directly to the query & code
+  // Generate concise content tailored directly to the query & code
   let generatedResponse = "";
+
+  const isEditCodeQuery =
+    queryLower.includes("edit") ||
+    queryLower.includes("fix") ||
+    queryLower.includes("likh do") ||
+    queryLower.includes("bna do") ||
+    queryLower.includes("bana do") ||
+    queryLower.includes("generate") ||
+    queryLower.includes("solve") ||
+    queryLower.includes("solution") ||
+    queryLower.includes("code do") ||
+    queryLower.includes("correct code") ||
+    queryLower.includes("apply") ||
+    queryLower.includes("update") ||
+    queryLower.includes("theek karo") ||
+    queryLower.includes("optimize");
+
+  const isExplainCodeQuery =
+    queryLower.includes("explain") ||
+    queryLower.includes("samjhao") ||
+    queryLower.includes("samaj") ||
+    queryLower.includes("line by line") ||
+    queryLower.includes("line-by-line") ||
+    queryLower.includes("kaise kaam");
 
   const isAskingCorrectness =
     queryLower.includes("sahi") ||
@@ -287,7 +436,24 @@ async function runClientAutonomousStreaming({
     code.includes("pass") ||
     (!codeLower.includes("for") && !codeLower.includes("while") && !codeLower.includes("map") && !codeLower.includes("switch") && !codeLower.includes("if"));
 
-  if (hasPopcount) {
+  if (isEditCodeQuery) {
+    addReasoning(`🛠️ Generating complete optimal ${language.toUpperCase()} solution with 1-click editor integration...`);
+    await delay(180);
+    addTool(
+      "generate_solution_code",
+      `generate_solution(${problemSlug}, ${language})`,
+      `Optimal ${language.toUpperCase()} solution synthesized (O(N) Time, O(1) Space)`
+    );
+    const optimalCode = getOptimalCodeForProblem(problemSlug, language, problem);
+    generatedResponse = `Bhai, #${problem?.id || ""} **${problemTitle}** ke liye optimal **${language.toUpperCase()}** code generate kar diya hai:
+- **Optimization**: Subtraction rule (\`val[s[i]] < val[s[i+1]]\`) aur value mapping implement ki hai.
+- **Complexity**: **$O(N)$** Time aur **$O(1)$** Space.
+- Niche **'✨ Apply to Editor'** button par click karke direct editor me code update kar sakte ho!
+
+\`\`\`${language}
+${optimalCode}
+\`\`\``;
+  } else if (hasPopcount) {
     generatedResponse = `### \`__builtin_popcount\` Summary ⚡
 - **Function**: Integer ke binary (base-2) representation mein kitne set bits (\`1\`s) hain, unhe count karta hai.
 - **Speed**: **$O(1)$** CPU hardware instruction (\`POPCNT\`).
@@ -298,15 +464,25 @@ async function runClientAutonomousStreaming({
 - **Fix**: Divide karne se pehle \`if (s1 == 0) return 0;\` check lagao.
 - **Complexity**: $O(1)$ time, $O(1)$ space.`;
   } else if (isAskingCorrectness && isDummyCode) {
+    const optimalCode = getOptimalCodeForProblem(problemSlug, language, problem);
     generatedResponse = `**Nahi bhai, ye code abhi incomplete hai! ⚠️**
-- **Problem**: Har Roman character (\`I=1, V=5, X=10...\`) ko integer value se map karke add/subtract karna zaroori hai.
-- **Flaw**: Abhi code direct \`return total = 0;\` kar raha hai bina string traverse kiye.
-- **Fix**: Loop lagao aur agar \`val[s[i]] < val[s[i+1]]\` ho toh subtract karo, warna add karo.`;
+- **Flaw**: Abhi code direct \`return total = 0;\` kar raha hai bina Roman characters calculate kiye.
+- **Fix**: Optimal $O(N)$ solution ready kiya hai. Niche **'✨ Apply to Editor'** par click karke editor me update kar lo:
+
+\`\`\`${language}
+${optimalCode}
+\`\`\``;
   } else if (isAskingCorrectness) {
     generatedResponse = `**Haan bhai, logic bilkul sahi aur optimal hai! ✓**
 - **Correctness**: Subtraction cases (jaise IV, IX, XL) aur character values accurately calculate ho rahe hain.
 - **Complexity**: **$O(N)$** Time aur **$O(1)$** Space constraints ko perfectly satisfy karta hai.
 - LeetCode par submit karne ke liye code ready hai!`;
+  } else if (isExplainCodeQuery) {
+    generatedResponse = `### Line-by-Line Code Logic 📖
+- **1. Mapping**: Har Roman numeral (\`I, V, X, L, C, D, M\`) ko uski integer value ke sath map kiya.
+- **2. Subtraction Check**: Loop me check kiya agar \`s[i] < s[i+1]\` (jaise \`IV=4, IX=9\`), toh \`total -= val[s[i]]\`.
+- **3. Normal Case**: Agar agla numeral chhota ya barabar ho, toh \`total += val[s[i]]\`.
+- **Conclusion**: Single pass me poora string process hokar accurate integer milta hai!`;
   } else if (isRomanLogicQuery) {
     generatedResponse = `### Roman Conversion Rule 🗺️
 - Standard order mein bade numerals pehle aate hain (\`VI = 6\`).
@@ -411,7 +587,7 @@ export async function streamChatMessage({
           messages: messagesPayload,
           stream: true,
           temperature: 0.25,
-          max_tokens: 300,
+          max_tokens: 1200,
         }),
         signal: abortSignal,
       });

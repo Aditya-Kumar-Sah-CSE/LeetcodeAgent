@@ -616,7 +616,7 @@ export default function WorkspacePage() {
   const currentLangObj = LANGUAGES.find((l) => l.value === language) || LANGUAGES[0];
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-6.5rem)] gap-3 pb-safe max-w-full overflow-x-hidden">
+    <div className="flex flex-col flex-1 h-full max-h-full min-h-0 gap-2 max-w-full overflow-hidden">
       {/* Toast Alert Banner */}
       {toastMessage && (
         <div
@@ -634,7 +634,7 @@ export default function WorkspacePage() {
 
       {/* Top Action Bar: Responsive Flex */}
       <div
-        className="card flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 sm:p-4"
+        className="card flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 p-2.5 sm:p-3 shrink-0"
         style={{ borderRadius: "12px" }}
       >
         {/* Problem Title & Difficulty */}
@@ -759,11 +759,11 @@ export default function WorkspacePage() {
       {/* Main Workspace Layout: Responsive Resizable Flex Container */}
       <div
         ref={workspaceContainerRef}
-        className="flex flex-col lg:flex-row gap-0 flex-1 min-h-[550px] lg:h-[calc(100vh-10.5rem)] w-full relative"
+        className="flex flex-col lg:flex-row gap-0 flex-1 min-h-0 h-full max-h-full w-full relative overflow-hidden"
       >
         {/* Left Column: Problem / Reasoning / AI Assistant */}
         <div
-          className={`flex-col card p-0 overflow-hidden min-h-[460px] h-full ${
+          className={`flex-col card p-0 overflow-hidden min-h-0 h-full max-h-full ${
             mobileTab !== "editor" ? "flex" : "hidden lg:flex"
           }`}
           style={{
@@ -773,7 +773,7 @@ export default function WorkspacePage() {
         >
           {/* Desktop Left Tab Bar */}
           <div
-            className="hidden lg:flex items-center px-3 pt-2 gap-1 border-b"
+            className="hidden lg:flex items-center px-3 pt-2 gap-1 border-b shrink-0"
             style={{ borderColor: "var(--color-border-subtle)", background: "var(--color-bg-secondary)" }}
           >
             <button
@@ -846,8 +846,8 @@ export default function WorkspacePage() {
 
           {/* Left Content Area */}
           <div
-            className={`flex-1 overflow-y-auto ${
-              mobileTab === "research" ? "p-2 flex flex-col h-full" : "p-4 space-y-4"
+            className={`flex-1 min-h-0 h-full max-h-full ${
+              mobileTab === "research" ? "p-1.5 flex flex-col overflow-hidden" : "overflow-y-auto p-4 space-y-4"
             }`}
           >
             {/* 1. Problem Description */}
@@ -953,7 +953,7 @@ export default function WorkspacePage() {
 
             {/* 3. AI Assistant Smart Chat Tab */}
             {mobileTab === "research" && (
-              <div className="flex-1 h-full min-h-[460px] flex flex-col">
+              <div className="flex-1 h-full min-h-0 max-h-full flex flex-col overflow-hidden">
                 <ProblemAIChat
                   problem={problem}
                   code={code}
@@ -1009,7 +1009,7 @@ export default function WorkspacePage() {
 
         {/* Right Column: Code Editor */}
         <div
-          className={`flex flex-col card p-0 overflow-hidden min-h-[460px] h-full ${
+          className={`flex flex-col card p-0 overflow-hidden min-h-0 h-full max-h-full ${
             mobileTab === "editor" ? "flex" : "hidden lg:flex"
           }`}
           style={{
@@ -1019,7 +1019,7 @@ export default function WorkspacePage() {
         >
           {/* Editor Action Header */}
           <div
-            className="flex flex-wrap items-center justify-between px-3 py-2 border-b gap-2"
+            className="flex flex-wrap items-center justify-between px-3 py-2 border-b gap-2 shrink-0"
             style={{
               background: "var(--color-bg-secondary)",
               borderColor: "var(--color-border-subtle)",

@@ -61,7 +61,18 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   const [syncingGit, setSyncingGit] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<string | null>(null);
+  const [appliedCodeKey, setAppliedCodeKey] = useState<string | null>(null);
   const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({});
+
+  const handleApplyCode = (codeStr: string, key?: string) => {
+    if (onApplyCode) {
+      onApplyCode(codeStr);
+      if (key) {
+        setAppliedCodeKey(key);
+        setTimeout(() => setAppliedCodeKey(null), 3500);
+      }
+    }
+  };
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -378,10 +389,10 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border-subtle)] overflow-hidden shadow-xl">
+    <div className="flex flex-col h-full max-h-full w-full min-h-0 bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border-subtle)] overflow-hidden shadow-xl relative">
       {/* ─── Chat Header ─── */}
       <div
-        className="px-3.5 py-2.5 flex items-center justify-between border-b gap-2 flex-wrap"
+        className="px-3.5 py-2.5 flex items-center justify-between border-b gap-2 flex-wrap shrink-0"
         style={{
           background: "var(--color-bg-elevated)",
           borderColor: "var(--color-border-subtle)",
@@ -486,7 +497,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
 
       {/* Active Context Banner */}
       <div
-        className="px-3.5 py-1.5 text-[11px] flex items-center justify-between border-b gap-2 text-muted"
+        className="px-3.5 py-1.5 text-[11px] flex items-center justify-between border-b gap-2 text-muted shrink-0"
         style={{
           background: "rgba(15, 23, 42, 0.6)",
           borderColor: "var(--color-border-subtle)",
@@ -507,8 +518,8 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
         </span>
       </div>
 
-      {/* ─── Message Stream Area ─── */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-3.5 space-y-4">
+      {/* ─── Message Stream Area (ChatGPT-Style Smooth Scroll) ─── */}
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto p-3.5 space-y-3.5 chat-scroll-container">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center space-y-3 px-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-cyan-400 shadow-inner">
@@ -681,23 +692,42 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                             const blockLang = match ? match[1] : language;
                             const blockKey = `${msg.id}-${codeStr.slice(0, 15)}`;
                             const isCopied = copiedCodeIdx === blockKey;
+                            const isApplied = appliedCodeKey === blockKey;
 
                             return (
-                              <div className="my-2 rounded-xl overflow-hidden border border-[var(--color-border)] bg-[#0d1117] shadow-lg">
+                              <div className="my-2.5 rounded-xl overflow-hidden border border-cyan-500/30 bg-[#0d1117] shadow-xl">
                                 {/* Code block header */}
                                 <div className="px-3 py-1.5 bg-[#161b22] border-b border-[var(--color-border-subtle)] flex items-center justify-between text-[11px]">
-                                  <span className="font-mono text-cyan-400 font-semibold uppercase">
-                                    {blockLang}
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-mono text-cyan-400 font-bold uppercase tracking-wider text-[10px]">
+                                      {blockLang}
+                                    </span>
+                                    <span className="text-[10px] text-gray-500 font-mono">
+                                      ({codeStr.split("\n").length} lines)
+                                    </span>
+                                  </div>
                                   <div className="flex items-center gap-1.5">
                                     {onApplyCode && (
                                       <button
-                                        onClick={() => onApplyCode(codeStr)}
-                                        className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 cursor-pointer flex items-center gap-1 transition-colors"
-                                        title="Apply code directly into active editor"
+                                        onClick={() => handleApplyCode(codeStr, blockKey)}
+                                        className={`px-2.5 py-1 rounded text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-all shadow-xs ${
+                                          isApplied
+                                            ? "bg-emerald-500 text-gray-950 shadow-emerald-500/40 scale-105"
+                                            : "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-gray-950 hover:scale-105 active:scale-95"
+                                        }`}
+                                        title="Apply code directly into active Monaco editor"
                                       >
-                                        <Code2 size={11} />
-                                        <span>Apply to Editor</span>
+                                        {isApplied ? (
+                                          <>
+                                            <Check size={11} className="stroke-[3]" />
+                                            <span>✓ Applied to Editor!</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Sparkles size={11} className="fill-current" />
+                                            <span>✨ Apply to Editor</span>
+                                          </>
+                                        )}
                                       </button>
                                     )}
                                     <button
@@ -730,6 +760,37 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                         {msg.content || (msg.status === "thinking" ? "*Reasoning and thinking...*" : "")}
                       </ReactMarkdown>
 
+                      {/* Quick Apply Card below assistant message containing code */}
+                      {!isUser && msg.content && msg.content.includes("```") && onApplyCode && (
+                        <div className="mt-2.5 p-2 rounded-xl bg-gradient-to-r from-emerald-950/40 via-teal-950/20 to-black/40 border border-emerald-500/30 flex items-center justify-between gap-2 shadow-sm">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                              <Code2 size={13} />
+                            </div>
+                            <div className="truncate text-[11px]">
+                              <span className="font-semibold text-white">Solution ready to test</span>
+                              <span className="text-gray-400 hidden sm:inline"> • Click to update editor code</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const codeMatch = msg.content.match(/```(?:\w+)?\n([\s\S]*?)```/);
+                              if (codeMatch && codeMatch[1]) {
+                                handleApplyCode(codeMatch[1].trim(), msg.id);
+                              }
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 shrink-0 cursor-pointer shadow-md transition-all active:scale-95 ${
+                              appliedCodeKey === msg.id
+                                ? "bg-emerald-500 text-gray-950"
+                                : "bg-gradient-to-r from-emerald-500 to-teal-500 text-gray-950 hover:opacity-90"
+                            }`}
+                          >
+                            <Sparkles size={12} className="fill-current" />
+                            <span>{appliedCodeKey === msg.id ? "✓ Applied!" : "✨ Apply to Editor"}</span>
+                          </button>
+                        </div>
+                      )}
+
                       {/* Blinking streaming cursor */}
                       {isStreaming && isLatest && msg.role === "assistant" && (
                         <span className="inline-block w-2 h-3.5 bg-cyan-400 ml-1 animate-pulse align-middle rounded-xs" />
@@ -744,9 +805,9 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ─── Bottom Chat Input Area ─── */}
+      {/* ─── Bottom Chat Input Area (Pinned like ChatGPT) ─── */}
       <div
-        className="p-3 border-t space-y-2"
+        className="p-2.5 sm:p-3 border-t shrink-0 z-10 space-y-2"
         style={{
           background: "var(--color-bg-primary)",
           borderColor: "var(--color-border-subtle)",

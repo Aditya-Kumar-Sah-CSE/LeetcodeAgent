@@ -41,8 +41,22 @@ export default function SolutionsPage() {
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [langFilter, setLangFilter] = useState<string>("all");
-  const [explanationLang, setExplanationLang] = useState<ExplanationLang>("english");
-  const [activeTab, setActiveTab] = useState<ActiveTab>("book");
+  const [explanationLang, setExplanationLangState] = useState<ExplanationLang>(() => {
+    return (localStorage.getItem("lca-sol-expl-lang") as any) || "english";
+  });
+  const setExplanationLang = (lang: ExplanationLang) => {
+    setExplanationLangState(lang);
+    localStorage.setItem("lca-sol-expl-lang", lang);
+  };
+
+  const [activeTab, setActiveTabState] = useState<ActiveTab>(() => {
+    return (localStorage.getItem("lca-sol-tab") as any) || "book";
+  });
+  const setActiveTab = (tab: ActiveTab) => {
+    setActiveTabState(tab);
+    localStorage.setItem("lca-sol-tab", tab);
+  };
+
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Submission modal state
@@ -84,9 +98,9 @@ export default function SolutionsPage() {
       }));
 
       setSolutions(mapped);
-      if (mapped.length > 0 && !selectedSolution) {
-        setSelectedSolution(mapped[0]);
-      }
+      const savedSlug = localStorage.getItem("lca-sol-selected-slug");
+      const target = (savedSlug && mapped.find((s) => s.problem_slug === savedSlug)) || mapped[0] || null;
+      setSelectedSolution(target);
     } catch (err) {
       console.error("Failed to load solutions:", err);
     } finally {
@@ -100,6 +114,7 @@ export default function SolutionsPage() {
 
   const handleSelectSolution = (sol: StoredSolution) => {
     setSelectedSolution(sol);
+    localStorage.setItem("lca-sol-selected-slug", sol.problem_slug);
     setMobileDetailOpen(true);
   };
 

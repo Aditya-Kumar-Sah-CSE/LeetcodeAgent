@@ -36,6 +36,7 @@ import {
 } from "../types";
 import {
   fetchDailyChallenge,
+  fetchProblem,
   runAgentStage,
   fetchModels,
   saveSolution,
@@ -57,6 +58,8 @@ import {
   isProblemSolved,
   toggleProblemSolved,
   setProblemSolved,
+  getActiveWorkspaceProblem,
+  setActiveWorkspaceProblem,
 } from "../services/storage";
 import {
   copyToClipboard,
@@ -70,10 +73,18 @@ import SubmissionModal from "../components/SubmissionModal";
 export default function WorkspacePage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const passedProblem = (location.state as { problem?: DailyProblem })?.problem;
+  const searchParams = new URLSearchParams(location.search);
+  const slugFromUrl = searchParams.get("slug");
 
-  const [problem, setProblem] = useState<DailyProblem | null>(passedProblem || null);
-  const [loadingProblem, setLoadingProblem] = useState(!passedProblem);
+  const passedProblem = (location.state as { problem?: DailyProblem })?.problem;
+  const cachedProblem = !passedProblem ? getActiveWorkspaceProblem() : null;
+
+  const initialProblem =
+    passedProblem ||
+    (cachedProblem && (!slugFromUrl || cachedProblem.slug === slugFromUrl) ? cachedProblem : null);
+
+  const [problem, setProblem] = useState<DailyProblem | null>(initialProblem);
+  const [loadingProblem, setLoadingProblem] = useState(!initialProblem);
   const [language, setLanguage] = useState<SupportedLanguage>(
     (getLanguage() as SupportedLanguage) || "python"
   );
@@ -121,8 +132,17 @@ export default function WorkspacePage() {
   );
 
   useEffect(() => {
-    if (problem?.slug) {
+    if (problem) {
+      setActiveWorkspaceProblem(problem);
       setIsSolved(isProblemSolved(problem.slug));
+      // Keep URL slug synced for bookmarks and direct browser reloads
+      const currentParams = new URLSearchParams(window.location.hash.split("?")[1] || "");
+      if (currentParams.get("slug") !== problem.slug) {
+        navigate(`/workspace?slug=${encodeURIComponent(problem.slug)}`, {
+          replace: true,
+          state: { problem },
+        });
+      }
     }
   }, [problem?.slug]);
 
@@ -136,13 +156,31 @@ export default function WorkspacePage() {
   // Load problem on mount
   useEffect(() => {
     if (!problem) {
-      fetchDailyChallenge()
-        .then((p) => {
-          setProblem(p);
-          setIsSolved(isProblemSolved(p.slug));
-          initCodeForProblem(p, language);
-        })
-        .finally(() => setLoadingProblem(false));
+      const slugToLoad = slugFromUrl || cachedProblem?.slug;
+      if (slugToLoad) {
+        fetchProblem(slugToLoad)
+          .then((p) => {
+            setProblem(p);
+            setIsSolved(isProblemSolved(p.slug));
+            initCodeForProblem(p, language);
+          })
+          .catch(() => {
+            fetchDailyChallenge().then((p) => {
+              setProblem(p);
+              setIsSolved(isProblemSolved(p.slug));
+              initCodeForProblem(p, language);
+            });
+          })
+          .finally(() => setLoadingProblem(false));
+      } else {
+        fetchDailyChallenge()
+          .then((p) => {
+            setProblem(p);
+            setIsSolved(isProblemSolved(p.slug));
+            initCodeForProblem(p, language);
+          })
+          .finally(() => setLoadingProblem(false));
+      }
     } else {
       initCodeForProblem(problem, language);
     }

@@ -359,3 +359,26 @@ export function formatLastSyncTime(timestamp: number | null): string {
   const days = Math.floor(diffSec / 86400);
   return `${days}d ago`;
 }
+
+// ─── Workspace Problem & State Persistence ──────────────────
+
+const LS_WORKSPACE_PROBLEM_KEY = "lca-active-workspace-problem";
+
+export function getActiveWorkspaceProblem(): any | null {
+  try {
+    const raw = localStorage.getItem(LS_WORKSPACE_PROBLEM_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setActiveWorkspaceProblem(problem: any) {
+  try {
+    if (!problem) {
+      localStorage.removeItem(LS_WORKSPACE_PROBLEM_KEY);
+    } else {
+      localStorage.setItem(LS_WORKSPACE_PROBLEM_KEY, JSON.stringify(problem));
+    }
+  } catch {}
+}

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
 import DashboardPage from "./pages/DashboardPage";
@@ -11,6 +11,25 @@ import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Remember active route on navigation for reload persistence
+  useEffect(() => {
+    if (location.pathname && location.pathname !== "/") {
+      localStorage.setItem("lca-last-route", location.pathname + location.search);
+    }
+  }, [location.pathname, location.search]);
+
+  // Restore last active route if opened at root "/"
+  useEffect(() => {
+    if (location.pathname === "/" && !location.search) {
+      const savedRoute = localStorage.getItem("lca-last-route");
+      if (savedRoute && savedRoute !== "/" && !savedRoute.startsWith("/#")) {
+        navigate(savedRoute, { replace: true });
+      }
+    }
+  }, []);
 
   return (
     <div

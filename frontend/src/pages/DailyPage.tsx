@@ -55,8 +55,14 @@ import type { DailyProblem, ProblemBrief, TopicTag, ContestBrief, ContestQuestio
 export default function DailyPage() {
   const navigate = useNavigate();
 
-  // Tab: daily challenge vs practice problems vs live/virtual contest
-  const [activeTab, setActiveTab] = useState<"daily" | "practice" | "contest">("daily");
+  // Tab: daily challenge vs practice problems vs live/virtual contest (persisted)
+  const [activeTab, setActiveTabState] = useState<"daily" | "practice" | "contest">(() => {
+    return (localStorage.getItem("lca-daily-tab") as any) || "daily";
+  });
+  const setActiveTab = (tab: "daily" | "practice" | "contest") => {
+    setActiveTabState(tab);
+    localStorage.setItem("lca-daily-tab", tab);
+  };
 
   // Solved status set for instant UI updates & connected account tracking
   const [solvedSlugsSet, setSolvedSlugsSet] = useState<Set<string>>(() => getSolvedSlugs());
@@ -64,14 +70,28 @@ export default function DailyPage() {
   const [syncing, setSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTimeState] = useState<number | null>(() => getLastSyncTime());
 
-  // Contest Arena state
+  // Contest Arena state (persisted)
   const [contests, setContests] = useState<ContestBrief[]>([]);
   const [loadingContests, setLoadingContests] = useState<boolean>(false);
   const [contestError, setContestError] = useState<string>("");
-  const [selectedContestSlug, setSelectedContestSlug] = useState<string>("weekly-contest-525");
+  const [selectedContestSlug, setSelectedContestSlugState] = useState<string>(() => {
+    return localStorage.getItem("lca-selected-contest-slug") || "weekly-contest-525";
+  });
+  const setSelectedContestSlug = (slug: string) => {
+    setSelectedContestSlugState(slug);
+    localStorage.setItem("lca-selected-contest-slug", slug);
+  };
+
   const [contestQuestions, setContestQuestions] = useState<ContestQuestion[]>([]);
   const [loadingContestQuestions, setLoadingContestQuestions] = useState<boolean>(false);
-  const [contestSubTab, setContestSubTab] = useState<"virtual" | "upcoming" | "all">("virtual");
+  const [contestSubTab, setContestSubTabState] = useState<"virtual" | "upcoming" | "all">(() => {
+    return (localStorage.getItem("lca-contest-subtab") as any) || "virtual";
+  });
+  const setContestSubTab = (subTab: "virtual" | "upcoming" | "all") => {
+    setContestSubTabState(subTab);
+    localStorage.setItem("lca-contest-subtab", subTab);
+  };
+
   const [contestSearchQuery, setContestSearchQuery] = useState<string>("");
   const [contestTypeFilter, setContestTypeFilter] = useState<"all" | "weekly" | "biweekly">("all");
   const [contestPageLimit, setContestPageLimit] = useState<number>(48);
@@ -87,11 +107,32 @@ export default function DailyPage() {
   const [refreshingDaily, setRefreshingDaily] = useState(false);
   const [dailyError, setDailyError] = useState("");
 
-  // Practice Problems state
+  // Practice Problems state (persisted)
   const [topics, setTopics] = useState<TopicTag[]>([]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | "EASY" | "MEDIUM" | "HARD">("ALL");
-  const [selectedTopic, setSelectedTopic] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<"ALL" | "SOLVED" | "NEW">("ALL");
+  const [selectedDifficulty, setSelectedDifficultyState] = useState<"ALL" | "EASY" | "MEDIUM" | "HARD">(() => {
+    return (localStorage.getItem("lca-practice-diff") as any) || "ALL";
+  });
+  const setSelectedDifficulty = (diff: "ALL" | "EASY" | "MEDIUM" | "HARD") => {
+    setSelectedDifficultyState(diff);
+    localStorage.setItem("lca-practice-diff", diff);
+  };
+
+  const [selectedTopic, setSelectedTopicState] = useState<string>(() => {
+    return localStorage.getItem("lca-practice-topic") || "all";
+  });
+  const setSelectedTopic = (t: string) => {
+    setSelectedTopicState(t);
+    localStorage.setItem("lca-practice-topic", t);
+  };
+
+  const [selectedStatus, setSelectedStatusState] = useState<"ALL" | "SOLVED" | "NEW">(() => {
+    return (localStorage.getItem("lca-practice-status") as any) || "ALL";
+  });
+  const setSelectedStatus = (status: "ALL" | "SOLVED" | "NEW") => {
+    setSelectedStatusState(status);
+    localStorage.setItem("lca-practice-status", status);
+  };
+
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [practiceProblems, setPracticeProblems] = useState<ProblemBrief[]>([]);
   const [totalPractice, setTotalPractice] = useState<number>(0);
@@ -202,7 +243,13 @@ export default function DailyPage() {
       const list = await fetchContests();
       setContests(list);
       const firstPast = list.find((c) => c.status === "PAST");
-      const defaultSlug = firstPast ? firstPast.slug : (list[0]?.slug || "weekly-contest-525");
+      const savedSlug = localStorage.getItem("lca-selected-contest-slug");
+      const defaultSlug =
+        savedSlug && list.some((c) => c.slug === savedSlug)
+          ? savedSlug
+          : firstPast
+          ? firstPast.slug
+          : list[0]?.slug || "weekly-contest-525";
       setSelectedContestSlug(defaultSlug);
       loadContestQuestions(defaultSlug);
     } catch (e: any) {

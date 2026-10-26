@@ -16,6 +16,8 @@ import {
   Trophy,
   Smartphone,
   GitBranch,
+  Monitor,
+  Sliders,
 } from "lucide-react";
 import { InstallPwaButton } from "../components/InstallPwaPrompt";
 
@@ -43,6 +45,10 @@ import {
   exportAllData,
   importData,
   clearAllData,
+  getUiDensity,
+  setUiDensity,
+  applyUiDensity,
+  type UiDensity,
 } from "../services/storage";
 import { fetchModels, fetchProfile } from "../services/api";
 import { LANGUAGES, type AIModel, type LeetCodeProfile } from "../types";
@@ -76,6 +82,7 @@ export default function SettingsPage() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [defaultLang, setDefaultLang] = useState(getLanguage());
+  const [uiDensity, setUiDensityState] = useState<UiDensity>(() => getUiDensity());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -215,6 +222,20 @@ export default function SettingsPage() {
     setDefaultLang(lang);
     setLanguage(lang);
     showToast("Default language updated");
+  };
+
+  const handleDensityChange = (d: UiDensity) => {
+    setUiDensity(d);
+    setUiDensityState(d);
+    showToast(
+      `Display Density set to: ${
+        d === "compact"
+          ? "Compact (75% Zoom Aesthetic — Default)"
+          : d === "medium"
+          ? "Medium (88% Scale)"
+          : "Standard (100% Scale)"
+      }`
+    );
   };
 
   const loadProfile = async (uname: string) => {
@@ -819,6 +840,77 @@ export default function SettingsPage() {
               {l.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* 5. UI Display Density & Zoom Scale Preference */}
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Monitor size={18} style={{ color: "var(--color-accent)" }} />
+            <h2 className="text-sm sm:text-base font-semibold text-white">UI Display Scale & Density</h2>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/30">
+            {uiDensity === "compact" ? "75% Feel (Active)" : uiDensity === "medium" ? "88% Feel (Active)" : "100% (Active)"}
+          </span>
+        </div>
+        <p className="text-xs text-secondary">
+          Customize application scaling to suit your monitor or browser preferences. "Compact" provides the sleek, spacious 75% IDE zoom feel by default without requiring manual browser zoom.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+          <button
+            onClick={() => handleDensityChange("compact")}
+            className="p-3 rounded-xl border text-left transition-all cursor-pointer touch-target"
+            style={{
+              background: uiDensity === "compact" ? "var(--color-accent-glow)" : "var(--color-bg-primary)",
+              borderColor: uiDensity === "compact" ? "var(--color-accent)" : "var(--color-border-subtle)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-bold text-xs text-white">Compact IDE</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400">
+                Recommended
+              </span>
+            </div>
+            <p className="text-[11px] text-muted leading-relaxed">
+              75% zoom aesthetic. Sleek high-density typography, maximum code & chat visibility, reduced margins.
+            </p>
+          </button>
+
+          <button
+            onClick={() => handleDensityChange("medium")}
+            className="p-3 rounded-xl border text-left transition-all cursor-pointer touch-target"
+            style={{
+              background: uiDensity === "medium" ? "var(--color-accent-glow)" : "var(--color-bg-primary)",
+              borderColor: uiDensity === "medium" ? "var(--color-accent)" : "var(--color-border-subtle)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-bold text-xs text-white">Balanced</span>
+              <span className="text-[10px] text-muted">~88% Scale</span>
+            </div>
+            <p className="text-[11px] text-muted leading-relaxed">
+              Balanced comfort mode. Slightly larger text for laptops and medium DPI displays.
+            </p>
+          </button>
+
+          <button
+            onClick={() => handleDensityChange("standard")}
+            className="p-3 rounded-xl border text-left transition-all cursor-pointer touch-target"
+            style={{
+              background: uiDensity === "standard" ? "var(--color-accent-glow)" : "var(--color-bg-primary)",
+              borderColor: uiDensity === "standard" ? "var(--color-accent)" : "var(--color-border-subtle)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-bold text-xs text-white">Standard</span>
+              <span className="text-[10px] text-muted">100% Scale</span>
+            </div>
+            <p className="text-[11px] text-muted leading-relaxed">
+              Standard 16px base font size. Generous touch targets for smaller low-resolution displays.
+            </p>
+          </button>
         </div>
       </div>
 

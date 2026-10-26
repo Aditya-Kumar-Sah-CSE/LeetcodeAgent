@@ -43,18 +43,49 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-size: 13px; /* Sleek high-density IDE typography matching the 75% zoom feel */
+  }
+
+  /* Density Scaling Modes */
+  html[data-density="compact"] {
+    font-size: 12.8px; /* ~80% scale: matches 75% browser zoom */
+  }
+
+  html[data-density="medium"] {
+    font-size: 14px; /* ~88% scale */
+  }
+
+  html[data-density="standard"] {
+    font-size: 16px; /* 100% standard */
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 12.8px;
+    }
+    html[data-density="compact"] {
+      font-size: 12.8px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    html {
+      font-size: 13.5px;
+    }
   }
 
   body {
     background-color: var(--color-bg-primary);
     color: var(--color-text-primary);
     min-height: 100vh;
-    line-height: 1.6;
+    line-height: 1.55;
+    overflow-x: hidden;
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
     background: var(--color-bg-secondary);
@@ -107,7 +138,7 @@
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-subtle);
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 

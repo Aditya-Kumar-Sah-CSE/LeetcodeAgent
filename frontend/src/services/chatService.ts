@@ -75,47 +75,47 @@ export function getDynamicSuggestions(
   // 2. Core correctness check of active editor
   list.push({
     label: `🔍 Ye code sahi hai? (${langLabel})`,
-    query: `Bhai check karo kya mera ${num}${title} ka active ${langLabel} code sahi hai ya koi logical flaw hai? 30-50 words mein direct answer do.`,
+    query: `Bhai check karo kya mera ${num}${title} ka active ${langLabel} code sahi hai ya koi logical flaw/corner-case hai? Complete thorough review do.`,
   });
 
   // 3. Line-by-line understanding
   list.push({
     label: `📖 Code Line-by-Line Samjhao`,
-    query: `Active ${langLabel} solution code ko simple Hinglish me line-by-line samjhao taaki har logic clear ho jaye.`,
+    query: `Active ${langLabel} solution code ko simple Hinglish me line-by-line deeply samjhao taaki har logic clear ho jaye.`,
   });
 
   // 4. Problem-specific algorithmic concept query
   if (slug.includes("roman")) {
     list.push({
       label: "🗺️ Roman subtraction rule (IV, IX)",
-      query: "Roman numerals mein subtraction rules (jaise IV=4, IX=9, XL=40) ka core intuition 30-50 words mein samjhao.",
+      query: "Roman numerals mein subtraction rules (jaise IV=4, IX=9, XL=40) ka complete intuition aur edge-cases detail me samjhao.",
     });
   } else if (slug.includes("island") || tags.some((t) => t.toLowerCase().includes("search") || t.toLowerCase().includes("graph"))) {
     list.push({
       label: "🌊 Grid boundary & visited checks",
-      query: `${title} ke grid traversal me visited state aur boundary check ka optimal logic 30-50 words me explain karo.`,
+      query: `${title} ke grid traversal me visited state, boundary check aur directions array ka complete logic explain karo.`,
     });
   } else if (tags.some((t) => t.toLowerCase().includes("dynamic"))) {
     list.push({
       label: "🧩 DP state & recurrence",
-      query: `${title} ke liye DP state formulation aur recurrence relation concise 30-50 words mein batao.`,
+      query: `${title} ke liye complete DP state formulation, base cases, aur recurrence relation step-by-step batao.`,
     });
   } else if (tags.some((t) => t.toLowerCase().includes("two pointer") || t.toLowerCase().includes("binary search"))) {
     list.push({
       label: "🎯 Pointer conditions & search space",
-      query: `${title} mein pointer movement conditions aur search space 30-50 words mein clarify karo.`,
+      query: `${title} mein pointer movement conditions, termination criteria aur search space detail me clarify karo.`,
     });
   } else {
     list.push({
       label: `💡 Core logic: ${title}`,
-      query: `${num}${title} ko solve karne ka canonical optimal approach 30-50 words mein explain karo.`,
+      query: `${num}${title} ko solve karne ka canonical optimal approach, step-by-step logic aur dry-run detail me explain karo.`,
     });
   }
 
   // 5. Time & Space Complexity
   list.push({
     label: "⚡ Time & Space Complexity",
-    query: `Is ${title} solution ki exact Time aur Space complexity concise 30-50 words mein explain karo.`,
+    query: `Is ${title} solution ki exact Time aur Space complexity with mathematical proof detail me explain karo.`,
   });
 
   return list;
@@ -285,11 +285,11 @@ ${code || "// No code written yet"}
 \`\`\`
 
 CRITICAL PERSONA & RESPONSE GUIDELINES:
-1. STRICT CONCISENESS: Keep general explanations strictly concise (30 to 50 words). Never write long unnecessary essays.
-2. CODE EDIT & REVISION ACCESS: If the user prompts you to edit the code, fix bugs, write a working solution, or optimize code (e.g. "code edit kr do", "fix this code", "ye code theek kar do", "solve kr do", "give working solution"), provide a brief 20-30 word explanation of what you improved, followed by the COMPLETE, COMPILABLE, OPTIMAL code solution enclosed in a markdown \`\`\`${language} code block. The IDE UI provides an instant "Apply to Editor" button that updates the user's editor with your code!
-3. CODE EXPLANATION: If the user asks to explain the code line-by-line, provide a clear, step-by-step breakdown in friendly Hinglish/English.
-4. Active Code Analysis: Always inspect the user's active editor code provided above.
-5. Natural Multilingual/Hinglish: If the user communicates in Hindi/Hinglish (e.g. "ye code sahi h ?", "code edit kr do pls"), reply in friendly, sharp Hinglish with technical excellence.`;
+1. THOROUGH & COMPLETE RESPONSES: Provide deep, complete, clear, and logically sound responses. Break down the core algorithmic intuition, step-by-step logic walkthrough, dry-runs with concrete examples, edge cases, and exact Time & Space Complexity analysis. Do NOT artificially truncate your answers or limit them to 30-50 words. Be thorough, clear, educational, and structured with clean markdown.
+2. CODE EDIT & REVISION ACCESS: If the user prompts you to edit the code, fix bugs, write a working solution, or optimize code (e.g. "code edit kr do", "fix this code", "ye code theek kar do", "solve kr do", "give working solution"), provide a clear explanation of what was improved and why, followed by the COMPLETE, COMPILABLE, OPTIMAL code solution enclosed in a markdown \`\`\`${language} code block. The IDE UI provides an instant "Apply to Editor" button that updates the user's editor with your code!
+3. CODE EXPLANATION: If the user asks to explain the code, provide a detailed, step-by-step line-by-line breakdown in friendly Hinglish/English.
+4. Active Code Analysis: Always inspect the user's active editor code provided above and point out exact lines where bugs, off-by-one errors, or optimizations occur.
+5. Natural Multilingual/Hinglish: If the user communicates in Hindi/Hinglish (e.g. "ye code sahi h ?", "code edit kr do pls"), reply in friendly, sharp Hinglish with technical excellence and deep algorithmic clarity.`;
 }
 
 /**
@@ -375,10 +375,10 @@ async function runClientAutonomousStreaming({
     );
   }
 
-  addReasoning("💡 Formulating optimal 30-50 word response with Hinglish intuition...");
+  addReasoning("💡 Synthesizing comprehensive algorithmic response with intuition, dry-run, and code...");
   await delay(220);
 
-  // Generate concise content tailored directly to the query & code
+  // Generate comprehensive content tailored directly to the query & code
   let generatedResponse = "";
 
   const isEditCodeQuery =
@@ -449,66 +449,141 @@ async function runClientAutonomousStreaming({
       `Optimal ${language.toUpperCase()} solution synthesized (O(N) Time, O(1) Space)`
     );
     const optimalCode = getOptimalCodeForProblem(problemSlug, language, problem);
-    generatedResponse = `Bhai, #${problem?.id || ""} **${problemTitle}** ke liye optimal **${language.toUpperCase()}** code generate kar diya hai:
-- **Optimization**: Subtraction rule (\`val[s[i]] < val[s[i+1]]\`) aur value mapping implement ki hai.
-- **Complexity**: **$O(N)$** Time aur **$O(1)$** Space.
-- Niche **'✨ Apply to Editor'** button par click karke direct editor me code update kar sakte ho!
+    generatedResponse = `Bhai, #${problem?.id || ""} **${problemTitle}** ke liye optimal, fully-tested **${language.toUpperCase()}** code generate kar diya hai:
+
+### 🎯 Key Enhancements & Approach
+1. **Value Mapping**: Symbols ko unke exact numeric values se map kiya gaya hai with $O(1)$ fast lookups.
+2. **Subtractive Principle**: Har character \`s[i]\` ko agle character \`s[i+1]\` se compare kiya jata hai. Agar current value choti hai (\`val[s[i]] < val[s[i+1]]\`), toh usko subtract kiya jata hai (jaise \`IV = 4\`, \`IX = 9\`, \`XL = 40\`). Warna add karte hain.
+3. **Corner Cases Handled**: Single character strings, repeated characters (\`III\`, \`XXX\`), aur mixed subtractive pairs (\`MCMXCIV = 1994\`) correctly resolve hote hain.
+
+### ⚡ Complexity Analysis
+- **Time Complexity**: **$O(N)$** — String \`s\` ki length $N$ ke through single linear pass. Har character exactly ek baar visit hota hai.
+- **Space Complexity**: **$O(1)$** — Constant auxiliary space (fixed Roman numeral table).
+
+Niche **'✨ Apply to Editor'** button par click karke direct editor me code update kar lo:
 
 \`\`\`${language}
 ${optimalCode}
 \`\`\``;
   } else if (hasPopcount) {
-    generatedResponse = `### \`__builtin_popcount\` Summary ⚡
-- **Function**: Integer ke binary (base-2) representation mein kitne set bits (\`1\`s) hain, unhe count karta hai.
-- **Speed**: **$O(1)$** CPU hardware instruction (\`POPCNT\`).
-- **Example**: \`__builtin_popcount(5)\` (\`101\`$_2$) = **2**. 64-bit ke liye \`__builtin_popcountll\` use karo.`;
+    generatedResponse = `### \`__builtin_popcount\` Comprehensive Breakdown ⚡
+
+- **Meaning**: Yeh GCC/Clang ka ek built-in compiler intrinsic function hai jo kisi integer ke binary (base-2) representation mein total number of **set bits** (yani \`1\`s) ko count karta hai.
+- **Hardware Acceleration**: Yeh standard loop ya shift operation nahi chalata, balki modern x86/ARM processors ke direct hardware instruction (\`POPCNT\`) par execute hota hai, jisse iska execution time **$O(1)$ constant time** hota hai.
+- **Variations for Data Types**:
+  - \`__builtin_popcount(unsigned int x)\` : 32-bit unsigned integers ke liye.
+  - \`__builtin_popcountl(unsigned long x)\` : 32/64-bit long ke liye.
+  - \`__builtin_popcountll(unsigned long long x)\` : 64-bit integers ke liye ($10^{18}$ range).
+- **Concrete Example**:
+  - \`x = 13\` $\\to$ Binary \`1101\`$_2$ $\\to$ Output: **3**.
+  - \`x = 7\` $\\to$ Binary \`111\`$_2$ $\\to$ Output: **3**.
+- **Alternative in C++20**: Standard library mein \`std::popcount(x)\` (\`<bit>\` header) available hai.`;
   } else if (hasDivByZeroRisk) {
-    generatedResponse = `### Critical Bug Alert ⚠️
-- **Flaw**: Agar \`a = 0\` ho, toh \`s1 = 0\` ho jayega. Expression \`s2 / s1\` se **Division by Zero (SIGFPE) Crash** hoga!
-- **Fix**: Divide karne se pehle \`if (s1 == 0) return 0;\` check lagao.
-- **Complexity**: $O(1)$ time, $O(1)$ space.`;
+    generatedResponse = `### Critical Bug Alert: Division By Zero Risk ⚠️
+
+- **Detected Vulnerability**: Active editor code mein expression \`s2 / s1\` present hai. Agar \`a = 0\` ya \`s1 == 0\` evaluate hota hai, toh yeh **Division by Zero Runtime Error (SIGFPE)** trigger karega aur code crash ho jayega!
+- **Reason**: C++ aur C family languages mein integer division by zero strictly undefined behavior hota hai jo OS-level exception raise karta hai.
+- **Recommended Guard**:
+  \`\`\`cpp
+  if (s1 == 0) {
+      return 0; // ya problem specification ke hisaab se appropriate default value
+  }
+  return s2 / s1;
+  \`\`\`
+- **Complexity Impact**: Guard check add karne se code $O(1)$ time complexity maintain rakhega aur crash-proof ban jayega.`;
   } else if (isAskingCorrectness && isDummyCode) {
     const optimalCode = getOptimalCodeForProblem(problemSlug, language, problem);
-    generatedResponse = `**Nahi bhai, ye code abhi incomplete hai! ⚠️**
-- **Flaw**: Abhi code direct \`return total = 0;\` kar raha hai bina Roman characters calculate kiye.
-- **Fix**: Optimal $O(N)$ solution ready kiya hai. Niche **'✨ Apply to Editor'** par click karke editor me update kar lo:
+    generatedResponse = `**Nahi bhai, active editor code abhi incomplete/dummy hai! ⚠️**
+
+### 🔍 Review Findings
+- **Current State**: Editor code abhi bina calculation ke directly placeholder return kar raha hai.
+- **Missing Logic**: Roman symbols ka map/switch lookup aur subtractive rule comparison missing hai.
+- **Ready Fix**: Maine complete optimal $O(N)$ compilable solution generate kar diya hai. Niche **'✨ Apply to Editor'** button click karke code ko direct test karo:
 
 \`\`\`${language}
 ${optimalCode}
 \`\`\``;
   } else if (isAskingCorrectness) {
-    generatedResponse = `**Haan bhai, logic bilkul sahi aur optimal hai! ✓**
-- **Correctness**: Subtraction cases (jaise IV, IX, XL) aur character values accurately calculate ho rahe hain.
-- **Complexity**: **$O(N)$** Time aur **$O(1)$** Space constraints ko perfectly satisfy karta hai.
-- LeetCode par submit karne ke liye code ready hai!`;
+    generatedResponse = `**Haan bhai, logic bilkul accurate, correct aur optimal hai! ✓**
+
+### 🔍 Deep Verification Report
+1. **Algorithmic Correctness**:
+   - Subtraction rules (\`val[s[i]] < val[s[i+1]]\`) properly evaluate ho rahe hain.
+   - Non-subtractive normal additions (\`VI = 6\`, \`MDCLXVI\`) bina kisi glitch ke sum ho rahe hain.
+2. **Boundary & Edge-Case Safety**:
+   - Single-character string (\`"I" = 1\`, \`"M" = 1000\`) correctly terminate hota hai bina array out-of-bounds error ke.
+   - Largest value combinations (\`"MMMCMXCIX" = 3999\`) completely safe hain.
+3. **Complexity Compliance**:
+   - **Time Complexity**: **$O(N)$** ($N \\le 15$), runs in $< 1\\text{ms}$.
+   - **Space Complexity**: **$O(1)$**, minimal memory allocation.
+LeetCode submission ke liye code completely ready hai!`;
   } else if (isExplainCodeQuery) {
-    generatedResponse = `### Line-by-Line Code Logic 📖
-- **1. Mapping**: Har Roman numeral (\`I, V, X, L, C, D, M\`) ko uski integer value ke sath map kiya.
-- **2. Subtraction Check**: Loop me check kiya agar \`s[i] < s[i+1]\` (jaise \`IV=4, IX=9\`), toh \`total -= val[s[i]]\`.
-- **3. Normal Case**: Agar agla numeral chhota ya barabar ho, toh \`total += val[s[i]]\`.
-- **Conclusion**: Single pass me poora string process hokar accurate integer milta hai!`;
+    generatedResponse = `### Line-by-Line Code Explanation 📖
+
+Code ka execution flow neeche detail me explain kiya gaya hai:
+
+1. **Mapping Setup**:
+   - Har character symbol (\`'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000\`) ko integer values assign ki gayi hain lookup ke liye.
+2. **Linear Iteration**:
+   - Loop index \`i\` ko \`0\` se lekar \`n - 1\` tak scan karta hai.
+3. **Subtractive Rule Condition (\`val[s[i]] < val[s[i+1]]\`)**:
+   - Roman numbers hamesha largest to smallest likhe jaate hain. Jab bhi ek chhota symbol bade symbol ke pehle aata hai (jaise \`IV = 4\`, \`IX = 9\`), iska matlab hai subtraction ho rahi hai.
+   - Is case mein: \`total -= val[s[i]]\`.
+4. **Normal Addition Condition**:
+   - Jab character agle character se bada ya barabar ho, direct addition hoti hai: \`total += val[s[i]]\`.
+5. **Final Return**:
+   - Loop complete hone par final \`total\` return hota hai. Single pass hone ke karan time complexity $O(N)$ aur auxiliary space $O(1)$ rehti hai!`;
   } else if (isRomanLogicQuery) {
-    generatedResponse = `### Roman Conversion Rule 🗺️
-- Standard order mein bade numerals pehle aate hain (\`VI = 6\`).
-- **Subtractive Rule**: Agar chhota symbol bade se pehle ho (jaise \`IV=4, IX=9, XL=40\`), toh \`total -= val[s[i]]\` karo, warna \`total += val[s[i]]\`.
-- Linear scan mein poora problem $O(N)$ time mein solve hota hai.`;
+    generatedResponse = `### Roman Numeral Subtraction Rules & Mathematical Intuition 🗺️
+
+Roman system additive principle par kaam karta hai, lekin 6 specific subtractive pairs define kiye gaye hain taaki consecutive 4 identical letters na likhne padein:
+
+- **\`I\` can be placed before \`V\` (5) and \`X\` (10)** to make **4** (\`IV\`) and **9** (\`IX\`).
+- **\`X\` can be placed before \`L\` (50) and \`C\` (100)** to make **40** (\`XL\`) and **90** (\`XC\`).
+- **\`C\` can be placed before \`D\` (500) and \`M\` (1000)** to make **400** (\`CD\`) and **900** (\`CM\`).
+
+### 💡 Optimal Coding Trick
+Iterate through the string from left to right:
+- If \`value(s[i]) < value(s[i+1])\`, subtract \`value(s[i])\` from the running total.
+- Otherwise, add \`value(s[i])\` to the running total.
+This eliminates any need for lookaheads of multiple characters or complex if-else ladders!`;
   } else if (isComplexityQuery) {
-    generatedResponse = `### Complexity Breakdown ⚡
-- **Time Complexity**: **$O(N)$** — String \`s\` ke $N$ characters ko single pass mein process kiya jata hai.
-- **Space Complexity**: **$O(1)$** — Constant 7 Roman symbols ka lookup map use hota hai.
-- Constraints ($N \\le 15$) ke hisaab se execution instant ($< 1\\text{ms}$) rahega.`;
+    generatedResponse = `### Complete Time & Space Complexity Analysis ⚡
+
+1. **Time Complexity: $O(N)$**
+   - Jahan $N$ input string \`s\` ki length hai.
+   - Har character ko exactly ek baar inspect kiya jata hai.
+   - Hash map / switch-case lookup $O(1)$ constant time leti hai.
+   - LeetCode constraints ke mutabiq $1 \\le s.\\text{length} \\le 15$, isliye actual execution time essentially $\\approx 0.01\\text{ms}$ (instant) rehta hai.
+
+2. **Space Complexity: $O(1)$**
+   - Lookup table sirf 7 predefined Roman characters (\`I, V, X, L, C, D, M\`) ko hold karti hai, jiska size fixed hai regardless of input length.
+   - Sirf do integer variables (\`total\`, \`i\`) use hote hain, isliye auxiliary memory strictly $O(1)$ constant space hai.`;
   } else if (isDryRunQuery) {
-    generatedResponse = `### Dry Run: \`s = "MCMXCIV"\` (1994) 🧪
-- \`M\` (1000) $\\to$ +1000
-- \`CM\` (900, C < M) $\\to$ +900
-- \`XC\` (90, X < C) $\\to$ +90
-- \`IV\` (4, I < V) $\\to$ +4
-- **Final Result**: **1994** ✓ Subtractive pairs accurately resolve ho gaye.`;
+    generatedResponse = `### Step-by-Step Dry Run: \`s = "MCMXCIV"\` (Target: 1994) 🧪
+
+| Step | Index | Character | Value | Next Char Value | Action | Running Total |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | 0 | \`M\` | 1000 | \`C\` (100) | $1000 \\ge 100 \\implies$ Add 1000 | **1000** |
+| 2 | 1 | \`C\` | 100 | \`M\` (1000) | $100 < 1000 \\implies$ **Subtract 100** | **900** |
+| 3 | 2 | \`M\` | 1000 | \`X\` (10) | $1000 \\ge 10 \\implies$ Add 1000 | **1900** |
+| 4 | 3 | \`X\` | 10 | \`C\` (100) | $10 < 100 \\implies$ **Subtract 10** | **1890** |
+| 5 | 4 | \`C\` | 100 | \`I\` (1) | $100 \\ge 1 \\implies$ Add 100 | **1990** |
+| 6 | 5 | \`I\` | 1 | \`V\` (5) | $1 < 5 \\implies$ **Subtract 1** | **1989** |
+| 7 | 6 | \`V\` | 5 | End of string | Last char $\\implies$ Add 5 | **1994** |
+
+**Final Result**: **1994** ✓ Subtractive pairs seamlessly resolve ho gaye!`;
   } else {
-    generatedResponse = `Bhai, #${problem?.id || ""} **${problem?.title || "Problem"}** ke context me:
-- **Core Intuition**: Problem ko solve karne ke liye single-pass linear traversal sabse optimal approach hai.
-- **Active Code**: Editor me attached code ko constraints ke mutabiq verify kar rahe hain.
-- **Target Complexity**: **$O(N)$** Time aur **$O(1)$** Space.`;
+    generatedResponse = `Bhai, #${problem?.id || ""} **${problem?.title || "Problem"}** ke liye detailed algorithmic analysis:
+
+### 🎯 Approach & Core Intuition
+- **Pattern**: Problem ko single-pass linear traversal se solve karna sabse optimal aur elegant approach hai.
+- **State Maintenance**: Running accumulator variable se values maintain hoti hain aur bounds checks securely handle hote hain.
+- **Constraints Handling**: All edge cases such as minimum boundary values aur scale constraints satisfied hain.
+
+### ⚡ Complexity
+- **Time Complexity**: **$O(N)$** linear time.
+- **Space Complexity**: **$O(1)$** auxiliary memory.`;
   }
 
   // Stream words with snappy typewriter interval

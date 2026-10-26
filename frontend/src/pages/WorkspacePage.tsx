@@ -24,6 +24,8 @@ import {
   ChevronDown,
   ChevronUp,
   GripVertical,
+  Columns,
+  Sliders,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -62,6 +64,9 @@ import {
   setProblemSolved,
   getActiveWorkspaceProblem,
   setActiveWorkspaceProblem,
+  getUiDensity,
+  setUiDensity,
+  type UiDensity,
 } from "../services/storage";
 import {
   copyToClipboard,
@@ -177,6 +182,56 @@ export default function WorkspacePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const [uiDensityState, setUiDensityState] = useState<UiDensity>(() => getUiDensity());
+
+  const handleCycleUiDensity = () => {
+    const order: UiDensity[] = ["compact", "medium", "standard"];
+    const currIdx = order.indexOf(uiDensityState);
+    const next = order[(currIdx + 1) % order.length];
+    setUiDensity(next);
+    setUiDensityState(next);
+    showToast(
+      `Display Scale: ${
+        next === "compact" ? "75% Sleek (Compact IDE)" : next === "medium" ? "88% Balanced" : "100% Standard"
+      }`
+    );
+  };
+
+  const handleUpdateSplitRatio = (newRatio: number) => {
+    const clamped = Math.min(80, Math.max(20, Math.round(newRatio)));
+    setSplitRatio(clamped);
+    try {
+      localStorage.setItem("lca-workspace-split-ratio", clamped.toString());
+    } catch {}
+    if (editorRef.current) {
+      try {
+        editorRef.current.layout();
+      } catch {}
+    }
+  };
+
+  const handleSplitPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsDraggingSplit(true);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handleSplitPointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingSplit || !workspaceContainerRef.current) return;
+    const rect = workspaceContainerRef.current.getBoundingClientRect();
+    const rawPercent = ((e.clientX - rect.left) / rect.width) * 100;
+    handleUpdateSplitRatio(rawPercent);
+  };
+
+  const handleSplitPointerUp = (e: React.PointerEvent) => {
+    setIsDraggingSplit(false);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+  };
+
   const handleSplitMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsDraggingSplit(true);
@@ -189,20 +244,11 @@ export default function WorkspacePage() {
       if (!workspaceContainerRef.current) return;
       const rect = workspaceContainerRef.current.getBoundingClientRect();
       const rawPercent = ((e.clientX - rect.left) / rect.width) * 100;
-      const clamped = Math.min(75, Math.max(25, rawPercent));
-      setSplitRatio(clamped);
-      if (editorRef.current) {
-        try {
-          editorRef.current.layout();
-        } catch {}
-      }
+      handleUpdateSplitRatio(rawPercent);
     };
 
     const handleMouseUp = () => {
       setIsDraggingSplit(false);
-      try {
-        localStorage.setItem("lca-workspace-split-ratio", splitRatio.toFixed(1));
-      } catch {}
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -216,7 +262,7 @@ export default function WorkspacePage() {
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [isDraggingSplit, splitRatio]);
+  }, [isDraggingSplit]);
 
   useEffect(() => {
     if (problem) {
@@ -728,6 +774,52 @@ export default function WorkspacePage() {
             </optgroup>
           </select>
 
+          {/* Real-time Dynamic Split Slider (Desktop) */}
+          <div
+            className="hidden xl:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+            }}
+            title="Drag slider to dynamically adjust Left (Chat) vs Right (Code) width in real time"
+          >
+            <Columns size={13} className="text-cyan-400 shrink-0" />
+            <span className="font-mono text-[10px] text-gray-300 whitespace-nowrap">
+              Split: <strong className="text-cyan-300">{Math.round(splitRatio)}%</strong> /{" "}
+              <strong className="text-purple-300">{100 - Math.round(splitRatio)}%</strong>
+            </span>
+            <input
+              type="range"
+              min="20"
+              max="80"
+              step="1"
+              value={Math.round(splitRatio)}
+              onChange={(e) => handleUpdateSplitRatio(Number(e.target.value))}
+              className="w-16 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+            />
+          </div>
+
+          {/* UI Scale / Density Zoom Toggle Button */}
+          <button
+            onClick={handleCycleUiDensity}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer touch-target"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+              color: "var(--color-text-primary)",
+            }}
+            title="Toggle UI Display Scale & Density (75% Zoom Feel vs Standard)"
+          >
+            <ZoomIn size={13} className="text-cyan-400" />
+            <span className="hidden md:inline">
+              {uiDensityState === "compact"
+                ? "Scale: 75% Sleek"
+                : uiDensityState === "medium"
+                ? "Scale: 88% Med"
+                : "Scale: 100% Std"}
+            </span>
+          </button>
+
           {/* Auto-Solve Full Agent Button */}
           <button
             onClick={handleRunFullPipeline}
@@ -839,25 +931,40 @@ export default function WorkspacePage() {
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             </button>
 
-            {/* Quick Split Presets on Desktop */}
-            <div className="ml-auto hidden xl:flex items-center gap-1 text-[10px] text-muted pr-1">
-              <span className="font-mono text-gray-500">Split:</span>
+            {/* Real-time Interactive Split Controls on Desktop */}
+            <div className="ml-auto hidden lg:flex items-center gap-1.5 text-[10px] text-muted pr-1">
+              <span className="font-mono text-gray-400 flex items-center gap-1">
+                <Columns size={11} className="text-cyan-400" />
+                <span>Split:</span>
+                <strong className="text-cyan-300 font-bold">{Math.round(splitRatio)}%</strong>
+              </span>
+
+              {/* Dynamic Range Slider */}
+              <input
+                type="range"
+                min="20"
+                max="80"
+                step="1"
+                value={Math.round(splitRatio)}
+                onChange={(e) => handleUpdateSplitRatio(Number(e.target.value))}
+                className="w-16 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                title={`Live Split: ${Math.round(splitRatio)}% Chat / ${100 - Math.round(splitRatio)}% Code`}
+              />
+
+              {/* Quick Presets */}
               {[
-                { label: "40%", val: 40, title: "40% Chat / 60% Code" },
+                { label: "35%", val: 35, title: "35% Chat / 65% Code (Code Focus)" },
+                { label: "45%", val: 45, title: "45% Chat / 55% Code" },
                 { label: "50%", val: 50, title: "50% Chat / 50% Code (Balanced)" },
                 { label: "65%", val: 65, title: "65% Chat / 35% Code (Wide Chat)" },
+                { label: "75%", val: 75, title: "75% Chat / 25% Code (Chat Focus)" },
               ].map((preset) => (
                 <button
                   key={preset.val}
-                  onClick={() => {
-                    setSplitRatio(preset.val);
-                    try {
-                      localStorage.setItem("lca-workspace-split-ratio", preset.val.toString());
-                    } catch {}
-                  }}
+                  onClick={() => handleUpdateSplitRatio(preset.val)}
                   className={`px-1.5 py-0.5 rounded cursor-pointer font-mono transition-colors ${
                     Math.round(splitRatio) === preset.val
-                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold"
                       : "hover:bg-white/10 text-gray-400"
                   }`}
                   title={preset.title}
@@ -994,18 +1101,23 @@ export default function WorkspacePage() {
 
         {/* Draggable Resizer Slider Bar (Visible on Desktop) */}
         <div
+          onPointerDown={handleSplitPointerDown}
+          onPointerMove={handleSplitPointerMove}
+          onPointerUp={handleSplitPointerUp}
           onMouseDown={handleSplitMouseDown}
-          onDoubleClick={() => {
-            setSplitRatio(50);
-            try {
-              localStorage.setItem("lca-workspace-split-ratio", "50");
-            } catch {}
-          }}
-          className={`hidden lg:flex items-center justify-center w-3 hover:w-3.5 cursor-col-resize select-none relative group z-10 transition-all shrink-0 ${
-            isDraggingSplit ? "w-3.5" : ""
+          onDoubleClick={() => handleUpdateSplitRatio(50)}
+          className={`hidden lg:flex items-center justify-center w-3.5 hover:w-4 cursor-col-resize select-none relative group z-20 transition-all shrink-0 ${
+            isDraggingSplit ? "w-4" : ""
           }`}
-          title="Drag left/right to resize panels • Double-click to reset 50/50"
+          title="Drag left/right to resize panels in real time • Double-click to reset 50/50"
         >
+          {/* Floating Live Percentage Badge During Drag */}
+          {isDraggingSplit && (
+            <div className="absolute top-1/2 -translate-y-1/2 -left-16 z-30 px-2 py-1 rounded-md bg-cyan-500 text-black font-mono font-bold text-[11px] shadow-xl pointer-events-none whitespace-nowrap">
+              {Math.round(splitRatio)}% | {100 - Math.round(splitRatio)}%
+            </div>
+          )}
+
           {/* Vertical divider line with glow on hover/drag */}
           <div
             className={`w-[2px] h-[98%] rounded transition-all ${

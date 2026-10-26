@@ -25,6 +25,7 @@ const LS_KEYS = {
   editorWordWrap: "lca-editor-word-wrap",
   githubToken: "lca-github-token",
   githubRepo: "lca-github-repo",
+  uiDensity: "lca-ui-density",
 } as const;
 
 export function getTheme(): string {
@@ -84,6 +85,24 @@ export function getEditorWordWrap(): boolean {
 
 export function setEditorWordWrap(wrap: boolean) {
   localStorage.setItem(LS_KEYS.editorWordWrap, wrap ? "true" : "false");
+}
+
+export type UiDensity = "compact" | "medium" | "standard";
+
+export function getUiDensity(): UiDensity {
+  return (localStorage.getItem(LS_KEYS.uiDensity) as UiDensity) || "compact";
+}
+
+export function setUiDensity(density: UiDensity) {
+  localStorage.setItem(LS_KEYS.uiDensity, density);
+  applyUiDensity(density);
+}
+
+export function applyUiDensity(density?: UiDensity) {
+  const d = density || getUiDensity();
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("data-density", d);
+  }
 }
 
 // ─── Draft persistence ────────────────────────────────────

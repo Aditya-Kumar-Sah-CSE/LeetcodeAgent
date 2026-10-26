@@ -429,14 +429,37 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           <select
             value={selectedModel}
             onChange={(e) => handleModelChange(e.target.value)}
-            className="text-[11px] px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-gray-200 cursor-pointer max-w-[130px] truncate"
-            title="Active LLM Model"
+            className="text-[11px] px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-gray-200 cursor-pointer max-w-[160px] sm:max-w-[210px] truncate"
+            title="Active Model & Reasoning Tier"
           >
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name || m.id.split("/").pop()}
-              </option>
-            ))}
+            <optgroup label="⚡ Fast / Low (<1.0s)">
+              {models.filter((m) => m.tier === "low").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Low] {m.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="🚀 Balanced / Medium (Optimal DSA)">
+              {models.filter((m) => m.tier === "medium").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Med] {m.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="🧠 High Reasoning (DP & Proofs)">
+              {models.filter((m) => m.tier === "high").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [High] {m.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="🛡️ Autonomous Local Engine">
+              {models.filter((m) => m.tier === "local").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Local] {m.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
 
           {/* Sync / Push to GitHub */}

@@ -67,42 +67,71 @@ export async function checkHealth(): Promise<{ status: string }> {
   }
 }
 
-// ─── Free Model Presets ─────────────────────────────────────
+import { queryProblemBank, getDetailedProblemFallback } from "./problemBank";
 
-// ─── Free Model Presets ─────────────────────────────────────
+// ─── Free Model Presets with Low, Medium & High Specifications ───
 
-const DEFAULT_MODELS: AIModel[] = [
+export const DEFAULT_MODELS: AIModel[] = [
+  // ─── Fast / Low-Latency Tier (Easy & Quick Problems) ───
   {
-    id: "openrouter/free",
-    name: "OpenRouter Free Router (Auto Best Model)",
-    provider: "OpenRouter",
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash (Google AI Studio)",
+    provider: "Google",
+    context_length: 1048576,
+    is_free: true,
+    tier: "low",
+    specification: "Low Latency • 1M Context • Rapid CP Feedback",
+    speed: "⚡ Ultra-Fast (<0.8s)",
+    reasoning_power: "High",
+    description: "Google's ultra-fast flagship multimodal model with generous free tier limits on Google AI Studio.",
+  },
+  {
+    id: "google/gemma-2-9b-it:free",
+    name: "Gemma 2 9B (Free)",
+    provider: "Google",
+    context_length: 8192,
+    is_free: true,
+    tier: "low",
+    specification: "Low Latency • 8K Context • Fast Logic Checks",
+    speed: "⚡ Fast (1.0s)",
+    reasoning_power: "Good",
+    description: "Lightweight and efficient code assistant for rapid problem solving.",
+  },
+  {
+    id: "meta-llama/llama-3.2-3b-instruct:free",
+    name: "Llama 3.2 3B Instruct (Free)",
+    provider: "Meta",
     context_length: 131072,
     is_free: true,
-    description: "Automatically routes to the best available free model with highest reliability.",
+    tier: "low",
+    specification: "Low Latency • 128K Context • Sub-second Latency",
+    speed: "⚡ Ultra-Fast (<0.6s)",
+    reasoning_power: "Good",
+    description: "Ultra-fast compact model for real-time intuition and complexity calculations.",
   },
   {
-    id: "google/gemma-4-31b-it:free",
-    name: "Gemma 4 31B (Free)",
-    provider: "Google",
+    id: "qwen/qwen-2.5-coder-7b-instruct:free",
+    name: "Qwen 2.5 Coder 7B (Free)",
+    provider: "Qwen",
     context_length: 32768,
     is_free: true,
-    description: "High-capability Google reasoning and coding model.",
+    tier: "low",
+    specification: "Low Latency • 32K Context • Specialized Code Generation",
+    speed: "⚡ Fast (0.9s)",
+    reasoning_power: "High",
+    description: "Code-specialized low latency model for instant syntax and error detection.",
   },
   {
-    id: "cohere/north-mini-code:free",
-    name: "North Mini Code (Free)",
-    provider: "Cohere",
-    context_length: 32768,
+    id: "groq/llama-3.1-8b-instant",
+    name: "Llama 3.1 8B Instant (Groq LPU)",
+    provider: "Groq",
+    context_length: 131072,
     is_free: true,
-    description: "Fast code synthesis and algorithmic problem solving.",
-  },
-  {
-    id: "nvidia/nemotron-3-ultra-550b-a55b:free",
-    name: "Nemotron 3 Ultra 550B (Free)",
-    provider: "NVIDIA",
-    context_length: 32768,
-    is_free: true,
-    description: "Massive scale model for complex multi-step reasoning.",
+    tier: "low",
+    specification: "Low Latency • 128K Context • Sub-300ms Responses",
+    speed: "⚡ Instant (<0.3s)",
+    reasoning_power: "Good",
+    description: "Ultra-fast inference powered by Groq LPU chipsets, delivering rapid code insights.",
   },
   {
     id: "liquid/lfm-2.5-2.6b:free",
@@ -110,7 +139,185 @@ const DEFAULT_MODELS: AIModel[] = [
     provider: "LiquidAI",
     context_length: 32768,
     is_free: true,
-    description: "Ultra-fast low-latency coding model.",
+    tier: "low",
+    specification: "Low Latency • 32K Context • Real-Time Stream",
+    speed: "⚡ Ultra-Fast (<0.5s)",
+    reasoning_power: "Medium",
+    description: "Ultra-fast low-latency neural coding model.",
+  },
+
+  // ─── Balanced / Medium Tier (Optimal DSA & Coding) ───
+  {
+    id: "openrouter/free",
+    name: "OpenRouter Free Router (Auto Best Model)",
+    provider: "OpenRouter",
+    context_length: 131072,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 128K Context • Dynamic Best Free Model",
+    speed: "🚀 Normal (~1.5s)",
+    reasoning_power: "Very High",
+    description: "Automatically routes to the highest-performing available free model with 99.9% uptime.",
+  },
+  {
+    id: "meta-llama/llama-3.3-70b-instruct:free",
+    name: "Llama 3.3 70B Instruct (Free)",
+    provider: "Meta",
+    context_length: 131072,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 128K Context • 70B Flagship Intelligence",
+    speed: "🚀 Normal (~1.8s)",
+    reasoning_power: "Very High",
+    description: "Full-scale 70B reasoning powerhouse for Medium LeetCode problems and optimal DP proofs.",
+  },
+  {
+    id: "mistralai/mistral-small-3.1-24b-instruct:free",
+    name: "Mistral Small 24B (Free)",
+    provider: "Mistral",
+    context_length: 32768,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 32K Context • Precision Edge-Case Analysis",
+    speed: "🚀 Fast (~1.2s)",
+    reasoning_power: "Very High",
+    description: "Exceptional precision in catching off-by-one errors and pointer edge-cases.",
+  },
+  {
+    id: "qwen/qwen-2.5-coder-32b-instruct:free",
+    name: "Qwen 2.5 Coder 32B (Free)",
+    provider: "Qwen",
+    context_length: 32768,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 32K Context • SOTA Competitive Coding",
+    speed: "🚀 Normal (~1.6s)",
+    reasoning_power: "Very High",
+    description: "World-class coding benchmarks, ideal for writing complete bug-free solutions.",
+  },
+  {
+    id: "google/gemma-2-27b-it:free",
+    name: "Gemma 2 27B (Free)",
+    provider: "Google",
+    context_length: 8192,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 8K Context • DeepMind Algorithmic Logic",
+    speed: "🚀 Fast (~1.4s)",
+    reasoning_power: "Very High",
+    description: "DeepMind architectural innovation with strong mathematical and algorithmic abilities.",
+  },
+  {
+    id: "groq/llama-3.3-70b-versatile",
+    name: "Llama 3.3 70B Versatile (Groq LPU)",
+    provider: "Groq",
+    context_length: 131072,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 128K Context • 300+ Tokens/Sec LPU Speed",
+    speed: "⚡ Ultra-Fast (~0.5s)",
+    reasoning_power: "Very High",
+    description: "Groq LPU accelerated 70B model with blazing fast inference for optimal DSA logic.",
+  },
+  {
+    id: "cohere/north-mini-code:free",
+    name: "North Mini Code (Free)",
+    provider: "Cohere",
+    context_length: 32768,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 32K Context • Algorithmic Problem Solving",
+    speed: "🚀 Fast (~1.1s)",
+    reasoning_power: "High",
+    description: "Fast code synthesis and algorithmic pattern matching.",
+  },
+
+  // ─── High Reasoning / Heavy Tier (Hard DP & Mathematical Proofs) ───
+  {
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro (Google AI Studio)",
+    provider: "Google",
+    context_length: 2097152,
+    is_free: true,
+    tier: "high",
+    specification: "High Reasoning • 2M Context • Elite Analytical Thinking",
+    speed: "🧠 Deep Think (~2.5s)",
+    reasoning_power: "Maximum",
+    description: "Google's most capable thinking model for complex Hard graphs, DP transitions, and mathematical induction.",
+  },
+  {
+    id: "groq/deepseek-r1-distill-llama-70b",
+    name: "DeepSeek R1 Distill 70B (Groq LPU)",
+    provider: "Groq",
+    context_length: 131072,
+    is_free: true,
+    tier: "high",
+    specification: "High Reasoning • 128K Context • Ultra-Fast Chain-of-Thought",
+    speed: "⚡ Rapid Deep Think (~0.8s)",
+    reasoning_power: "Maximum",
+    description: "DeepSeek R1 reasoning architecture accelerated by Groq LPU hardware for instant math proofs.",
+  },
+  {
+    id: "deepseek/deepseek-r1:free",
+    name: "DeepSeek R1 Reasoning (Free)",
+    provider: "DeepSeek",
+    context_length: 65536,
+    is_free: true,
+    tier: "high",
+    specification: "High Reasoning • 64K Context • Chain-of-Thought Math Proofs",
+    speed: "🧠 Deep Think (~3.0s)",
+    reasoning_power: "Maximum",
+    description: "Open reasoning model that outputs deep step-by-step thinking traces before coding.",
+  },
+  {
+    id: "deepseek/deepseek-chat:free",
+    name: "DeepSeek V3 671B MoE (Free)",
+    provider: "DeepSeek",
+    context_length: 65536,
+    is_free: true,
+    tier: "high",
+    specification: "High Reasoning • 64K Context • 671B MoE Supermodel",
+    speed: "🚀 Normal (~1.8s)",
+    reasoning_power: "Maximum",
+    description: "Massive 671-billion parameter Mixture of Experts architecture for comprehensive problem breakdown.",
+  },
+  {
+    id: "qwen/qwen-2.5-72b-instruct:free",
+    name: "Qwen 2.5 72B Instruct (Free)",
+    provider: "Qwen",
+    context_length: 65536,
+    is_free: true,
+    tier: "high",
+    specification: "High Reasoning • 64K Context • Flagship CP Heavyweight",
+    speed: "🚀 Normal (~2.0s)",
+    reasoning_power: "Maximum",
+    description: "Flagship 72B reasoning model dominating open competitive programming leaderboards.",
+  },
+  {
+    id: "nvidia/nemotron-3-ultra-550b-a55b:free",
+    name: "Nemotron 3 Ultra 550B (Free)",
+    provider: "NVIDIA",
+    context_length: 32768,
+    is_free: true,
+    tier: "high",
+    specification: "High Reasoning • 32K Context • 550B Multi-Step Architecture",
+    speed: "🚀 Normal (~2.2s)",
+    reasoning_power: "Maximum",
+    description: "550B ultra-large model from NVIDIA for intricate algorithmic problem solving.",
+  },
+
+  // ─── Autonomous Local Engine ───
+  {
+    id: "autonomous/local-engine",
+    name: "Autonomous Algorithmic Engine (Local)",
+    provider: "LeetCodeAgent",
+    context_length: 32768,
+    is_free: true,
+    tier: "local",
+    specification: "Zero-Config • 100% Free • Works Offline • Instant Tools",
+    speed: "⚡ Instant (<0.2s)",
+    reasoning_power: "High",
+    description: "Built-in autonomous engine running directly in your browser. Requires zero API keys or external servers.",
   },
 ];
 
@@ -190,7 +397,15 @@ export async function fetchProblem(slug: string): Promise<DailyProblem> {
 
     if (slug === FALLBACK_DAILY.slug) return FALLBACK_DAILY;
 
-    const foundCurated = CURATED_PRACTICE_PROBLEMS.find((p) => p.slug === slug);
+    const detailedFallback = getDetailedProblemFallback(slug);
+    if (detailedFallback) {
+      return {
+        ...detailedFallback,
+        is_solved: isProblemSolved(detailedFallback.slug),
+      };
+    }
+
+    const foundCurated = queryProblemBank().questions.find((p) => p.slug === slug);
     const archiveMap = (contestsQuestionsArchiveData as Record<string, ContestQuestion[]>) || {};
     let foundContestQ: ContestQuestion | undefined;
     for (const qs of Object.values(archiveMap)) {
@@ -463,25 +678,17 @@ export async function fetchPracticeProblems(options?: {
       })),
     };
   } catch (err) {
-    console.warn("Could not fetch practice problems from backend, filtering curated set:", err);
-    let filtered = [...CURATED_PRACTICE_PROBLEMS];
-    if (options?.difficulty && options.difficulty !== "ALL") {
-      filtered = filtered.filter((q) => q.difficulty.toUpperCase() === options.difficulty?.toUpperCase());
-    }
-    if (options?.topic && options.topic !== "all") {
-      const topicLower = options.topic.toLowerCase().replace(/-/g, " ");
-      filtered = filtered.filter((q) =>
-        q.tags.some((t) => t.toLowerCase().includes(topicLower) || topicLower.includes(t.toLowerCase()))
-      );
-    }
-    if (options?.search) {
-      const term = options.search.toLowerCase();
-      filtered = filtered.filter((q) => q.title.toLowerCase().includes(term) || String(q.id).includes(term));
-    }
-    const sliced = filtered.slice(options?.skip || 0, (options?.skip || 0) + (options?.limit || 20));
+    console.warn("Could not fetch practice problems from backend, using rich embedded problem bank:", err);
+    const { total, questions } = queryProblemBank({
+      difficulty: options?.difficulty,
+      topic: options?.topic,
+      search: options?.search,
+      skip: options?.skip,
+      limit: options?.limit,
+    });
     return {
-      total: filtered.length,
-      questions: sliced.map((q) => ({
+      total,
+      questions: questions.map((q) => ({
         ...q,
         is_solved: isProblemSolved(q.slug) || !!q.is_solved,
       })),

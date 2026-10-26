@@ -102,6 +102,10 @@ class AIModel(BaseModel):
     context_length: Optional[int] = None
     is_free: bool = False
     description: Optional[str] = None
+    tier: Optional[str] = "medium"  # "low" | "medium" | "high" | "local"
+    specification: Optional[str] = None
+    speed: Optional[str] = None
+    reasoning_power: Optional[str] = None
 
 
 class AIRequest(BaseModel):

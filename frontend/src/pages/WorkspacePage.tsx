@@ -690,18 +690,42 @@ export default function WorkspacePage() {
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
-            className="hidden sm:block px-3 py-2 text-xs font-medium rounded-lg cursor-pointer max-w-[180px] truncate border"
+            className="hidden sm:block px-2.5 py-1.5 text-xs font-medium rounded-lg cursor-pointer max-w-[240px] truncate border"
+            title="Active Model & Reasoning Tier"
             style={{
               background: "var(--color-bg-elevated)",
               color: "var(--color-text-primary)",
               borderColor: "var(--color-border)",
             }}
           >
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name || m.id.split("/").pop()} {m.is_free ? "[FREE]" : ""}
-              </option>
-            ))}
+            <optgroup label="⚡ Fast / Low-Latency Tier (<1.0s)">
+              {models.filter((m) => m.tier === "low").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Low] {m.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="🚀 Balanced / Medium Tier (Optimal DSA)">
+              {models.filter((m) => m.tier === "medium").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Med] {m.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="🧠 High Reasoning Tier (Hard DP & Proofs)">
+              {models.filter((m) => m.tier === "high").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [High] {m.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="🛡️ Autonomous Local Engine">
+              {models.filter((m) => m.tier === "local").map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Local] {m.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
 
           {/* Auto-Solve Full Agent Button */}

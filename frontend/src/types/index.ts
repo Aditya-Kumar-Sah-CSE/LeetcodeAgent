@@ -80,6 +80,10 @@ export interface AIModel {
   context_length: number | null;
   is_free: boolean;
   description: string | null;
+  tier?: "low" | "medium" | "high" | "local";
+  specification?: string;
+  speed?: string;
+  reasoning_power?: string;
 }
 
 export interface AIRequest {

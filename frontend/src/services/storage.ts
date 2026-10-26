@@ -17,6 +17,10 @@ const LS_KEYS = {
   dailyCache: "lca-daily-cache",
   dailyCacheDate: "lca-daily-cache-date",
   apiKeyHash: "lca-api-key-configured",
+  geminiKey: "lca-gemini-key",
+  groqKey: "lca-groq-key",
+  openrouterKey: "lca-openrouter-key",
+  activeProvider: "lca-active-provider",
   editorFontSize: "lca-editor-font-size",
   editorWordWrap: "lca-editor-word-wrap",
   githubToken: "lca-github-token",
@@ -98,22 +102,66 @@ export function clearDraftCode(slug: string, lang: string) {
   localStorage.removeItem(`lca-draft:${slug}:${lang}`);
 }
 
-// ─── Session-only API key (not persisted to localStorage) ──
+// ─── Multi-Provider API Key Configuration ────────────────────
 
 let _sessionApiKey: string | null = null;
 
+export function getGeminiApiKey(): string {
+  return localStorage.getItem(LS_KEYS.geminiKey) || "";
+}
+
+export function setGeminiApiKey(key: string) {
+  if (key) {
+    localStorage.setItem(LS_KEYS.geminiKey, key.trim());
+  } else {
+    localStorage.removeItem(LS_KEYS.geminiKey);
+  }
+}
+
+export function getGroqApiKey(): string {
+  return localStorage.getItem(LS_KEYS.groqKey) || "";
+}
+
+export function setGroqApiKey(key: string) {
+  if (key) {
+    localStorage.setItem(LS_KEYS.groqKey, key.trim());
+  } else {
+    localStorage.removeItem(LS_KEYS.groqKey);
+  }
+}
+
+export function getOpenRouterApiKey(): string {
+  return localStorage.getItem(LS_KEYS.openrouterKey) || _sessionApiKey || "";
+}
+
+export function setOpenRouterApiKey(key: string) {
+  _sessionApiKey = key ? key.trim() : null;
+  if (key) {
+    localStorage.setItem(LS_KEYS.openrouterKey, key.trim());
+  } else {
+    localStorage.removeItem(LS_KEYS.openrouterKey);
+  }
+}
+
+export function getActiveProvider(): string {
+  return localStorage.getItem(LS_KEYS.activeProvider) || "auto";
+}
+
+export function setActiveProvider(provider: string) {
+  localStorage.setItem(LS_KEYS.activeProvider, provider);
+}
+
 export function getApiKey(): string {
-  return _sessionApiKey || "";
+  return getOpenRouterApiKey() || getGeminiApiKey() || getGroqApiKey() || _sessionApiKey || "";
 }
 
 export function setApiKey(key: string) {
-  _sessionApiKey = key;
-  // Store a hash marker that a key was provided, not the key itself
+  setOpenRouterApiKey(key);
   localStorage.setItem(LS_KEYS.apiKeyHash, key ? "configured" : "");
 }
 
 export function isApiKeyConfigured(): boolean {
-  return !!_sessionApiKey || localStorage.getItem(LS_KEYS.apiKeyHash) === "configured";
+  return !!(getGeminiApiKey() || getGroqApiKey() || getOpenRouterApiKey() || _sessionApiKey);
 }
 
 // ─── GitHub Token & Repo Configuration ────────────────────

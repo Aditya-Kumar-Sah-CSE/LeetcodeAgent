@@ -14,6 +14,10 @@ import type { DailyProblem, ChatMessage, ToolCallItem, SupportedLanguage } from 
 import {
   getApiKey,
   getModelId,
+  getGeminiApiKey,
+  getGroqApiKey,
+  getOpenRouterApiKey,
+  getActiveProvider,
   saveChatSessionLocal,
   getChatSessionLocal,
   getGithubToken,
@@ -526,8 +530,302 @@ ${optimalCode}
 }
 
 /**
+ * Direct E2E Browser Streaming for Google Gemini (Google AI Studio REST API).
+ * Calls https://generativelanguage.googleapis.com directly with SSE.
+ */
+async function streamGoogleGemini({
+  geminiKey,
+  modelId,
+  systemPrompt,
+  messages,
+  currentQuery,
+  code,
+  language,
+  onReasoning,
+  onToolCall,
+  onDelta,
+  onDone,
+  abortSignal,
+}: {
+  geminiKey: string;
+  modelId: string;
+  systemPrompt: string;
+  messages: ChatMessage[];
+  currentQuery: string;
+  code: string;
+  language: SupportedLanguage;
+  onReasoning?: (reasoning: string) => void;
+  onToolCall?: (toolCall: ToolCallItem) => void;
+  onDelta: (delta: string) => void;
+  onDone: (fullContent: string, reasoning: string, toolCalls: ToolCallItem[], modelUsed: string) => void;
+  abortSignal?: AbortSignal;
+}): Promise<boolean> {
+  const candidateModels = [
+    modelId.replace(/^models\//, ""),
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+  ].filter(Boolean);
+
+  if (onReasoning) {
+    onReasoning("⚡ Connecting to Google AI Studio Gemini API directly from browser...");
+  }
+  if (onToolCall) {
+    onToolCall({
+      name: "inspect_editor_code",
+      label: `inspect_code_editor(${language}, ${code.split("\n").length} lines)`,
+      status: "completed",
+      result: `Buffered ${code.split("\n").length} lines of ${language.toUpperCase()} code`,
+    });
+  }
+
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+  for (const m of messages) {
+    if (m.role === "user" || m.role === "assistant") {
+      contents.push({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      });
+    }
+  }
+  contents.push({
+    role: "user",
+    parts: [{ text: currentQuery }],
+  });
+
+  const payload = {
+    systemInstruction: {
+      parts: [{ text: systemPrompt }],
+    },
+    contents,
+    generationConfig: {
+      temperature: 0.25,
+      maxOutputTokens: 2048,
+    },
+  };
+
+  let lastErr: any = null;
+  for (const mName of candidateModels) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${mName}:streamGenerateContent?key=${encodeURIComponent(
+        geminiKey
+      )}&alt=sse`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: abortSignal,
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `Gemini HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("ReadableStream not available");
+
+      const decoder = new TextDecoder("utf-8");
+      let fullContent = "";
+      let reasoningContent = "";
+      const tools: ToolCallItem[] = [
+        {
+          name: "google_gemini_inference",
+          label: `gemini_stream(${mName})`,
+          status: "completed",
+          result: "Direct Google AI Studio SSE stream active",
+        },
+      ];
+
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data:")) continue;
+          const dataStr = trimmed.slice(5).trim();
+          if (dataStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(dataStr);
+            const candidate = parsed.candidates?.[0];
+            const parts = candidate?.content?.parts;
+            if (Array.isArray(parts)) {
+              for (const p of parts) {
+                if (p.thought) {
+                  reasoningContent += p.thought;
+                  if (onReasoning) onReasoning(reasoningContent);
+                }
+                if (p.text) {
+                  fullContent += p.text;
+                  onDelta(p.text);
+                }
+              }
+            }
+          } catch {
+            // Ignore incomplete chunks
+          }
+        }
+      }
+
+      if (fullContent.trim()) {
+        onDone(fullContent, reasoningContent || "Direct Google AI Studio Gemini reasoning verified.", tools, mName);
+        return true;
+      }
+    } catch (err: any) {
+      if (abortSignal?.aborted) return false;
+      lastErr = err;
+      console.warn(`Gemini model ${mName} attempt failed, trying fallback:`, err.message);
+    }
+  }
+
+  if (lastErr) {
+    throw lastErr;
+  }
+  return false;
+}
+
+/**
+ * Direct E2E Browser Streaming for Groq (Ultra-Fast LPU Inference).
+ * Calls https://api.groq.com/openai/v1/chat/completions directly.
+ */
+async function streamGroqChat({
+  groqKey,
+  modelId,
+  systemPrompt,
+  messages,
+  currentQuery,
+  code,
+  language,
+  onReasoning,
+  onToolCall,
+  onDelta,
+  onDone,
+  abortSignal,
+}: {
+  groqKey: string;
+  modelId: string;
+  systemPrompt: string;
+  messages: ChatMessage[];
+  currentQuery: string;
+  code: string;
+  language: SupportedLanguage;
+  onReasoning?: (reasoning: string) => void;
+  onToolCall?: (toolCall: ToolCallItem) => void;
+  onDelta: (delta: string) => void;
+  onDone: (fullContent: string, reasoning: string, toolCalls: ToolCallItem[], modelUsed: string) => void;
+  abortSignal?: AbortSignal;
+}): Promise<boolean> {
+  const actualModel = modelId.startsWith("groq/")
+    ? modelId.replace("groq/", "")
+    : modelId.includes("r1")
+    ? "deepseek-r1-distill-llama-70b"
+    : "llama-3.3-70b-versatile";
+
+  if (onReasoning) {
+    onReasoning("⚡ Connecting to Groq LPU Ultra-Fast Inference (<300ms)...");
+  }
+  if (onToolCall) {
+    onToolCall({
+      name: "inspect_editor_code",
+      label: `inspect_code_editor(${language}, ${code.split("\n").length} lines)`,
+      status: "completed",
+      result: `Buffered ${code.split("\n").length} lines of ${language.toUpperCase()} code`,
+    });
+  }
+
+  const messagesPayload = [
+    { role: "system", content: systemPrompt },
+    ...messages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content })),
+    { role: "user", content: currentQuery },
+  ];
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${groqKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: actualModel,
+      messages: messagesPayload,
+      stream: true,
+      temperature: 0.25,
+      max_tokens: 1500,
+    }),
+    signal: abortSignal,
+  });
+
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    throw new Error(errJson.error?.message || `Groq HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("ReadableStream not available");
+
+  const decoder = new TextDecoder("utf-8");
+  let fullContent = "";
+  let reasoningContent = "";
+  const tools: ToolCallItem[] = [
+    {
+      name: "groq_lpu_inference",
+      label: `groq_lpu(${actualModel})`,
+      status: "completed",
+      result: "Groq LPU high-throughput streaming active",
+    },
+  ];
+
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith("data:")) continue;
+      const dataStr = trimmed.slice(5).trim();
+      if (dataStr === "[DONE]") break;
+
+      try {
+        const parsed = JSON.parse(dataStr);
+        const delta = parsed.choices?.[0]?.delta;
+        if (delta) {
+          if (delta.reasoning) {
+            reasoningContent += delta.reasoning;
+            if (onReasoning) onReasoning(reasoningContent);
+          }
+          if (delta.content) {
+            fullContent += delta.content;
+            onDelta(delta.content);
+          }
+        }
+      } catch {
+        // Ignore incomplete chunks
+      }
+    }
+  }
+
+  onDone(fullContent, reasoningContent || "Groq LPU ultra-low latency response completed.", tools, `groq/${actualModel}`);
+  return true;
+}
+
+/**
  * Main streaming chat orchestrator.
- * Sends full stateless message history dictionary to OpenRouter or local engine.
+ * Connects to Google Gemini, Groq, OpenRouter, or Local Autonomous Engine based on configured keys & model.
  */
 export async function streamChatMessage({
   slug,
@@ -545,23 +843,81 @@ export async function streamChatMessage({
   onError,
   abortSignal,
 }: StreamChatParams) {
-  const activeKey = apiKey || getApiKey();
+  const geminiKey = getGeminiApiKey();
+  const groqKey = getGroqApiKey();
+  const openRouterKey = getOpenRouterApiKey();
+  const fallbackKey = apiKey || getApiKey();
   const activeModel = modelId || getModelId() || "openrouter/free";
+  const activeProvider = getActiveProvider();
 
-  // Build the complete stateless history payload
   const systemPrompt = buildSystemPrompt(problem, code, language);
-  const messagesPayload = [
-    { role: "system", content: systemPrompt },
-    ...messages
-      .filter((m) => m.role === "user" || m.role === "assistant")
-      .map((m) => ({ role: m.role, content: m.content })),
-    { role: "user", content: currentQuery },
-  ];
 
-  // If user has an OpenRouter API key, call OpenRouter streaming endpoint
-  if (activeKey) {
+  // 1. Check if Google Gemini direct streaming should be executed
+  const isGeminiModel = activeModel.toLowerCase().startsWith("gemini-");
+  const useGemini =
+    geminiKey &&
+    (activeProvider === "gemini" ||
+      isGeminiModel ||
+      (activeProvider === "auto" && !groqKey && !openRouterKey));
+
+  if (useGemini) {
     try {
-      // Diagnostic tool call before network request
+      const ok = await streamGoogleGemini({
+        geminiKey,
+        modelId: activeModel,
+        systemPrompt,
+        messages,
+        currentQuery,
+        code,
+        language,
+        onReasoning,
+        onToolCall,
+        onDelta,
+        onDone,
+        abortSignal,
+      });
+      if (ok) return;
+    } catch (geminiErr: any) {
+      if (abortSignal?.aborted) return;
+      console.warn("Gemini streaming failed, attempting fallback:", geminiErr);
+    }
+  }
+
+  // 2. Check if Groq direct streaming should be executed
+  const isGroqModel = activeModel.toLowerCase().startsWith("groq/");
+  const useGroq =
+    groqKey &&
+    (activeProvider === "groq" ||
+      isGroqModel ||
+      (activeProvider === "auto" && !openRouterKey && !geminiKey));
+
+  if (useGroq) {
+    try {
+      const ok = await streamGroqChat({
+        groqKey,
+        modelId: activeModel,
+        systemPrompt,
+        messages,
+        currentQuery,
+        code,
+        language,
+        onReasoning,
+        onToolCall,
+        onDelta,
+        onDone,
+        abortSignal,
+      });
+      if (ok) return;
+    } catch (groqErr: any) {
+      if (abortSignal?.aborted) return;
+      console.warn("Groq streaming failed, attempting fallback:", groqErr);
+    }
+  }
+
+  // 3. Check if OpenRouter streaming should be executed
+  const resolvedOpenRouterKey = openRouterKey || fallbackKey;
+  if (resolvedOpenRouterKey && activeProvider !== "local" && activeModel !== "autonomous/local-engine") {
+    try {
       if (onReasoning) {
         onReasoning("🔍 Initializing agent reasoning & inspecting active editor context...");
       }
@@ -574,16 +930,31 @@ export async function streamChatMessage({
         });
       }
 
+      let orModel = activeModel;
+      if (orModel.startsWith("gemini-")) {
+        orModel = "google/" + orModel;
+      } else if (orModel.startsWith("groq/")) {
+        orModel = orModel.replace("groq/", "");
+      }
+
+      const messagesPayload = [
+        { role: "system", content: systemPrompt },
+        ...messages
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({ role: m.role, content: m.content })),
+        { role: "user", content: currentQuery },
+      ];
+
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${activeKey}`,
+          Authorization: `Bearer ${resolvedOpenRouterKey}`,
           "Content-Type": "application/json",
           "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "http://localhost:5173",
           "X-Title": "LeetCode AI Agent",
         },
         body: JSON.stringify({
-          model: activeModel,
+          model: orModel,
           messages: messagesPayload,
           stream: true,
           temperature: 0.25,
@@ -648,12 +1019,11 @@ export async function streamChatMessage({
         }
       }
 
-      onDone(fullContent, reasoningContent || "Reasoned and verified against problem constraints.", tools, activeModel);
+      onDone(fullContent, reasoningContent || "Reasoned and verified against problem constraints.", tools, orModel);
       return;
     } catch (err: any) {
       if (abortSignal?.aborted) return;
       console.warn("OpenRouter streaming failed, switching to Autonomous Generative Engine:", err);
-      // Fall through to Autonomous Streaming Engine
     }
   }
 

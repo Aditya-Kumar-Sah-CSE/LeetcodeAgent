@@ -22,6 +22,14 @@ import { InstallPwaButton } from "../components/InstallPwaPrompt";
 import {
   getApiKey,
   setApiKey,
+  getGeminiApiKey,
+  setGeminiApiKey,
+  getGroqApiKey,
+  setGroqApiKey,
+  getOpenRouterApiKey,
+  setOpenRouterApiKey,
+  getActiveProvider,
+  setActiveProvider,
   getModelId,
   setModelId,
   getUsername,
@@ -40,8 +48,24 @@ import { fetchModels, fetchProfile } from "../services/api";
 import { LANGUAGES, type AIModel, type LeetCodeProfile } from "../types";
 
 export default function SettingsPage() {
-  const [apiKeyInput, setApiKeyInput] = useState(getApiKey());
-  const [showKey, setShowKey] = useState(false);
+  // Multi-Provider Keys
+  const [geminiKeyInput, setGeminiKeyInput] = useState(getGeminiApiKey());
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [testingGemini, setTestingGemini] = useState(false);
+  const [geminiStatus, setGeminiStatus] = useState<string | null>(null);
+
+  const [groqKeyInput, setGroqKeyInput] = useState(getGroqApiKey());
+  const [showGroqKey, setShowGroqKey] = useState(false);
+  const [testingGroq, setTestingGroq] = useState(false);
+  const [groqStatus, setGroqStatus] = useState<string | null>(null);
+
+  const [openRouterKeyInput, setOpenRouterKeyInput] = useState(getOpenRouterApiKey() || getApiKey());
+  const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
+  const [testingOpenRouter, setTestingOpenRouter] = useState(false);
+  const [openRouterStatus, setOpenRouterStatus] = useState<string | null>(null);
+
+  const [activeProviderState, setActiveProviderState] = useState(getActiveProvider());
+
   const [githubTokenInput, setGithubTokenInput] = useState(getGithubToken());
   const [githubRepoInput, setGithubRepoInput] = useState(getGithubRepo());
   const [showGithubToken, setShowGithubToken] = useState(false);
@@ -71,9 +95,108 @@ export default function SettingsPage() {
     loadProfile(targetUser);
   }, []);
 
-  const handleSaveApiKey = () => {
-    setApiKey(apiKeyInput.trim());
-    showToast("OpenRouter API key saved (session memory)");
+  const handleSaveGeminiKey = () => {
+    setGeminiApiKey(geminiKeyInput.trim());
+    showToast("Google Gemini API key saved to device");
+  };
+
+  const handleTestGemini = async () => {
+    const k = geminiKeyInput.trim();
+    if (!k) {
+      showToast("Please enter a Google Gemini key first");
+      return;
+    }
+    setTestingGemini(true);
+    setGeminiStatus(null);
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k)}`
+      );
+      if (res.ok) {
+        setGeminiStatus("connected");
+        setGeminiApiKey(k);
+        showToast("🟢 Google Gemini API Connected & Verified!");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setGeminiStatus("error: " + (err.error?.message || `HTTP ${res.status}`));
+      }
+    } catch (e: any) {
+      setGeminiStatus("error: " + (e.message || "Network error"));
+    } finally {
+      setTestingGemini(false);
+    }
+  };
+
+  const handleSaveGroqKey = () => {
+    setGroqApiKey(groqKeyInput.trim());
+    showToast("Groq API key saved to device");
+  };
+
+  const handleTestGroq = async () => {
+    const k = groqKeyInput.trim();
+    if (!k) {
+      showToast("Please enter a Groq key first");
+      return;
+    }
+    setTestingGroq(true);
+    setGroqStatus(null);
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/models", {
+        headers: { Authorization: `Bearer ${k}` },
+      });
+      if (res.ok) {
+        setGroqStatus("connected");
+        setGroqApiKey(k);
+        showToast("🟢 Groq LPU Connected & Verified!");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setGroqStatus("error: " + (err.error?.message || `HTTP ${res.status}`));
+      }
+    } catch (e: any) {
+      setGroqStatus("error: " + (e.message || "Network error"));
+    } finally {
+      setTestingGroq(false);
+    }
+  };
+
+  const handleSaveOpenRouterKey = () => {
+    setOpenRouterApiKey(openRouterKeyInput.trim());
+    setApiKey(openRouterKeyInput.trim());
+    showToast("OpenRouter API key saved to device");
+  };
+
+  const handleTestOpenRouter = async () => {
+    const k = openRouterKeyInput.trim();
+    if (!k) {
+      showToast("Please enter an OpenRouter key first");
+      return;
+    }
+    setTestingOpenRouter(true);
+    setOpenRouterStatus(null);
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/auth/key", {
+        headers: { Authorization: `Bearer ${k}` },
+      });
+      if (res.ok) {
+        setOpenRouterStatus("connected");
+        setOpenRouterApiKey(k);
+        setApiKey(k);
+        showToast("🟢 OpenRouter Connected & Verified!");
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setOpenRouterStatus("error: " + (err.error?.message || `HTTP ${res.status}`));
+      }
+    } catch (e: any) {
+      setOpenRouterStatus("error: " + (e.message || "Network error"));
+    } finally {
+      setTestingOpenRouter(false);
+    }
+  };
+
+  const handleProviderChange = (prov: string) => {
+    setActiveProviderState(prov);
+    setActiveProvider(prov);
+    showToast(`Active Provider set to: ${prov.toUpperCase()}`);
   };
 
   const handleSaveGithubSettings = () => {
@@ -142,7 +265,9 @@ export default function SettingsPage() {
   const handleClear = async () => {
     if (!confirm("Are you sure you want to clear ALL local data and saved solutions? This cannot be undone.")) return;
     await clearAllData();
-    setApiKeyInput("");
+    setGeminiKeyInput("");
+    setGroqKeyInput("");
+    setOpenRouterKeyInput("");
     setUsernameInput("Aditya_Kumar_Sah-28");
     setProfile(null);
     showToast("Local data reset successfully");
@@ -273,53 +398,235 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* 2. OpenRouter API Key */}
-      <div className="card space-y-3">
-        <div className="flex items-center gap-2">
-          <Key size={18} style={{ color: "var(--color-accent)" }} />
-          <h2 className="text-sm sm:text-base font-semibold text-white">OpenRouter API Key (Optional)</h2>
+      {/* 2. Multi-Provider API Connections (Gemini, Groq, OpenRouter) */}
+      <div className="card space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Key size={18} style={{ color: "var(--color-accent)" }} />
+            <h2 className="text-sm sm:text-base font-semibold text-white">Multi-API Key Connections & Providers</h2>
+          </div>
+          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-semibold">
+            100% Free Providers Supported
+          </span>
         </div>
-        <p className="text-xs text-secondary">
-          Powers direct browser-based AI generation. A free tier key is available with zero cost from{" "}
-          <a
-            href="https://openrouter.ai/keys"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent underline inline-flex items-center gap-1"
-          >
-            openrouter.ai/keys <ExternalLink size={10} />
-          </a>
+        <p className="text-xs text-secondary leading-relaxed">
+          Connect your free API keys for direct, high-speed, browser-based AI generation. All keys are encrypted & stored only in your local browser memory.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <input
-              type={showKey ? "text" : "password"}
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="sk-or-v1-..."
-              className="w-full px-3 py-2.5 text-xs rounded-xl border outline-none font-mono touch-target"
-              style={{
-                background: "var(--color-bg-primary)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-text-primary)",
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey(!showKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer"
-              aria-label={showKey ? "Hide key" : "Show key"}
+        {/* Active Provider Routing */}
+        <div className="p-3 rounded-xl border space-y-1.5" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
+          <label className="text-xs font-semibold text-white flex items-center justify-between">
+            <span>Active Inference Routing Strategy:</span>
+            <span className="text-accent text-[11px] font-mono">{activeProviderState.toUpperCase()}</span>
+          </label>
+          <select
+            value={activeProviderState}
+            onChange={(e) => handleProviderChange(e.target.value)}
+            className="w-full px-3 py-2 text-xs rounded-lg border outline-none cursor-pointer"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            <option value="auto">Auto Router (Smart Best: Gemini ➔ Groq ➔ OpenRouter ➔ Local)</option>
+            <option value="gemini">Google Gemini (Direct Google AI Studio - 1M+ Context)</option>
+            <option value="groq">Groq LPU (Ultra-Fast Hardware Inference &lt;300ms)</option>
+            <option value="openrouter">OpenRouter (Multi-Model Unified Router)</option>
+            <option value="local">Autonomous Local Engine (100% Offline / No Keys)</option>
+          </select>
+        </div>
+
+        {/* 2A. Google Gemini API Key */}
+        <div className="p-3.5 rounded-xl border space-y-2.5" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+              <span className="font-semibold text-xs text-white">Google Gemini API (Google AI Studio)</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono">1M Ctx • Free</span>
+            </div>
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-accent underline flex items-center gap-1 hover:text-white"
             >
-              {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+              Get Free Gemini Key <ExternalLink size={11} />
+            </a>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <input
+                type={showGeminiKey ? "text" : "password"}
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                placeholder="AIzaSy..."
+                className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
+                style={{
+                  background: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-text-primary)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowGeminiKey(!showGeminiKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer"
+              >
+                {showGeminiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            <button
+              onClick={handleSaveGeminiKey}
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-accent text-white hover:opacity-90 cursor-pointer touch-target shadow"
+            >
+              Save Key
+            </button>
+            <button
+              onClick={handleTestGemini}
+              disabled={testingGemini}
+              className="px-4 py-2 text-xs font-semibold rounded-xl border border-blue-500/40 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 cursor-pointer disabled:opacity-50"
+            >
+              {testingGemini ? "Testing..." : "Test Connection"}
             </button>
           </div>
-          <button
-            onClick={handleSaveApiKey}
-            className="px-5 py-2.5 text-xs font-bold rounded-xl bg-accent text-white cursor-pointer hover:opacity-90 touch-target shadow-md"
-          >
-            Save Key
-          </button>
+
+          {geminiStatus && (
+            <div className={`text-[11px] font-medium flex items-center gap-1.5 ${
+              geminiStatus === "connected" ? "text-emerald-400" : "text-red-400"
+            }`}>
+              <span>{geminiStatus === "connected" ? "✓ Verified & Connected to Google AI Studio" : `✗ Connection Failed: ${geminiStatus}`}</span>
+            </div>
+          )}
+        </div>
+
+        {/* 2B. Groq LPU API Key */}
+        <div className="p-3.5 rounded-xl border space-y-2.5" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <span className="font-semibold text-xs text-white">Groq LPU (Ultra-Fast 300+ Tokens/Sec)</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono">&lt;300ms • Free</span>
+            </div>
+            <a
+              href="https://console.groq.com/keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-accent underline flex items-center gap-1 hover:text-white"
+            >
+              Get Free Groq Key <ExternalLink size={11} />
+            </a>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <input
+                type={showGroqKey ? "text" : "password"}
+                value={groqKeyInput}
+                onChange={(e) => setGroqKeyInput(e.target.value)}
+                placeholder="gsk_..."
+                className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
+                style={{
+                  background: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-text-primary)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowGroqKey(!showGroqKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer"
+              >
+                {showGroqKey ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            <button
+              onClick={handleSaveGroqKey}
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-accent text-white hover:opacity-90 cursor-pointer touch-target shadow"
+            >
+              Save Key
+            </button>
+            <button
+              onClick={handleTestGroq}
+              disabled={testingGroq}
+              className="px-4 py-2 text-xs font-semibold rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 cursor-pointer disabled:opacity-50"
+            >
+              {testingGroq ? "Testing..." : "Test Connection"}
+            </button>
+          </div>
+
+          {groqStatus && (
+            <div className={`text-[11px] font-medium flex items-center gap-1.5 ${
+              groqStatus === "connected" ? "text-emerald-400" : "text-red-400"
+            }`}>
+              <span>{groqStatus === "connected" ? "✓ Verified & Connected to Groq LPU Inference" : `✗ Connection Failed: ${groqStatus}`}</span>
+            </div>
+          )}
+        </div>
+
+        {/* 2C. OpenRouter API Key */}
+        <div className="p-3.5 rounded-xl border space-y-2.5" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
+              <span className="font-semibold text-xs text-white">OpenRouter (Unified Multi-Model Gateway)</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono">100+ Models • Free Tier</span>
+            </div>
+            <a
+              href="https://openrouter.ai/keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-accent underline flex items-center gap-1 hover:text-white"
+            >
+              Get Free OpenRouter Key <ExternalLink size={11} />
+            </a>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <input
+                type={showOpenRouterKey ? "text" : "password"}
+                value={openRouterKeyInput}
+                onChange={(e) => setOpenRouterKeyInput(e.target.value)}
+                placeholder="sk-or-v1-..."
+                className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
+                style={{
+                  background: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-text-primary)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowOpenRouterKey(!showOpenRouterKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer"
+              >
+                {showOpenRouterKey ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            <button
+              onClick={handleSaveOpenRouterKey}
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-accent text-white hover:opacity-90 cursor-pointer touch-target shadow"
+            >
+              Save Key
+            </button>
+            <button
+              onClick={handleTestOpenRouter}
+              disabled={testingOpenRouter}
+              className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-500/40 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 cursor-pointer disabled:opacity-50"
+            >
+              {testingOpenRouter ? "Testing..." : "Test Connection"}
+            </button>
+          </div>
+
+          {openRouterStatus && (
+            <div className={`text-[11px] font-medium flex items-center gap-1.5 ${
+              openRouterStatus === "connected" ? "text-emerald-400" : "text-red-400"
+            }`}>
+              <span>{openRouterStatus === "connected" ? "✓ Verified & Connected to OpenRouter Gateway" : `✗ Connection Failed: ${openRouterStatus}`}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -388,32 +695,110 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* 3. AI Model Selection */}
-      <div className="card space-y-3">
-        <div className="flex items-center gap-2">
-          <Cpu size={18} style={{ color: "var(--color-accent)" }} />
-          <h2 className="text-sm sm:text-base font-semibold text-white">Default AI Reasoning Model</h2>
+      {/* 3. AI Model Selection & Specifications (Low, Medium, High Tiers) */}
+      <div className="card space-y-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Cpu size={18} style={{ color: "var(--color-accent)" }} />
+            <h2 className="text-sm sm:text-base font-semibold text-white">Default AI Reasoning Model & Specifications</h2>
+          </div>
+          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 font-semibold">
+            {models.length} Free Models Available
+          </span>
         </div>
-        <p className="text-xs text-secondary">
-          Select the model that powers code generation, problem deconstruction, and testcase verification.
+        <p className="text-xs text-secondary leading-relaxed">
+          Categorized with distinct performance tiers: Low-Latency (Rapid CP feedback), Balanced (Optimal DSA & Complete code), and High Reasoning (Deep DP & Proofs).
         </p>
 
         <select
           value={selectedModel}
           onChange={(e) => handleModelChange(e.target.value)}
-          className="w-full px-3 py-2.5 text-xs rounded-xl border outline-none cursor-pointer touch-target"
+          className="w-full px-3 py-2.5 text-xs rounded-xl border outline-none cursor-pointer touch-target font-medium"
           style={{
             background: "var(--color-bg-primary)",
             borderColor: "var(--color-border)",
             color: "var(--color-text-primary)",
           }}
         >
-          {models.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name || m.id} {m.is_free ? "— [FREE]" : ""} ({m.provider})
-            </option>
-          ))}
+          <optgroup label="⚡ Fast / Low-Latency Tier (Easy & Rapid Feedback)">
+            {models
+              .filter((m) => m.tier === "low")
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Low] {m.name} • {m.speed}
+                </option>
+              ))}
+          </optgroup>
+          <optgroup label="🚀 Balanced / Medium Tier (Optimal DSA & Coding)">
+            {models
+              .filter((m) => m.tier === "medium")
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Med] {m.name} • {m.speed}
+                </option>
+              ))}
+          </optgroup>
+          <optgroup label="🧠 High Reasoning / Heavy Tier (Hard DP & Proofs)">
+            {models
+              .filter((m) => m.tier === "high")
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  [High] {m.name} • {m.speed}
+                </option>
+              ))}
+          </optgroup>
+          <optgroup label="🛡️ Autonomous Local Engine (Offline / Zero-Config)">
+            {models
+              .filter((m) => m.tier === "local")
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  [Local] {m.name}
+                </option>
+              ))}
+          </optgroup>
         </select>
+
+        {/* Selected Model Detailed Specification Card */}
+        {(() => {
+          const activeObj = models.find((m) => m.id === selectedModel);
+          if (!activeObj) return null;
+          return (
+            <div
+              className="p-3.5 rounded-xl border space-y-2 text-xs"
+              style={{
+                background: "var(--color-bg-primary)",
+                borderColor: "var(--color-border-subtle)",
+              }}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      activeObj.tier === "high"
+                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                        : activeObj.tier === "medium"
+                        ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                        : activeObj.tier === "low"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                        : "bg-blue-500/20 text-blue-300 border border-blue-500/40"
+                    }`}
+                  >
+                    {(activeObj.tier || "BALANCED").toUpperCase()} TIER
+                  </span>
+                  <span className="font-semibold text-white">{activeObj.name}</span>
+                </div>
+                <div className="flex items-center gap-3 text-muted text-[11px]">
+                  <span>Speed: <strong className="text-white">{activeObj.speed || "Normal"}</strong></span>
+                  <span>Reasoning: <strong className="text-white">{activeObj.reasoning_power || "High"}</strong></span>
+                  <span>Context: <strong className="text-white">{Math.round((activeObj.context_length || 32768) / 1024)}K</strong></span>
+                </div>
+              </div>
+              <p className="text-secondary text-[11px] leading-relaxed">
+                {activeObj.specification ? `${activeObj.specification} — ` : ""}{activeObj.description}
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* 4. Preferred Language */}

@@ -15,11 +15,18 @@ import DifficultyBadge, {
   StatusDot,
   LoadingCard,
   ErrorBox,
+  ProblemStatusBadge,
 } from "../components/UIComponents";
 import { InstallPwaBanner } from "../components/InstallPwaPrompt";
 import { fetchDailyChallenge, checkHealth, fetchProfile } from "../services/api";
-import { getUsername, getModelId, getApiKey } from "../services/storage";
-import { getAllSolutionsLocal, getActivities } from "../services/storage";
+import {
+  getUsername,
+  getModelId,
+  getApiKey,
+  getAllSolutionsLocal,
+  getActivities,
+  isProblemSolved,
+} from "../services/storage";
 import type { DailyProblem, StoredSolution, ActivityEntry, LeetCodeProfile } from "../types";
 
 const fadeIn = {
@@ -151,7 +158,10 @@ export default function DashboardPage() {
                     Today's Challenge · {daily.date}
                   </span>
                 </div>
-                <DifficultyBadge difficulty={daily.difficulty} />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ProblemStatusBadge isSolved={isProblemSolved(daily.slug)} size="sm" />
+                  <DifficultyBadge difficulty={daily.difficulty} />
+                </div>
               </div>
 
               <h2

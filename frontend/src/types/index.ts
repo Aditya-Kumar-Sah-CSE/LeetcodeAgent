@@ -19,6 +19,7 @@ export interface DailyProblem {
   date: string;
   fetched_at: string;
   code_snippets?: Record<string, string>;
+  is_solved?: boolean;
 }
 
 export interface ProblemBrief {
@@ -28,6 +29,7 @@ export interface ProblemBrief {
   difficulty: "Easy" | "Medium" | "Hard";
   tags: string[];
   url: string;
+  is_solved?: boolean;
 }
 
 export interface TopicTag {
@@ -151,6 +153,7 @@ export interface LeetCodeProfile {
   solved_hard: number | null;
   reputation: number | null;
   verified: boolean;
+  solved_slugs?: string[];
 }
 
 export type AgentStage =

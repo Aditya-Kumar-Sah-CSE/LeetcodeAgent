@@ -111,3 +111,105 @@ export function ErrorBox({ message, onRetry }: ErrorBoxProps) {
     </div>
   );
 }
+
+// ─── Problem Solved / New Status Badges & Toggles ─────────
+
+interface ProblemStatusBadgeProps {
+  isSolved: boolean;
+  size?: "sm" | "md";
+  interactive?: boolean;
+  onToggle?: () => void;
+  showAccountHint?: boolean;
+}
+
+export function ProblemStatusBadge({
+  isSolved,
+  size = "sm",
+  interactive = false,
+  onToggle,
+  showAccountHint = false,
+}: ProblemStatusBadgeProps) {
+  if (isSolved) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 font-bold rounded-full transition-all shrink-0 ${
+          size === "sm" ? "text-[11px] px-2.5 py-0.5" : "text-xs px-3 py-1"
+        } ${interactive ? "cursor-pointer hover:scale-105 active:scale-95" : ""}`}
+        style={{
+          background: "rgba(16, 185, 129, 0.15)",
+          color: "#34d399",
+          border: "1px solid rgba(16, 185, 129, 0.35)",
+          boxShadow: "0 0 10px rgba(16, 185, 129, 0.15)",
+        }}
+        title={
+          interactive
+            ? "Solved on connected account. Click to toggle status"
+            : "Solved on connected LeetCode account"
+        }
+        onClick={interactive ? onToggle : undefined}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+        <span>{showAccountHint ? "✓ Solved on @Aditya_Kumar_Sah-28" : "✓ Solved"}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 font-bold rounded-full transition-all shrink-0 ${
+        size === "sm" ? "text-[11px] px-2.5 py-0.5" : "text-xs px-3 py-1"
+      } ${interactive ? "cursor-pointer hover:scale-105 active:scale-95" : ""}`}
+      style={{
+        background: "rgba(168, 85, 247, 0.15)",
+        color: "#c084fc",
+        border: "1px solid rgba(168, 85, 247, 0.35)",
+        boxShadow: "0 0 10px rgba(168, 85, 247, 0.15)",
+      }}
+      title={
+        interactive
+          ? "New problem. Click to mark as Solved"
+          : "New problem / Unsolved"
+      }
+      onClick={interactive ? onToggle : undefined}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
+      <span>★ New</span>
+    </span>
+  );
+}
+
+interface ProblemStatusToggleProps {
+  isSolved: boolean;
+  onToggle: () => void;
+  className?: string;
+  compact?: boolean;
+}
+
+export function ProblemStatusToggle({
+  isSolved,
+  onToggle,
+  className = "",
+  compact = false,
+}: ProblemStatusToggleProps) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className={`inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all border touch-target ${
+        compact ? "px-2 py-1 text-[11px]" : "px-2.5 py-1.5 text-xs"
+      } ${className}`}
+      style={{
+        background: isSolved ? "rgba(16, 185, 129, 0.12)" : "rgba(168, 85, 247, 0.12)",
+        borderColor: isSolved ? "rgba(16, 185, 129, 0.3)" : "rgba(168, 85, 247, 0.3)",
+        color: isSolved ? "#34d399" : "#c084fc",
+      }}
+      title={isSolved ? "Click to mark as New" : "Click to mark as Solved"}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${isSolved ? "bg-emerald-400" : "bg-purple-400"}`} />
+      <span>{isSolved ? (compact ? "Mark New" : "Mark as New") : (compact ? "Mark Solved" : "Mark as Solved")}</span>
+    </button>
+  );
+}

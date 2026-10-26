@@ -54,6 +54,9 @@ import {
   setEditorFontSize,
   getEditorWordWrap,
   setEditorWordWrap,
+  isProblemSolved,
+  toggleProblemSolved,
+  setProblemSolved,
 } from "../services/storage";
 import {
   copyToClipboard,
@@ -61,7 +64,7 @@ import {
   detectPlatform,
   getCanonicalLeetCodeUrl,
 } from "../services/leetcodeNavigation";
-import DifficultyBadge from "../components/UIComponents";
+import DifficultyBadge, { ProblemStatusBadge, ProblemStatusToggle } from "../components/UIComponents";
 import SubmissionModal from "../components/SubmissionModal";
 
 export default function WorkspacePage() {
@@ -112,12 +115,31 @@ export default function WorkspacePage() {
 
   const platform = detectPlatform();
 
+  // Problem solved status tracking
+  const [isSolved, setIsSolved] = useState<boolean>(() =>
+    passedProblem?.slug ? isProblemSolved(passedProblem.slug) : false
+  );
+
+  useEffect(() => {
+    if (problem?.slug) {
+      setIsSolved(isProblemSolved(problem.slug));
+    }
+  }, [problem?.slug]);
+
+  const handleToggleSolved = () => {
+    if (!problem?.slug) return;
+    const nowSolved = toggleProblemSolved(problem.slug);
+    setIsSolved(nowSolved);
+    showToast(nowSolved ? `Marked "${problem.title}" as Solved ✓` : `Marked "${problem.title}" as New ★`);
+  };
+
   // Load problem on mount
   useEffect(() => {
     if (!problem) {
       fetchDailyChallenge()
         .then((p) => {
           setProblem(p);
+          setIsSolved(isProblemSolved(p.slug));
           initCodeForProblem(p, language);
         })
         .finally(() => setLoadingProblem(false));
@@ -419,10 +441,12 @@ export default function WorkspacePage() {
         style={{ borderRadius: "12px" }}
       >
         {/* Problem Title & Difficulty */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
           {problem && (
             <>
               <DifficultyBadge difficulty={problem.difficulty} />
+              <ProblemStatusBadge isSolved={isSolved} size="sm" showAccountHint={isSolved} />
+              <ProblemStatusToggle isSolved={isSolved} onToggle={handleToggleSolved} compact={true} />
               <h2
                 className="text-sm sm:text-base font-bold truncate text-white"
                 title={problem.title}

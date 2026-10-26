@@ -31,12 +31,18 @@ query userPublicProfile($username: String!) {
             }
         }
     }
+    recentAcSubmissionList(username: $username, limit: 50) {
+        id
+        title
+        titleSlug
+        timestamp
+    }
 }
 """
 
 
 async def fetch_public_profile(username: str) -> Optional[LeetCodeProfile]:
-    """Fetch a user's public LeetCode profile."""
+    """Fetch a user's public LeetCode profile and accepted problem slugs."""
     if not username or not username.strip():
         return None
 
@@ -67,6 +73,12 @@ async def fetch_public_profile(username: str) -> Optional[LeetCodeProfile]:
 
         profile_data = user.get("profile", {})
         submit_stats = user.get("submitStatsGlobal", {}).get("acSubmissionNum", [])
+        recent_ac = data.get("data", {}).get("recentAcSubmissionList", []) or []
+
+        # Extract unique solved slugs
+        solved_slugs = list(dict.fromkeys(
+            item.get("titleSlug") for item in recent_ac if item.get("titleSlug")
+        ))
 
         solved = {s["difficulty"]: s["count"] for s in submit_stats}
 
@@ -81,6 +93,7 @@ async def fetch_public_profile(username: str) -> Optional[LeetCodeProfile]:
             solved_hard=solved.get("Hard", 0),
             reputation=profile_data.get("reputation"),
             verified=True,
+            solved_slugs=solved_slugs,
         )
 
     except httpx.HTTPStatusError as e:

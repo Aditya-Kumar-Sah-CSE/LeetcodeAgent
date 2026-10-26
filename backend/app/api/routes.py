@@ -106,8 +106,9 @@ async def get_practice_problems(
     limit: int = Query(20, ge=1, le=50),
     skip: int = Query(0, ge=0),
     search: Optional[str] = Query(None, description="Keywords to search in title or slug"),
+    username: Optional[str] = Query(None, description="LeetCode username to mark solved problems"),
 ):
-    """Fetch practice problems filtered by difficulty and DSA topic from LeetCode."""
+    """Fetch practice problems filtered by difficulty, topic, and mark solved for connected account."""
     try:
         data = await fetch_practice_problems(
             difficulty=difficulty,
@@ -115,6 +116,7 @@ async def get_practice_problems(
             limit=limit,
             skip=skip,
             search=search,
+            username=username,
         )
         return data.model_dump()
     except Exception as e:

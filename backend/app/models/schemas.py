@@ -30,6 +30,7 @@ class DailyProblem(BaseModel):
     date: str  # YYYY-MM-DD
     fetched_at: str  # ISO timestamp
     code_snippets: dict[str, str] = {}
+    is_solved: Optional[bool] = None
 
 
 class ProblemBrief(BaseModel):
@@ -40,6 +41,7 @@ class ProblemBrief(BaseModel):
     difficulty: str
     tags: list[str] = []
     url: str
+    is_solved: Optional[bool] = None
 
 
 class TopicTag(BaseModel):
@@ -155,3 +157,4 @@ class LeetCodeProfile(BaseModel):
     solved_hard: Optional[int] = None
     reputation: Optional[int] = None
     verified: bool = False
+    solved_slugs: list[str] = []

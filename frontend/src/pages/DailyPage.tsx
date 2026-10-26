@@ -18,8 +18,14 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
+  CheckCircle,
 } from "lucide-react";
-import DifficultyBadge, { LoadingCard, ErrorBox } from "../components/UIComponents";
+import DifficultyBadge, {
+  LoadingCard,
+  ErrorBox,
+  ProblemStatusBadge,
+  ProblemStatusToggle,
+} from "../components/UIComponents";
 import {
   fetchDailyChallenge,
   refreshDailyChallenge,
@@ -27,7 +33,12 @@ import {
   fetchPracticeProblems,
   fetchProblem,
 } from "../services/api";
-import { addActivity } from "../services/storage";
+import {
+  addActivity,
+  getSolvedSlugs,
+  toggleProblemSolved,
+  isProblemSolved,
+} from "../services/storage";
 import type { DailyProblem, ProblemBrief, TopicTag } from "../types";
 
 export default function DailyPage() {
@@ -35,6 +46,10 @@ export default function DailyPage() {
 
   // Tab: daily challenge vs practice problems
   const [activeTab, setActiveTab] = useState<"daily" | "practice">("daily");
+
+  // Solved status set for instant UI updates & connected account tracking
+  const [solvedSlugsSet, setSolvedSlugsSet] = useState<Set<string>>(() => getSolvedSlugs());
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Daily Challenge state
   const [daily, setDaily] = useState<DailyProblem | null>(null);
@@ -46,6 +61,7 @@ export default function DailyPage() {
   const [topics, setTopics] = useState<TopicTag[]>([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"ALL" | "EASY" | "MEDIUM" | "HARD">("ALL");
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<"ALL" | "SOLVED" | "NEW">("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [practiceProblems, setPracticeProblems] = useState<ProblemBrief[]>([]);
   const [totalPractice, setTotalPractice] = useState<number>(0);
@@ -55,6 +71,17 @@ export default function DailyPage() {
   const [navigatingSlug, setNavigatingSlug] = useState<string | null>(null);
 
   const PAGE_SIZE = 20;
+
+  const handleToggleSolved = (slug: string, title?: string) => {
+    const isNowSolved = toggleProblemSolved(slug);
+    setSolvedSlugsSet(new Set(getSolvedSlugs()));
+    setToastMessage(
+      isNowSolved
+        ? `Marked "${title || slug}" as Solved ✓`
+        : `Marked "${title || slug}" as New ★`
+    );
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Load Daily Challenge
   const loadDaily = (forceRefresh = false) => {
@@ -150,8 +177,33 @@ export default function DailyPage() {
 
   const totalPages = Math.max(1, Math.ceil(totalPractice / PAGE_SIZE));
 
+  const displayedSolvedCount = practiceProblems.filter((p) => solvedSlugsSet.has(p.slug)).length;
+  const displayedNewCount = practiceProblems.length - displayedSolvedCount;
+
+  const displayedProblems = practiceProblems.filter((p) => {
+    const isSolved = solvedSlugsSet.has(p.slug);
+    if (selectedStatus === "SOLVED") return isSolved;
+    if (selectedStatus === "NEW") return !isSolved;
+    return true;
+  });
+
   return (
-    <div className="space-y-5 max-w-5xl mx-auto w-full max-w-full overflow-x-hidden pb-safe">
+    <div className="space-y-5 max-w-5xl mx-auto w-full max-w-full overflow-x-hidden pb-safe relative">
+      {/* Toast Alert */}
+      {toastMessage && (
+        <div
+          className="fixed bottom-20 md:bottom-6 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border animate-bounce backdrop-blur-md"
+          style={{
+            background: "var(--color-bg-card)",
+            borderColor: "var(--color-accent)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          <Sparkles size={16} style={{ color: "var(--color-accent)" }} />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* ─── Top Header & Mode Tabs ─── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
@@ -264,7 +316,16 @@ export default function DailyPage() {
                       {daily.title}
                     </h2>
                   </div>
-                  <div className="flex items-center gap-2.5 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <ProblemStatusBadge
+                      isSolved={solvedSlugsSet.has(daily.slug)}
+                      size="md"
+                      showAccountHint={true}
+                    />
+                    <ProblemStatusToggle
+                      isSolved={solvedSlugsSet.has(daily.slug)}
+                      onToggle={() => handleToggleSolved(daily.slug, daily.title)}
+                    />
                     <DifficultyBadge difficulty={daily.difficulty} />
                     <a
                       href={daily.url}
@@ -431,8 +492,53 @@ export default function DailyPage() {
               </button>
             </form>
 
-            {/* Difficulty Filter Pills */}
+            {/* Status & Difficulty Filter Pills */}
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t" style={{ borderColor: "var(--color-border-subtle)" }}>
+              {/* Status Filter */}
+              <span className="text-xs font-semibold text-muted flex items-center gap-1.5 mr-1">
+                <CheckCircle size={13} /> Status:
+              </span>
+              {(["ALL", "SOLVED", "NEW"] as const).map((status) => {
+                const isSelected = selectedStatus === status;
+                return (
+                  <button
+                    key={status}
+                    onClick={() => setSelectedStatus(status)}
+                    className="px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer border touch-target flex items-center gap-1.5"
+                    style={{
+                      background: isSelected ? "var(--color-accent-glow)" : "var(--color-bg-elevated)",
+                      borderColor: isSelected
+                        ? status === "SOLVED"
+                          ? "#10b981"
+                          : status === "NEW"
+                          ? "#a855f7"
+                          : "var(--color-accent)"
+                        : "var(--color-border-subtle)",
+                      color: isSelected
+                        ? status === "SOLVED"
+                          ? "#34d399"
+                          : status === "NEW"
+                          ? "#c084fc"
+                          : "var(--color-accent)"
+                        : "var(--color-text-secondary)",
+                    }}
+                  >
+                    {status === "SOLVED" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                    {status === "NEW" && <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />}
+                    <span>
+                      {status === "ALL"
+                        ? `All (${practiceProblems.length})`
+                        : status === "SOLVED"
+                        ? `Solved (${displayedSolvedCount})`
+                        : `New (${displayedNewCount})`}
+                    </span>
+                  </button>
+                );
+              })}
+
+              <span className="text-muted mx-1 hidden sm:inline">|</span>
+
+              {/* Difficulty */}
               <span className="text-xs font-semibold text-muted flex items-center gap-1.5 mr-1">
                 <SlidersHorizontal size={13} /> Difficulty:
               </span>
@@ -470,86 +576,106 @@ export default function DailyPage() {
             <LoadingCard lines={6} />
           ) : practiceError ? (
             <ErrorBox message={practiceError} onRetry={() => loadPractice(false)} />
-          ) : practiceProblems.length === 0 ? (
+          ) : displayedProblems.length === 0 ? (
             <div className="card text-center py-10 space-y-2">
               <BookOpen size={30} className="mx-auto text-muted" />
               <h3 className="text-sm font-semibold text-white">No problems found</h3>
               <p className="text-xs text-muted">
-                Try selecting a different topic, difficulty, or clear your search term.
+                {selectedStatus !== "ALL"
+                  ? `No problems match status "${selectedStatus}" in current filter. Try selecting "All (${practiceProblems.length})" or clear filters.`
+                  : "Try selecting a different topic, difficulty, or clear your search term."}
               </p>
+              {selectedStatus !== "ALL" && (
+                <button
+                  onClick={() => setSelectedStatus("ALL")}
+                  className="mt-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent text-white"
+                >
+                  Show All Statuses
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-2.5">
-              {practiceProblems.map((p) => (
-                <div
-                  key={p.slug}
-                  className="card p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-accent/40 transition-all group"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono font-bold text-accent px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">
-                        #{p.id}
-                      </span>
-                      <h4
-                        className="text-sm font-bold text-white truncate group-hover:text-accent transition-colors cursor-pointer"
-                        onClick={() => handleOpenInWorkspace(p)}
-                        title={p.title}
-                      >
-                        {p.title}
-                      </h4>
-                      <DifficultyBadge difficulty={p.difficulty} />
-                    </div>
-
-                    {/* Topic Tags */}
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {p.tags.slice(0, 4).map((t) => (
-                        <span
-                          key={t}
-                          className="text-[11px] px-2 py-0.2 rounded-md bg-secondary text-secondary border border-border-subtle"
-                        >
-                          {t}
+              {displayedProblems.map((p) => {
+                const isSolved = solvedSlugsSet.has(p.slug);
+                return (
+                  <div
+                    key={p.slug}
+                    className="card p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-accent/40 transition-all group"
+                  >
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-mono font-bold text-accent px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">
+                          #{p.id}
                         </span>
-                      ))}
-                      {p.tags.length > 4 && (
-                        <span className="text-[10px] text-muted">+{p.tags.length - 4} more</span>
-                      )}
+                        <h4
+                          className="text-sm font-bold text-white truncate group-hover:text-accent transition-colors cursor-pointer"
+                          onClick={() => handleOpenInWorkspace(p)}
+                          title={p.title}
+                        >
+                          {p.title}
+                        </h4>
+                        <ProblemStatusBadge isSolved={isSolved} size="sm" />
+                        <DifficultyBadge difficulty={p.difficulty} />
+                      </div>
+
+                      {/* Topic Tags */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {p.tags.slice(0, 4).map((t) => (
+                          <span
+                            key={t}
+                            className="text-[11px] px-2 py-0.2 rounded-md bg-secondary text-secondary border border-border-subtle"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                        {p.tags.length > 4 && (
+                          <span className="text-[10px] text-muted">+{p.tags.length - 4} more</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <ProblemStatusToggle
+                        isSolved={isSolved}
+                        onToggle={() => handleToggleSolved(p.slug, p.title)}
+                        compact={true}
+                      />
+
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg border text-muted hover:text-white transition-colors cursor-pointer touch-target"
+                        style={{ background: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}
+                        title="Open on LeetCode"
+                      >
+                        <ExternalLink size={14} />
+                      </a>
+
+                      <button
+                        onClick={() => handleOpenInWorkspace(p)}
+                        disabled={navigatingSlug === p.slug}
+                        className="px-3.5 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-md touch-target disabled:opacity-50"
+                        style={{ background: "var(--color-accent)" }}
+                      >
+                        {navigatingSlug === p.slug ? (
+                          <>
+                            <Loader2 size={13} className="animate-spin" />
+                            <span>Loading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={13} />
+                            <span>Solve in Workspace</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <a
-                      href={p.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg border text-muted hover:text-white transition-colors cursor-pointer touch-target"
-                      style={{ background: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}
-                      title="Open on LeetCode"
-                    >
-                      <ExternalLink size={14} />
-                    </a>
-
-                    <button
-                      onClick={() => handleOpenInWorkspace(p)}
-                      disabled={navigatingSlug === p.slug}
-                      className="px-3.5 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-md touch-target disabled:opacity-50"
-                      style={{ background: "var(--color-accent)" }}
-                    >
-                      {navigatingSlug === p.slug ? (
-                        <>
-                          <Loader2 size={13} className="animate-spin" />
-                          <span>Loading...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={13} />
-                          <span>Solve in Workspace</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Pagination */}
               {totalPages > 1 && (

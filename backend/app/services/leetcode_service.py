@@ -399,8 +399,9 @@ async def fetch_practice_problems(
     limit: int = 20,
     skip: int = 0,
     search: Optional[str] = None,
+    username: Optional[str] = None,
 ) -> ProblemListResponse:
-    """Fetch practice problems from LeetCode filtered by difficulty, topic, search query."""
+    """Fetch practice problems from LeetCode filtered by difficulty, topic, search query, with solved marking."""
     filters: dict[str, Any] = {}
     if difficulty and difficulty.upper() in ("EASY", "MEDIUM", "HARD"):
         filters["difficulty"] = difficulty.upper()
@@ -408,6 +409,17 @@ async def fetch_practice_problems(
         filters["tags"] = [topic.lower()]
     if search and search.strip():
         filters["searchKeywords"] = search.strip()
+
+    # If username provided, get their solved slugs
+    user_solved_slugs: set[str] = set()
+    if username:
+        try:
+            from app.services.profile_service import fetch_public_profile
+            prof = await fetch_public_profile(username)
+            if prof and prof.solved_slugs:
+                user_solved_slugs = set(prof.solved_slugs)
+        except Exception as e:
+            logger.warning("Could not fetch user solved slugs for %s: %s", username, e)
 
     async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT) as client:
         response = await client.post(
@@ -442,6 +454,8 @@ async def fetch_practice_problems(
         diff = q.get("difficulty", "Medium")
         tags = [t["name"] for t in q.get("topicTags", []) if "name" in t]
         url = f"https://leetcode.com/problems/{slug}/"
+        is_solved = (slug in user_solved_slugs) if user_solved_slugs else False
+
         questions.append(ProblemBrief(
             id=q_id,
             title=title,
@@ -449,6 +463,7 @@ async def fetch_practice_problems(
             difficulty=diff,
             tags=tags,
             url=url,
+            is_solved=is_solved,
         ))
 
     return ProblemListResponse(total=total, questions=questions)

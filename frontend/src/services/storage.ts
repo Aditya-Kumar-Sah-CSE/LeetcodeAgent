@@ -244,3 +244,80 @@ export async function clearAllData(): Promise<void> {
 
   _sessionApiKey = null;
 }
+
+// ─── Solved Problems Status Tracking ────────────────────────
+
+const LS_SOLVED_KEY = "lca-solved-problem-slugs";
+
+// Pre-seeded known accepted problems for connected account Aditya_Kumar_Sah-28
+const INITIAL_SOLVED_SLUGS: string[] = [
+  "count-islands-with-total-value-divisible-by-k",
+  "two-sum",
+  "palindrome-number",
+  "valid-parentheses",
+  "search-in-rotated-sorted-array",
+  "search-in-rotated-sorted-array-ii",
+  "maximum-subarray",
+  "running-sum-of-1d-array",
+  "find-peak-element",
+  "find-minimum-in-rotated-sorted-array-ii",
+  "search-insert-position",
+  "guess-number-higher-or-lower",
+  "sqrtx",
+  "search-a-2d-matrix",
+  "single-element-in-a-sorted-array",
+  "number-of-islands",
+];
+
+export function getSolvedSlugs(): Set<string> {
+  try {
+    const raw = localStorage.getItem(LS_SOLVED_KEY);
+    if (!raw) {
+      // Seed with default
+      localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(INITIAL_SOLVED_SLUGS));
+      return new Set(INITIAL_SOLVED_SLUGS);
+    }
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : INITIAL_SOLVED_SLUGS);
+  } catch {
+    return new Set(INITIAL_SOLVED_SLUGS);
+  }
+}
+
+export function isProblemSolved(slug: string): boolean {
+  if (!slug) return false;
+  return getSolvedSlugs().has(slug);
+}
+
+export function setProblemSolved(slug: string, solved: boolean) {
+  if (!slug) return;
+  const current = getSolvedSlugs();
+  if (solved) {
+    current.add(slug);
+  } else {
+    current.delete(slug);
+  }
+  localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(Array.from(current)));
+}
+
+export function toggleProblemSolved(slug: string): boolean {
+  if (!slug) return false;
+  const current = getSolvedSlugs();
+  const willBeSolved = !current.has(slug);
+  if (willBeSolved) {
+    current.add(slug);
+  } else {
+    current.delete(slug);
+  }
+  localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(Array.from(current)));
+  return willBeSolved;
+}
+
+export function syncSolvedSlugs(newSlugs: string[]) {
+  if (!newSlugs || !Array.isArray(newSlugs)) return;
+  const current = getSolvedSlugs();
+  for (const s of newSlugs) {
+    if (s) current.add(s);
+  }
+  localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(Array.from(current)));
+}

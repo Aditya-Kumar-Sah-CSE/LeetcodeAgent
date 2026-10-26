@@ -842,10 +842,10 @@ async function streamGoogleGemini({
     new Set(
       [
         cleanModel.startsWith("gemini") ? cleanModel : null,
-        "gemini-2.0-flash",
         "gemini-1.5-flash",
+        "gemini-2.0-flash",
         "gemini-1.5-pro",
-        "gemini-2.0-flash-lite-preview-02-05",
+        "gemini-1.5-flash-8b",
       ].filter(Boolean) as string[]
     )
   );
@@ -866,6 +866,7 @@ async function streamGoogleGemini({
   for (const m of messages) {
     if (m.role === "user" || m.role === "assistant") {
       const role = m.role === "assistant" ? "model" : "user";
+      if (!m.content || !m.content.trim()) continue;
       if (contents.length > 0 && contents[contents.length - 1].role === role) {
         contents[contents.length - 1].parts[0].text += `\n\n${m.content}`;
       } else {
@@ -875,6 +876,11 @@ async function streamGoogleGemini({
         });
       }
     }
+  }
+
+  // Google Gemini API strictly requires multi-turn talk to begin with a 'user' turn
+  while (contents.length > 0 && contents[0].role !== "user") {
+    contents.shift();
   }
 
   // Ensure alternating roles and include currentQuery in last user turn
@@ -901,13 +907,16 @@ async function streamGoogleGemini({
   let lastErr: any = null;
   for (const mName of candidateModels) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${mName}:streamGenerateContent?key=${encodeURIComponent(
-        geminiKey
-      )}&alt=sse`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${mName}:streamGenerateContent?alt=sse&key=${encodeURIComponent(
+        geminiKey.trim()
+      )}`;
 
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": geminiKey.trim(),
+        },
         body: JSON.stringify(payload),
         signal: abortSignal,
       });
@@ -1017,11 +1026,20 @@ async function streamGroqChat({
   onDone: (fullContent: string, reasoning: string, toolCalls: ToolCallItem[], modelUsed: string) => void;
   abortSignal?: AbortSignal;
 }): Promise<boolean> {
-  const actualModel = modelId.startsWith("groq/")
+  const cleanModel = modelId.startsWith("groq/")
     ? modelId.replace("groq/", "")
     : modelId.includes("r1")
     ? "deepseek-r1-distill-llama-70b"
-    : "llama-3.3-70b-versatile";
+    : modelId.startsWith("llama")
+    ? modelId
+    : "llama-3.1-8b-instant";
+
+  const candidateModels = Array.from(
+    new Set([
+      cleanModel,
+      "llama-3.1-8b-instant",
+    ].filter(Boolean) as string[])
+  );
 
   if (onReasoning) {
     onReasoning("⚡ Connecting to Groq LPU Ultra-Fast Inference (<300ms)...");
@@ -1043,78 +1061,94 @@ async function streamGroqChat({
     { role: "user", content: currentQuery },
   ];
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${groqKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: actualModel,
-      messages: messagesPayload,
-      stream: true,
-      temperature: 0.25,
-      max_tokens: 1500,
-    }),
-    signal: abortSignal,
-  });
+  let lastErr: any = null;
+  for (const mName of candidateModels) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${groqKey.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: mName,
+          messages: messagesPayload,
+          stream: true,
+          temperature: 0.25,
+          max_tokens: 1500,
+        }),
+        signal: abortSignal,
+      });
 
-  if (!res.ok) {
-    const errJson = await res.json().catch(() => ({}));
-    throw new Error(errJson.error?.message || `Groq HTTP ${res.status}: ${res.statusText}`);
-  }
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `Groq HTTP ${res.status}: ${res.statusText}`);
+      }
 
-  const reader = res.body?.getReader();
-  if (!reader) throw new Error("ReadableStream not available");
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("ReadableStream not available");
 
-  const decoder = new TextDecoder("utf-8");
-  let fullContent = "";
-  let reasoningContent = "";
-  const tools: ToolCallItem[] = [
-    {
-      name: "groq_lpu_inference",
-      label: `groq_lpu(${actualModel})`,
-      status: "completed",
-      result: "Groq LPU high-throughput streaming active",
-    },
-  ];
+      const decoder = new TextDecoder("utf-8");
+      let fullContent = "";
+      let reasoningContent = "";
+      const tools: ToolCallItem[] = [
+        {
+          name: "groq_lpu_inference",
+          label: `groq_lpu(${mName})`,
+          status: "completed",
+          result: "Groq LPU high-throughput streaming active",
+        },
+      ];
 
-  let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith("data:")) continue;
-      const dataStr = trimmed.slice(5).trim();
-      if (dataStr === "[DONE]") break;
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data:")) continue;
+          const dataStr = trimmed.slice(5).trim();
+          if (dataStr === "[DONE]") break;
 
-      try {
-        const parsed = JSON.parse(dataStr);
-        const delta = parsed.choices?.[0]?.delta;
-        if (delta) {
-          if (delta.reasoning) {
-            reasoningContent += delta.reasoning;
-            if (onReasoning) onReasoning(reasoningContent);
-          }
-          if (delta.content) {
-            fullContent += delta.content;
-            onDelta(delta.content);
+          try {
+            const parsed = JSON.parse(dataStr);
+            const delta = parsed.choices?.[0]?.delta;
+            if (delta) {
+              if (delta.reasoning) {
+                reasoningContent += delta.reasoning;
+                if (onReasoning) onReasoning(reasoningContent);
+              }
+              if (delta.content) {
+                fullContent += delta.content;
+                onDelta(delta.content);
+              }
+            }
+          } catch {
+            // Ignore incomplete chunks
           }
         }
-      } catch {
-        // Ignore incomplete chunks
       }
+
+      if (fullContent.trim()) {
+        onDone(fullContent, reasoningContent || "Groq LPU ultra-low latency response completed.", tools, `groq/${mName}`);
+        return true;
+      }
+    } catch (err: any) {
+      if (abortSignal?.aborted) return false;
+      lastErr = err;
+      console.warn(`Groq model ${mName} attempt failed, trying candidate fallback:`, err.message);
     }
   }
 
-  onDone(fullContent, reasoningContent || "Groq LPU ultra-low latency response completed.", tools, `groq/${actualModel}`);
-  return true;
+  if (lastErr) {
+    throw lastErr;
+  }
+  return false;
 }
 
 /**
@@ -1334,12 +1368,12 @@ export async function streamChatMessage({
   // 4. Smart Cross-Provider Fallback: User has ONE active key but selected another provider's model
   if (geminiKey && !isGeminiModel) {
     if (onReasoning) {
-      onReasoning("⚡ Auto-routing to your active Google Gemini 2.0 Flash engine for live reasoning...");
+      onReasoning("⚡ Auto-routing to your active Google Gemini engine for live reasoning...");
     }
     try {
       const ok = await streamGoogleGemini({
         geminiKey,
-        modelId: "gemini-2.0-flash",
+        modelId: "gemini-1.5-flash",
         systemPrompt,
         messages,
         currentQuery,
@@ -1366,7 +1400,7 @@ export async function streamChatMessage({
     try {
       const ok = await streamGroqChat({
         groqKey,
-        modelId: "groq/llama-3.3-70b-versatile",
+        modelId: "groq/llama-3.1-8b-instant",
         systemPrompt,
         messages,
         currentQuery,

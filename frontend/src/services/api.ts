@@ -785,56 +785,80 @@ async function runGeminiDirect(
   apiKey: string,
   modelId?: string
 ): Promise<AIResponse> {
-  const cleanModel = (modelId || "gemini-2.0-flash").replace(/^models\//, "").replace(/^google\//, "");
-  const mName = cleanModel.startsWith("gemini") ? cleanModel : "gemini-2.0-flash";
+  const cleanModel = (modelId || "gemini-1.5-flash").replace(/^models\//, "").replace(/^google\//, "");
+  const candidateModels = Array.from(
+    new Set([
+      cleanModel.startsWith("gemini") ? cleanModel : null,
+      "gemini-1.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-pro",
+      "gemini-1.5-flash-8b",
+    ].filter(Boolean) as string[])
+  );
+
   const userPrompt = getStagePrompt(req);
   const systemPrompt =
     "You are an expert algorithmic competitive programmer and LeetCode coach. Provide concise, rigorous, and optimal analysis.";
 
-  const contents = [
-    ...(req.previous_context ? [{ role: "user", parts: [{ text: `Previous context:\n${req.previous_context}` }] }] : []),
-    { role: "user", parts: [{ text: userPrompt }] },
-  ];
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+  if (req.previous_context && req.previous_context.trim()) {
+    contents.push({ role: "user", parts: [{ text: `Previous context:\n${req.previous_context.trim()}` }] });
+    contents.push({ role: "model", parts: [{ text: "Context acknowledged. Proceeding with algorithmic analysis." }] });
+  }
+  contents.push({ role: "user", parts: [{ text: userPrompt }] });
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents,
-        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
-      }),
+  let lastErr: any = null;
+  for (const mName of candidateModels) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(apiKey.trim())}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey.trim(),
+          },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents,
+            generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Google Gemini HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+      let extractedCode: string | null = null;
+      const codeBlockMatch = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        extractedCode = codeBlockMatch[1].trim();
+      }
+      if (req.stage === "generate" && !extractedCode) {
+        const fallbackAlgo = generateClientAlgorithmicSolution(req);
+        extractedCode = fallbackAlgo.code;
+      }
+
+      return {
+        stage: req.stage,
+        content: rawText,
+        code: extractedCode,
+        model_used: mName,
+        citations: [],
+        error: null,
+      };
+    } catch (err: any) {
+      lastErr = err;
+      console.warn(`Gemini direct model ${mName} failed, trying candidate fallback:`, err.message);
     }
-  );
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `Google Gemini HTTP ${res.status}: ${res.statusText}`);
   }
 
-  const data = await res.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
-  let extractedCode: string | null = null;
-  const codeBlockMatch = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) {
-    extractedCode = codeBlockMatch[1].trim();
-  }
-  if (req.stage === "generate" && !extractedCode) {
-    const fallbackAlgo = generateClientAlgorithmicSolution(req);
-    extractedCode = fallbackAlgo.code;
-  }
-
-  return {
-    stage: req.stage,
-    content: rawText,
-    code: extractedCode,
-    model_used: mName,
-    citations: [],
-    error: null,
-  };
+  throw lastErr || new Error("All Gemini candidate models failed");
 }
 
 /**
@@ -845,59 +869,79 @@ async function runGroqDirect(
   apiKey: string,
   modelId?: string
 ): Promise<AIResponse> {
-  let actualModel = (modelId || "groq/llama-3.3-70b-versatile").replace(/^groq\//, "");
-  if (!actualModel.startsWith("llama") && !actualModel.startsWith("deepseek") && !actualModel.startsWith("mixtral") && !actualModel.startsWith("gemma")) {
-    actualModel = "llama-3.3-70b-versatile";
+  let cleanModel = (modelId || "llama-3.1-8b-instant").replace(/^groq\//, "");
+  if (!cleanModel.startsWith("llama") && !cleanModel.startsWith("deepseek") && !cleanModel.startsWith("mixtral") && !cleanModel.startsWith("gemma")) {
+    cleanModel = "llama-3.1-8b-instant";
   }
+
+  const candidateModels = Array.from(
+    new Set([
+      cleanModel,
+      "llama-3.1-8b-instant",
+    ].filter(Boolean) as string[])
+  );
+
   const userPrompt = getStagePrompt(req);
   const systemPrompt =
     "You are an expert algorithmic competitive programmer and LeetCode coach. Provide concise, rigorous, and optimal analysis.";
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: actualModel,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...(req.previous_context ? [{ role: "user", content: `Previous context:\n${req.previous_context}` }] : []),
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.2,
-      max_tokens: 2048,
-    }),
-  });
+  let lastErr: any = null;
+  for (const mName of candidateModels) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey.trim()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: mName,
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...(req.previous_context ? [{ role: "user", content: `Previous context:\n${req.previous_context}` }] : []),
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.2,
+          max_tokens: 2048,
+        }),
+      });
 
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `Groq HTTP ${res.status}: ${res.statusText}`);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Groq HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const rawText = data.choices?.[0]?.message?.content || "";
+
+      let extractedCode: string | null = null;
+      const codeBlockMatch = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        extractedCode = codeBlockMatch[1].trim();
+      }
+      if (req.stage === "generate" && !extractedCode) {
+        const fallbackAlgo = generateClientAlgorithmicSolution(req);
+        extractedCode = fallbackAlgo.code;
+      }
+
+      return {
+        stage: req.stage,
+        content: rawText,
+        code: extractedCode,
+        model_used: `groq/${mName}`,
+        citations: [],
+        error: null,
+      };
+    } catch (err: any) {
+      lastErr = err;
+      console.warn(`Groq direct model ${mName} failed, trying candidate fallback:`, err.message);
+    }
   }
 
-  const data = await res.json();
-  const rawText = data.choices?.[0]?.message?.content || "";
-
-  let extractedCode: string | null = null;
-  const codeBlockMatch = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)```/);
-  if (codeBlockMatch) {
-    extractedCode = codeBlockMatch[1].trim();
-  }
-  if (req.stage === "generate" && !extractedCode) {
-    const fallbackAlgo = generateClientAlgorithmicSolution(req);
-    extractedCode = fallbackAlgo.code;
-  }
-
-  return {
-    stage: req.stage,
-    content: rawText,
-    code: extractedCode,
-    model_used: `groq/${actualModel}`,
-    citations: [],
-    error: null,
-  };
+  throw lastErr || new Error("All Groq candidate models failed");
 }
+
+
 
 /**
  * Direct browser call to OpenRouter API for standalone client-side execution.
@@ -1026,7 +1070,7 @@ export async function runAgentStage(request: AIRequest): Promise<AIResponse> {
   // 3. Cross-Provider Fallback to whichever active key is available
   if (geminiKey && !isGeminiModel) {
     try {
-      return await runGeminiDirect(request, geminiKey, "gemini-2.0-flash");
+      return await runGeminiDirect(request, geminiKey, "gemini-1.5-flash");
     } catch (geminiErr: any) {
       lastError = (lastError ? `${lastError} | ` : "") + `Gemini Fallback: ${geminiErr.message || geminiErr}`;
     }
@@ -1034,7 +1078,7 @@ export async function runAgentStage(request: AIRequest): Promise<AIResponse> {
 
   if (groqKey && !isGroqModel) {
     try {
-      return await runGroqDirect(request, groqKey, "groq/llama-3.3-70b-versatile");
+      return await runGroqDirect(request, groqKey, "groq/llama-3.1-8b-instant");
     } catch (groqErr: any) {
       lastError = (lastError ? `${lastError} | ` : "") + `Groq Fallback: ${groqErr.message || groqErr}`;
     }

@@ -320,7 +320,7 @@ async def _run_research_stage(request: AIRequest) -> AIResponse:
 
         messages = _build_research_prompt(request, search_results)
 
-        model_id = request.model_id or "google/gemini-2.0-flash-lite-preview:free"
+        model_id = request.model_id or "openrouter/free"
         response_text = await chat_completion(
             messages=messages,
             model_id=model_id,

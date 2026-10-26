@@ -7,9 +7,11 @@
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
 
-- 🌐 **Interactive Web Workspace**: Built with React, TypeScript, Tailwind CSS, and Monaco Editor.
+- 🌐 **Live Website**: **[https://aditya-kumar-sah-cse.github.io/LeetcodeAgent/](https://aditya-kumar-sah-cse.github.io/LeetcodeAgent/)**
+- 📱 **Progressive Web App (PWA)**: Installable directly on Android, iOS, Windows, and macOS as a standalone native-like application with offline access.
 - 🤖 **Multi-Stage AI Reasoning**: Understand ➔ Research ➔ Plan ➔ Generate ➔ Validate ➔ Explain.
 - 📅 **GitHub Actions Daily Scheduler**: Runs every midnight to fetch the official LeetCode Daily Challenge, generate the optimal solution with OpenRouter AI, validate code syntax with AST, and push commits to GitHub.
+- 👤 **LeetCode Profile Integration**: Directly connected to [Aditya_Kumar_Sah-28](https://leetcode.com/u/Aditya_Kumar_Sah-28/).
 - 🔒 **Zero Signup / Privacy First**: Direct browser-to-model execution, localStorage & IndexedDB persistence, no external database required.
 
 ---

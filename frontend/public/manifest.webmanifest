@@ -1,0 +1,61 @@
+{
+  "name": "LeetCode AI Agent — Autonomous Problem Solver",
+  "short_name": "LeetCode AI",
+  "description": "Local-first AI-powered LeetCode coding assistant, daily problem solver, and Monaco workspace.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#161822",
+  "background_color": "#0f1117",
+  "categories": ["education", "developer", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Daily Challenge",
+      "short_name": "Daily",
+      "description": "View today's LeetCode problem",
+      "url": "./#/daily",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Workspace",
+      "short_name": "Workspace",
+      "description": "Open interactive Monaco code editor",
+      "url": "./#/workspace",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Solutions",
+      "short_name": "Solutions",
+      "description": "View saved solution repository",
+      "url": "./#/solutions",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

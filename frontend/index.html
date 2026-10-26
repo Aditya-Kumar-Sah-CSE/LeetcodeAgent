@@ -2,10 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236c63ff'><path d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LeetCode AI Agent — Autonomous Problem Solver & Coding Assistant</title>
-    <meta name="description" content="Local-first AI-powered LeetCode coding assistant and daily problem solver with Monaco Editor and OpenRouter models." />
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    
+    <!-- PWA & Mobile Web Capabilities -->
+    <meta name="theme-color" content="#161822" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LeetCode AI" />
+    <meta name="application-name" content="LeetCode AI" />
+
+    <title>LeetCode AI Agent — Autonomous Problem Solver & Coding Workspace</title>
+    <meta name="description" content="Local-first AI-powered LeetCode coding assistant, daily problem solver, and mobile-friendly Monaco workspace." />
+
     <!-- Google Fonts Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,5 +26,15 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Register Service Worker for PWA installation & offline caching
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('[PWA] Service Worker active, scope:', reg.scope))
+            .catch(err => console.log('[PWA] Service Worker registration skipped:', err));
+        });
+      }
+    </script>
   </body>
 </html>

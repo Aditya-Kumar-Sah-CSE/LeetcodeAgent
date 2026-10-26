@@ -12,6 +12,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { InstallPwaButton } from "./InstallPwaPrompt";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -129,12 +130,16 @@ export default function Sidebar({ collapsed: propCollapsed, setCollapsed: propSe
 
       {/* Footer */}
       <div
-        className="px-4 py-3 shrink-0"
+        className="px-3 py-3 shrink-0 flex flex-col gap-2"
         style={{ borderTop: "1px solid var(--color-border-subtle)" }}
       >
+        <InstallPwaButton
+          variant={collapsed ? "compact" : "default"}
+          className={collapsed ? "justify-center p-2" : "w-full justify-center"}
+        />
         {!collapsed && (
-          <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-            v1.0.0 · Local-first
+          <div className="text-xs text-center" style={{ color: "var(--color-text-muted)" }}>
+            v1.0.0 · Local-first PWA
           </div>
         )}
       </div>

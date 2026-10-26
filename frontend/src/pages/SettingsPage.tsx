@@ -14,7 +14,9 @@ import {
   EyeOff,
   Sparkles,
   Trophy,
+  Smartphone,
 } from "lucide-react";
+import { InstallPwaButton } from "../components/InstallPwaPrompt";
 
 import {
   getApiKey,
@@ -404,6 +406,29 @@ export default function SettingsPage() {
             <Trash2 size={14} />
             Reset Local Data
           </button>
+        </div>
+      </div>
+
+      {/* 6. Progressive Web App (PWA) */}
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Smartphone size={18} style={{ color: "var(--color-accent)" }} />
+            <h2 className="text-sm sm:text-base font-semibold text-white">App Installation & Offline (PWA)</h2>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            PWA Ready
+          </span>
+        </div>
+        <p className="text-xs text-secondary">
+          Install LeetCode Agent directly to your phone, tablet, or desktop home screen. Runs in standalone app mode with instant launch, offline caching, and native OS notifications.
+        </p>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+          <div className="text-xs text-muted">
+            Status: Service Worker active · App Shell Cached · Manifest configured
+          </div>
+          <InstallPwaButton className="self-start sm:self-auto" />
         </div>
       </div>
     </div>

@@ -13,6 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { getUsername } from "../services/storage";
+import { InstallPwaButton } from "./InstallPwaPrompt";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Home" },
@@ -59,10 +60,11 @@ export default function MobileNav() {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <InstallPwaButton variant="compact" />
           {username && (
             <span
-              className="text-[11px] font-medium px-2 py-0.5 rounded-full truncate max-w-[120px]"
+              className="text-[11px] font-medium px-2 py-0.5 rounded-full truncate max-w-[100px] xs:max-w-[120px]"
               style={{
                 background: "var(--color-bg-elevated)",
                 color: "var(--color-text-secondary)",
@@ -113,6 +115,11 @@ export default function MobileNav() {
               >
                 <X size={20} />
               </button>
+            </div>
+
+            {/* PWA Install Drawer Banner */}
+            <div className="mt-3">
+              <InstallPwaButton variant="drawer" />
             </div>
 
             {/* User Profile Pill in Drawer */}

@@ -16,6 +16,7 @@ import DifficultyBadge, {
   LoadingCard,
   ErrorBox,
 } from "../components/UIComponents";
+import { InstallPwaBanner } from "../components/InstallPwaPrompt";
 import { fetchDailyChallenge, checkHealth, fetchProfile } from "../services/api";
 import { getUsername, getModelId, getApiKey } from "../services/storage";
 import { getAllSolutionsLocal, getActivities } from "../services/storage";
@@ -63,6 +64,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5 max-w-full overflow-x-hidden pb-safe">
+      {/* PWA Install Banner */}
+      <InstallPwaBanner />
+
       {/* Header */}
       <motion.div {...fadeIn}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

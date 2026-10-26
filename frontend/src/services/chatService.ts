@@ -235,6 +235,184 @@ public:
     }
   }
 
+  if (s.includes("add-two-numbers") || s === "2") {
+    switch (language) {
+      case "python":
+        return `# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def addTwoNumbers(self, l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+        dummy = ListNode(0)
+        curr = dummy
+        carry = 0
+        while l1 or l2 or carry:
+            v1 = l1.val if l1 else 0
+            v2 = l2.val if l2 else 0
+            val = v1 + v2 + carry
+            carry = val // 10
+            curr.next = ListNode(val % 10)
+            curr = curr.next
+            if l1: l1 = l1.next
+            if l2: l2 = l2.next
+        return dummy.next`;
+      case "java":
+        return `class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        int carry = 0;
+        while (l1 != null || l2 != null || carry != 0) {
+            int x = (l1 != null) ? l1.val : 0;
+            int y = (l2 != null) ? l2.val : 0;
+            int sum = carry + x + y;
+            carry = sum / 10;
+            curr.next = new ListNode(sum % 10);
+            curr = curr.next;
+            if (l1 != null) l1 = l1.next;
+            if (l2 != null) l2 = l2.next;
+        }
+        return dummy.next;
+    }
+}`;
+      case "javascript":
+        return `/**
+ * @param {ListNode} l1
+ * @param {ListNode} l2
+ * @return {ListNode}
+ */
+var addTwoNumbers = function(l1, l2) {
+    let dummy = new ListNode(0);
+    let curr = dummy;
+    let carry = 0;
+    while (l1 !== null || l2 !== null || carry !== 0) {
+        let x = l1 ? l1.val : 0;
+        let y = l2 ? l2.val : 0;
+        let sum = carry + x + y;
+        carry = Math.floor(sum / 10);
+        curr.next = new ListNode(sum % 10);
+        curr = curr.next;
+        if (l1) l1 = l1.next;
+        if (l2) l2 = l2.next;
+    }
+    return dummy.next;
+};`;
+      case "typescript":
+        return `function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {
+    const dummy = new ListNode(0);
+    let curr = dummy;
+    let carry = 0;
+    while (l1 !== null || l2 !== null || carry !== 0) {
+        const x = l1 ? l1.val : 0;
+        const y = l2 ? l2.val : 0;
+        const sum = carry + x + y;
+        carry = Math.floor(sum / 10);
+        curr.next = new ListNode(sum % 10);
+        curr = curr.next;
+        if (l1) l1 = l1.next;
+        if (l2) l2 = l2.next;
+    }
+    return dummy.next;
+}`;
+      case "cpp":
+      default:
+        return `/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        ListNode dummy(0);
+        ListNode* tail = &dummy;
+        int carry = 0;
+        while (l1 || l2 || carry) {
+            int sum = carry;
+            if (l1) { sum += l1->val; l1 = l1->next; }
+            if (l2) { sum += l2->val; l2 = l2->next; }
+            carry = sum / 10;
+            tail->next = new ListNode(sum % 10);
+            tail = tail->next;
+        }
+        return dummy.next;
+    }
+};`;
+    }
+  }
+
+  if (s.includes("two-sum") || s === "1") {
+    switch (language) {
+      case "python":
+        return `class Solution:
+    def twoSum(self, nums: list[int], target: int) -> list[int]:
+        seen = {}
+        for i, num in enumerate(nums):
+            complement = target - num
+            if complement in seen:
+                return [seen[complement], i]
+            seen[num] = i
+        return []`;
+      case "java":
+        return `import java.util.HashMap;
+import java.util.Map;
+
+class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < nums.length; i++) {
+            int complement = target - nums[i];
+            if (map.containsKey(complement)) {
+                return new int[] { map.get(complement), i };
+            }
+            map.put(nums[i], i);
+        }
+        return new int[0];
+    }
+}`;
+      case "javascript":
+      case "typescript":
+        return `function twoSum(nums: number[], target: number): number[] {
+    const map = new Map<number, number>();
+    for (let i = 0; i < nums.length; i++) {
+        const complement = target - nums[i];
+        if (map.has(complement)) {
+            return [map.get(complement)!, i];
+        }
+        map.set(nums[i], i);
+    }
+    return [];
+}`;
+      case "cpp":
+      default:
+        return `#include <vector>
+#include <unordered_map>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> seen;
+        for (int i = 0; i < nums.size(); ++i) {
+            int complement = target - nums[i];
+            if (seen.find(complement) != seen.end()) {
+                return {seen[complement], i};
+            }
+            seen[nums[i]] = i;
+        }
+        return {};
+    }
+};`;
+    }
+  }
+
   // Fallback to snippet from LeetCode problem if available
   if (problem?.code_snippets?.[language]) {
     return problem.code_snippets[language];
@@ -303,12 +481,13 @@ async function runClientAutonomousStreaming({
   language,
   currentQuery,
   modelId,
+  fallbackError,
   onReasoning,
   onToolCall,
   onDelta,
   onDone,
   abortSignal,
-}: StreamChatParams) {
+}: StreamChatParams & { fallbackError?: string }) {
   const problemSlug = problem?.slug || "general-dsa";
   const problemTitle = problem?.title || "Problem";
   const toolsExecuted: ToolCallItem[] = [];
@@ -441,12 +620,17 @@ async function runClientAutonomousStreaming({
     (!codeLower.includes("for") && !codeLower.includes("while") && !codeLower.includes("map") && !codeLower.includes("switch") && !codeLower.includes("if"));
 
   const hasConfiguredKey = isApiKeyConfigured();
-  const noticeBanner = hasConfiguredKey
+  const noticeBanner = fallbackError
+    ? `> ⚠️ **Cloud Provider Live Inference Notice**: ${fallbackError}
+> *Local Autonomous Heuristic Engine active to ensure continuous workflow. You can update or verify your API key in [Settings](#/settings).*
+
+`
+    : hasConfiguredKey
     ? `> ℹ️ **Note**: Cloud provider temporary rate-limit / timeout detected. Seamlessly fell back to **Local Autonomous Heuristic Engine** so your workflow continues uninterrupted.
 
 `
     : `> ⚠️ **Live AI Model Disconnected (No API Key Configured)**
-> Real-time **Google Gemini 2.0 / DeepSeek R1** streaming ke liye **[🔑 Free Google Gemini Key Connect Karein](#/settings)** (Google AI Studio se 100% free key lein). Abhi local heuristic mode active hai.
+> Real-time **Google Gemini 2.0 / Groq LPU** streaming ke liye **[🔑 Free Google Gemini Key Connect Karein](#/settings)** (Google AI Studio se 100% free key lein). Abhi local heuristic mode active hai.
 
 `;
 
@@ -977,6 +1161,8 @@ export async function streamChatMessage({
 
   const resolvedOpenRouterKey = openRouterKey || fallbackKey;
 
+  let lastError: string | null = null;
+
   // 1. Direct match: Groq model with Groq key
   if (groqKey && (isGroqModel || activeProvider === "groq")) {
     try {
@@ -997,6 +1183,7 @@ export async function streamChatMessage({
       if (ok) return;
     } catch (groqErr: any) {
       if (abortSignal?.aborted) return;
+      lastError = `Groq (${activeModel}): ${groqErr.message || groqErr}`;
       console.warn("Groq streaming failed, attempting cross-provider fallback:", groqErr);
     }
   }
@@ -1021,6 +1208,7 @@ export async function streamChatMessage({
       if (ok) return;
     } catch (geminiErr: any) {
       if (abortSignal?.aborted) return;
+      lastError = `Google Gemini (${activeModel}): ${geminiErr.message || geminiErr}`;
       console.warn("Gemini streaming failed, attempting cross-provider fallback:", geminiErr);
     }
   }
@@ -1138,12 +1326,13 @@ export async function streamChatMessage({
       return;
     } catch (err: any) {
       if (abortSignal?.aborted) return;
+      lastError = `OpenRouter (${activeModel}): ${err.message || err}`;
       console.warn("OpenRouter streaming failed, trying cross-provider fallback:", err);
     }
   }
 
   // 4. Smart Cross-Provider Fallback: User has ONE active key but selected another provider's model
-  if (geminiKey) {
+  if (geminiKey && !isGeminiModel) {
     if (onReasoning) {
       onReasoning("⚡ Auto-routing to your active Google Gemini 2.0 Flash engine for live reasoning...");
     }
@@ -1165,18 +1354,19 @@ export async function streamChatMessage({
       if (ok) return;
     } catch (geminiErr: any) {
       if (abortSignal?.aborted) return;
+      lastError = (lastError ? `${lastError} | ` : "") + `Gemini Fallback: ${geminiErr.message || geminiErr}`;
       console.warn("Cross-provider Gemini fallback failed:", geminiErr);
     }
   }
 
-  if (groqKey) {
+  if (groqKey && !isGroqModel) {
     if (onReasoning) {
       onReasoning("⚡ Auto-routing to your active Groq LPU engine...");
     }
     try {
       const ok = await streamGroqChat({
         groqKey,
-        modelId: "groq/deepseek-r1-distill-llama-70b",
+        modelId: "groq/llama-3.3-70b-versatile",
         systemPrompt,
         messages,
         currentQuery,
@@ -1191,6 +1381,7 @@ export async function streamChatMessage({
       if (ok) return;
     } catch (groqErr: any) {
       if (abortSignal?.aborted) return;
+      lastError = (lastError ? `${lastError} | ` : "") + `Groq Fallback: ${groqErr.message || groqErr}`;
       console.warn("Cross-provider Groq fallback failed:", groqErr);
     }
   }
@@ -1205,6 +1396,7 @@ export async function streamChatMessage({
       messages,
       currentQuery,
       modelId: activeModel,
+      fallbackError: lastError || (!geminiKey && !groqKey && !openRouterKey ? "No API Key configured on this browser. Connect a free key in Settings." : undefined),
       onReasoning,
       onToolCall,
       onDelta,

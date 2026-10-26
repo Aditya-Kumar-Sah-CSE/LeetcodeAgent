@@ -30,6 +30,9 @@ import {
   setGroqApiKey,
   getOpenRouterApiKey,
   setOpenRouterApiKey,
+  getEnvGeminiKey,
+  getEnvGroqKey,
+  getEnvOpenRouterKey,
   getActiveProvider,
   setActiveProvider,
   getModelId,
@@ -462,6 +465,37 @@ export default function SettingsPage() {
           </select>
         </div>
 
+        {/* GitHub Pages Production Deployment Secrets Guide */}
+        <div className="p-3.5 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-indigo-950/40 space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-cyan-400 shrink-0" />
+            <h3 className="text-xs font-bold text-white">🚀 GitHub Pages Production Secrets (Deploy Guide)</h3>
+          </div>
+          <p className="text-[11px] text-gray-300 leading-relaxed">
+            Agar aapne ye app <strong>GitHub Pages</strong> par deploy kiya hai, toh aap apne GitHub repo me <strong>Settings ➔ Secrets and variables ➔ Actions</strong> me Repository Secrets add kar sakte hain:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] font-mono">
+            <div className="p-2 rounded-lg bg-black/40 border border-white/10">
+              <span className="text-cyan-300 block font-bold">GEMINI_API_KEY</span>
+              <span className="text-muted text-[10px]">Google AI Studio Free Key</span>
+              {getEnvGeminiKey() && <span className="text-emerald-400 text-[10px] block font-sans">✓ Injected in Build</span>}
+            </div>
+            <div className="p-2 rounded-lg bg-black/40 border border-white/10">
+              <span className="text-amber-300 block font-bold">GROQ_API_KEY</span>
+              <span className="text-muted text-[10px]">Groq LPU Console Key</span>
+              {getEnvGroqKey() && <span className="text-emerald-400 text-[10px] block font-sans">✓ Injected in Build</span>}
+            </div>
+            <div className="p-2 rounded-lg bg-black/40 border border-white/10">
+              <span className="text-purple-300 block font-bold">OPENROUTER_API_KEY</span>
+              <span className="text-muted text-[10px]">OpenRouter API Key</span>
+              {getEnvOpenRouterKey() && <span className="text-emerald-400 text-[10px] block font-sans">✓ Injected in Build</span>}
+            </div>
+          </div>
+          <p className="text-[10px] text-indigo-200">
+            ✓ <em>Deploy ke time GitHub Actions in secrets ko production frontend me bake kar deta hai, jisse visitors ko bina key dale AI mil sake. Niche personal keys save karne par personal key pehle use hogi.</em>
+          </p>
+        </div>
+
         {/* 2A. Google Gemini API Key */}
         <div className="p-3.5 rounded-xl border space-y-2.5" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -469,6 +503,11 @@ export default function SettingsPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
               <span className="font-semibold text-xs text-white">Google Gemini API (Google AI Studio)</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono">1M Ctx • Free</span>
+              {getEnvGeminiKey() && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  🟢 Built-in Secret Active
+                </span>
+              )}
             </div>
             <a
               href="https://aistudio.google.com/app/apikey"
@@ -538,6 +577,11 @@ export default function SettingsPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
               <span className="font-semibold text-xs text-white">Groq LPU (Ultra-Fast 300+ Tokens/Sec)</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono">&lt;300ms • Free</span>
+              {getEnvGroqKey() && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  🟢 Built-in Secret Active
+                </span>
+              )}
             </div>
             <a
               href="https://console.groq.com/keys"
@@ -607,6 +651,11 @@ export default function SettingsPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
               <span className="font-semibold text-xs text-white">OpenRouter (Unified Multi-Model Gateway)</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono">100+ Models • Free Tier</span>
+              {getEnvOpenRouterKey() && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  🟢 Built-in Secret Active
+                </span>
+              )}
             </div>
             <a
               href="https://openrouter.ai/keys"

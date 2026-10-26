@@ -15,6 +15,8 @@ export function generateClientAlgorithmicSolution(req: AIRequest): AIResponse {
 
   if (slug.includes("3sum") || slug === "three-sum") {
     return solve3Sum(title, stage, lang);
+  } else if (slug.includes("add-two-numbers") || slug === "2") {
+    return solveAddTwoNumbers(title, stage, lang);
   } else if (slug.includes("two-sum")) {
     return solveTwoSum(title, stage, lang);
   } else if (slug.includes("count-islands")) {
@@ -48,6 +50,208 @@ export function generateClientAlgorithmicSolution(req: AIRequest): AIResponse {
   } else {
     return synthesizeUniversalSolution(req, title, stage, lang);
   }
+}
+
+// ─── 0. Add Two Numbers (#2) ──────────────────────────────────────────────────
+
+function solveAddTwoNumbers(title: string, stage: string, lang: string): AIResponse {
+  const codeMap: Record<string, string> = {
+    cpp: `/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode() : val(0), next(nullptr) {}
+ *     ListNode(int x) : val(x), next(nullptr) {}
+ *     ListNode(int x, ListNode *next) : val(x), next(next) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        // Time Complexity: O(max(N, M))
+        // Space Complexity: O(1) auxiliary (ignoring output linked list)
+        ListNode dummy(0);
+        ListNode* tail = &dummy;
+        int carry = 0;
+
+        while (l1 != nullptr || l2 != nullptr || carry != 0) {
+            int sum = carry;
+            if (l1 != nullptr) {
+                sum += l1->val;
+                l1 = l1->next;
+            }
+            if (l2 != nullptr) {
+                sum += l2->val;
+                l2 = l2->next;
+            }
+            carry = sum / 10;
+            tail->next = new ListNode(sum % 10);
+            tail = tail->next;
+        }
+
+        return dummy.next;
+    }
+};`,
+    python: `# Definition for singly-linked list.
+# class ListNode:
+#     def __init__(self, val=0, next=None):
+#         self.val = val
+#         self.next = next
+class Solution:
+    def addTwoNumbers(self, l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:
+        """
+        Add two numbers represented as reversed linked lists.
+        Time Complexity: O(max(N, M))
+        Space Complexity: O(1) auxiliary
+        """
+        dummy = ListNode(0)
+        curr = dummy
+        carry = 0
+
+        while l1 or l2 or carry:
+            val1 = l1.val if l1 else 0
+            val2 = l2.val if l2 else 0
+            total = val1 + val2 + carry
+            carry = total // 10
+            curr.next = ListNode(total % 10)
+            curr = curr.next
+            if l1:
+                l1 = l1.next
+            if l2:
+                l2 = l2.next
+
+        return dummy.next`,
+    java: `/**
+ * Definition for singly-linked list.
+ * public class ListNode {
+ *     int val;
+ *     ListNode next;
+ *     ListNode() {}
+ *     ListNode(int val) { this.val = val; }
+ *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
+ * }
+ */
+class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        // Time Complexity: O(max(N, M))
+        // Space Complexity: O(1) auxiliary
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        int carry = 0;
+
+        while (l1 != null || l2 != null || carry != 0) {
+            int x = (l1 != null) ? l1.val : 0;
+            int y = (l2 != null) ? l2.val : 0;
+            int sum = carry + x + y;
+            carry = sum / 10;
+            curr.next = new ListNode(sum % 10);
+            curr = curr.next;
+            if (l1 != null) l1 = l1.next;
+            if (l2 != null) l2 = l2.next;
+        }
+
+        return dummy.next;
+    }
+}`,
+    javascript: `/**
+ * Definition for singly-linked list.
+ * function ListNode(val, next) {
+ *     this.val = (val===undefined ? 0 : val)
+ *     this.next = (next===undefined ? null : next)
+ * }
+ */
+/**
+ * @param {ListNode} l1
+ * @param {ListNode} l2
+ * @return {ListNode}
+ */
+var addTwoNumbers = function(l1, l2) {
+    let dummy = new ListNode(0);
+    let curr = dummy;
+    let carry = 0;
+
+    while (l1 !== null || l2 !== null || carry !== 0) {
+        let x = l1 ? l1.val : 0;
+        let y = l2 ? l2.val : 0;
+        let sum = carry + x + y;
+        carry = Math.floor(sum / 10);
+        curr.next = new ListNode(sum % 10);
+        curr = curr.next;
+        if (l1) l1 = l1.next;
+        if (l2) l2 = l2.next;
+    }
+
+    return dummy.next;
+};`,
+    typescript: `/**
+ * Definition for singly-linked list.
+ * class ListNode {
+ *     val: number
+ *     next: ListNode | null
+ *     constructor(val?: number, next?: ListNode | null) {
+ *         this.val = (val===undefined ? 0 : val)
+ *         this.next = (next===undefined ? null : next)
+ *     }
+ * }
+ */
+function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {
+    const dummy = new ListNode(0);
+    let curr = dummy;
+    let carry = 0;
+
+    while (l1 !== null || l2 !== null || carry !== 0) {
+        const x = l1 ? l1.val : 0;
+        const y = l2 ? l2.val : 0;
+        const sum = carry + x + y;
+        carry = Math.floor(sum / 10);
+        curr.next = new ListNode(sum % 10);
+        curr = curr.next;
+        if (l1) l1 = l1.next;
+        if (l2) l2 = l2.next;
+    }
+
+    return dummy.next;
+}`,
+  };
+
+  const selectedCode = codeMap[lang] || codeMap.python;
+
+  const stageContent: Record<string, string> = {
+    understand: `### Stage 1: Problem Understanding — ${title}
+- **Input**: Two non-empty linked lists representing two non-negative integers in reverse order.
+- **Output**: Sum of the two numbers represented as a linked list in reverse order.
+- **Constraints**: 0 <= Node.val <= 9, list length 1 to 100, no leading zeros.
+- **Target Complexity**: O(max(N, M)) Time, O(1) Auxiliary Space.`,
+    research: `### Stage 2: Algorithmic Research — ${title}
+- **Optimal Pattern**: Elementary math addition with digit carry forward using a dummy head pointer.
+- **Edge Cases**: Lists of unequal lengths, remaining carry at the end creating a new node (e.g. 99 + 1 = 100), single-node lists with zero.`,
+    plan: `### Stage 3: Implementation Blueprint — ${title}
+1. Create a dummy head node and initialize \`carry = 0\`.
+2. Loop while \`l1\`, \`l2\`, or \`carry\` is non-zero.
+3. Sum values from available nodes plus current carry.
+4. Calculate new carry (\`sum / 10\`) and attach new node (\`sum % 10\`).
+5. Advance pointers and return \`dummy.next\`.`,
+    generate: `### Stage 4: Optimal Solution — ${title} (${lang.toUpperCase()})\n\n\`\`\`${lang}\n${selectedCode}\n\`\`\``,
+    validate: `### Stage 5: Validation — ${title}
+- **Example 1**: [2,4,3] + [5,6,4] -> [7,0,8] (342 + 465 = 807) ✓ Passed.
+- **Example 2**: [0] + [0] -> [0] ✓ Passed.
+- **Example 3**: [9,9,9] + [9] -> [8,0,0,1] ✓ Carry-over verified.`,
+    explain: `### Stage 6: Line-by-Line Explanation — ${title}
+- **Dummy Head**: Eliminates edge case handling for the first node insertion.
+- **Carry Logic**: Tracks base-10 digit overflow across turns.
+- **Time Complexity**: O(max(N, M)) where N and M are the lengths of the two linked lists.
+- **Space Complexity**: O(max(N, M)) for the newly allocated output list, O(1) auxiliary memory.`,
+  };
+
+  return {
+    stage,
+    content: stageContent[stage] || stageContent.generate,
+    code: stage === "generate" ? selectedCode : null,
+    model_used: "Algorithmic Engine (Verified Offline)",
+    citations: [],
+    error: null,
+  };
 }
 
 // ─── 1. 3Sum (#15) ────────────────────────────────────────────────────────────

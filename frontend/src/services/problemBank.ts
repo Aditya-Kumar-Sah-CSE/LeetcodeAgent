@@ -891,6 +891,37 @@ M             1000
     };
   }
 
+  if (normSlug === "add-two-numbers" || normSlug === "2") {
+    return {
+      id: 2,
+      title: "Add Two Numbers",
+      slug: "add-two-numbers",
+      difficulty: "Medium",
+      description: `<p>You are given two <strong>non-empty</strong> linked lists representing two non-negative integers. The digits are stored in <strong>reverse order</strong>, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.</p><p>You may assume the two numbers do not contain any leading zero, except the number 0 itself.</p>`,
+      examples: [
+        { input: "l1 = [2,4,3], l2 = [5,6,4]", output: "[7,0,8]", explanation: "342 + 465 = 807." },
+        { input: "l1 = [0], l2 = [0]", output: "[0]" },
+        { input: "l1 = [9,9,9,9,9,9,9], l2 = [9,9,9,9]", output: "[8,9,9,9,0,0,0,1]" },
+      ],
+      constraints: [
+        "The number of nodes in each linked list is in the range [1, 100].",
+        "0 <= Node.val <= 9",
+        "It is guaranteed that the list represents a number that does not have leading zeros.",
+      ],
+      tags: ["Linked List", "Math", "Recursion"],
+      url: "https://leetcode.com/problems/add-two-numbers/",
+      date: new Date().toISOString().split("T")[0],
+      fetched_at: new Date().toISOString(),
+      code_snippets: {
+        cpp: `/**\n * Definition for singly-linked list.\n * struct ListNode {\n *     int val;\n *     ListNode *next;\n *     ListNode() : val(0), next(nullptr) {}\n *     ListNode(int x) : val(x), next(nullptr) {}\n *     ListNode(int x, ListNode *next) : val(x), next(next) {}\n * };\n */\nclass Solution {\npublic:\n    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {\n        ListNode dummy(0);\n        ListNode* tail = &dummy;\n        int carry = 0;\n        while (l1 || l2 || carry) {\n            int sum = carry;\n            if (l1) { sum += l1->val; l1 = l1->next; }\n            if (l2) { sum += l2->val; l2 = l2->next; }\n            carry = sum / 10;\n            tail->next = new ListNode(sum % 10);\n            tail = tail->next;\n        }\n        return dummy.next;\n    }\n};`,
+        python: `# Definition for singly-linked list.\n# class ListNode:\n#     def __init__(self, val=0, next=None):\n#         self.val = val\n#         self.next = next\nclass Solution:\n    def addTwoNumbers(self, l1: Optional[ListNode], l2: Optional[ListNode]) -> Optional[ListNode]:\n        dummy = ListNode(0)\n        curr = dummy\n        carry = 0\n        while l1 or l2 or carry:\n            val1 = l1.val if l1 else 0\n            val2 = l2.val if l2 else 0\n            total = val1 + val2 + carry\n            carry = total // 10\n            curr.next = ListNode(total % 10)\n            curr = curr.next\n            if l1: l1 = l1.next\n            if l2: l2 = l2.next\n        return dummy.next`,
+        java: `/**\n * Definition for singly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n * }\n */\nclass Solution {\n    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {\n        ListNode dummy = new ListNode(0);\n        ListNode curr = dummy;\n        int carry = 0;\n        while (l1 != null || l2 != null || carry != 0) {\n            int x = (l1 != null) ? l1.val : 0;\n            int y = (l2 != null) ? l2.val : 0;\n            int sum = carry + x + y;\n            carry = sum / 10;\n            curr.next = new ListNode(sum % 10);\n            curr = curr.next;\n            if (l1 != null) l1 = l1.next;\n            if (l2 != null) l2 = l2.next;\n        }\n        return dummy.next;\n    }\n}`,
+        javascript: `var addTwoNumbers = function(l1, l2) {\n    let dummy = new ListNode(0);\n    let curr = dummy;\n    let carry = 0;\n    while (l1 !== null || l2 !== null || carry !== 0) {\n        let x = l1 ? l1.val : 0;\n        let y = l2 ? l2.val : 0;\n        let sum = carry + x + y;\n        carry = Math.floor(sum / 10);\n        curr.next = new ListNode(sum % 10);\n        curr = curr.next;\n        if (l1) l1 = l1.next;\n        if (l2) l2 = l2.next;\n    }\n    return dummy.next;\n};`,
+        typescript: `function addTwoNumbers(l1: ListNode | null, l2: ListNode | null): ListNode | null {\n    const dummy = new ListNode(0);\n    let curr = dummy;\n    let carry = 0;\n    while (l1 !== null || l2 !== null || carry !== 0) {\n        const x = l1 ? l1.val : 0;\n        const y = l2 ? l2.val : 0;\n        const sum = carry + x + y;\n        carry = Math.floor(sum / 10);\n        curr.next = new ListNode(sum % 10);\n        curr = curr.next;\n        if (l1) l1 = l1.next;\n        if (l2) l2 = l2.next;\n    }\n    return dummy.next;\n};`,
+      },
+    };
+  }
+
   if (normSlug === "two-sum" || normSlug === "1") {
     return {
       id: 1,

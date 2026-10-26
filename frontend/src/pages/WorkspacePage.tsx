@@ -497,7 +497,11 @@ export default function WorkspacePage() {
         handleCodeChange(codeToApply);
       }
 
-      showToast(`Stage "${stageToRun}" complete!`);
+      if (response.error) {
+        showToast(`⚠️ ${response.error}`);
+      } else {
+        showToast(`Stage "${stageToRun}" complete!`);
+      }
       addActivity({
         type: "solve",
         problem_slug: problem.slug,
@@ -522,6 +526,7 @@ export default function WorkspacePage() {
 
     const stages: AgentStage[] = ["understand", "plan", "generate", "validate"];
     const accumulatedOutputs: Record<string, string> = { ...stageOutputs };
+    let hasFallbackError: string | null = null;
 
     for (const stg of stages) {
       setSelectedStage(stg);
@@ -544,6 +549,10 @@ export default function WorkspacePage() {
           previous_context: prevContext,
         });
 
+        if (response.error) {
+          hasFallbackError = response.error;
+        }
+
         if (response.content) {
           accumulatedOutputs[stg] = response.content;
           setStageOutputs((prev) => ({ ...prev, [stg]: response.content }));
@@ -560,6 +569,7 @@ export default function WorkspacePage() {
           handleCodeChange(codeToApply);
         }
       } catch (err: any) {
+        hasFallbackError = err.message || `Stage ${stg} error`;
         console.warn(`Stage ${stg} error:`, err);
         // Continue rather than breaking so subsequent stages & code generation still succeed
       }
@@ -575,7 +585,11 @@ export default function WorkspacePage() {
 
     setIsRunning(false);
     setMobileTab("editor");
-    showToast("✨ AI Solution generated & verified!");
+    if (hasFallbackError) {
+      showToast(`⚠️ Notice: ${hasFallbackError}`);
+    } else {
+      showToast("✨ AI Solution generated & verified!");
+    }
     addActivity({
       type: "solve",
       problem_slug: problem.slug,

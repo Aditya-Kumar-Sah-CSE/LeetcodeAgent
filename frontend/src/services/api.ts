@@ -844,7 +844,10 @@ async function runGroqDirect(
   apiKey: string,
   modelId?: string
 ): Promise<AIResponse> {
-  const actualModel = (modelId || "groq/llama-3.3-70b-versatile").replace(/^groq\//, "");
+  let actualModel = (modelId || "groq/llama-3.3-70b-versatile").replace(/^groq\//, "");
+  if (!actualModel.startsWith("llama") && !actualModel.startsWith("deepseek") && !actualModel.startsWith("mixtral") && !actualModel.startsWith("gemma")) {
+    actualModel = "llama-3.3-70b-versatile";
+  }
   const userPrompt = getStagePrompt(req);
   const systemPrompt =
     "You are an expert algorithmic competitive programmer and LeetCode coach. Provide concise, rigorous, and optimal analysis.";
@@ -889,7 +892,7 @@ async function runGroqDirect(
     stage: req.stage,
     content: rawText,
     code: extractedCode,
-    model_used: actualModel,
+    model_used: `groq/${actualModel}`,
     citations: [],
     error: null,
   };
@@ -902,7 +905,10 @@ async function runOpenRouterDirect(
   req: AIRequest,
   apiKey: string
 ): Promise<AIResponse> {
-  const model = req.model_id || getModelId() || "openrouter/free";
+  let model = req.model_id || getModelId() || "openrouter/free";
+  if (model.startsWith("groq/")) {
+    model = model.replace(/^groq\//, "");
+  }
   const userPrompt = getStagePrompt(req);
   const systemPrompt =
     "You are an expert algorithmic competitive programmer and LeetCode coach. Provide concise, rigorous, and optimal analysis.";
@@ -963,17 +969,23 @@ async function runOpenRouterDirect(
 // ─── AI Agent ───────────────────────────────────────────────
 
 export async function runAgentStage(request: AIRequest): Promise<AIResponse> {
-  // 1. Try FastAPI backend first if available
-  try {
-    const res = await apiFetch<AIResponse>("/agent/run", {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
-    if (res && (res.content || res.code)) {
-      return res;
+  // 1. Try FastAPI backend first if available (skip on static github.io domains)
+  const isStaticHost =
+    typeof window !== "undefined" &&
+    (window.location.hostname.endsWith("github.io") || window.location.hostname.includes("github.io"));
+
+  if (!isStaticHost) {
+    try {
+      const res = await apiFetch<AIResponse>("/agent/run", {
+        method: "POST",
+        body: JSON.stringify(request),
+      });
+      if (res && (res.content || res.code)) {
+        return res;
+      }
+    } catch (backendErr) {
+      console.warn("Backend /agent/run unavailable, trying direct browser execution:", backendErr);
     }
-  } catch (backendErr) {
-    console.warn("Backend /agent/run unavailable, trying direct browser execution:", backendErr);
   }
 
   const geminiKey = getGeminiApiKey();
@@ -981,48 +993,66 @@ export async function runAgentStage(request: AIRequest): Promise<AIResponse> {
   const openRouterKey = getOpenRouterApiKey();
   const activeModel = request.model_id || getModelId() || "gemini-2.0-flash";
 
-  // 2. Direct Google Gemini call if user configured Gemini Key
-  if (geminiKey && (activeModel.includes("gemini") || (!groqKey && !openRouterKey))) {
-    try {
-      return await runGeminiDirect(request, geminiKey, activeModel);
-    } catch (geminiErr) {
-      console.warn("Direct Gemini execution failed, trying alternative keys:", geminiErr);
-    }
-  }
+  let lastError: string | null = null;
+  const isGroqModel = activeModel.startsWith("groq/") || activeModel.includes("llama-3");
+  const isGeminiModel = activeModel.includes("gemini");
+  const isOpenRouterModel = !isGroqModel && !isGeminiModel && activeModel !== "autonomous/local-engine";
 
-  // 3. Direct Groq LPU call if user configured Groq Key
-  if (groqKey && (activeModel.startsWith("groq/") || (!geminiKey && !openRouterKey))) {
+  // 2. Direct Provider Matching
+  if (isGroqModel && groqKey) {
     try {
       return await runGroqDirect(request, groqKey, activeModel);
-    } catch (groqErr) {
-      console.warn("Direct Groq execution failed, trying alternative keys:", groqErr);
+    } catch (groqErr: any) {
+      lastError = `Groq (${activeModel}): ${groqErr.message || groqErr}`;
+      console.warn("Direct Groq execution failed:", groqErr);
     }
-  }
-
-  // 4. Direct OpenRouter call if user configured OpenRouter Key
-  const clientKey = request.api_key || openRouterKey;
-  if (clientKey) {
+  } else if (isGeminiModel && geminiKey) {
     try {
-      return await runOpenRouterDirect(request, clientKey);
-    } catch (llmErr) {
-      console.warn("Direct OpenRouter call failed, trying secondary providers:", llmErr);
+      return await runGeminiDirect(request, geminiKey, activeModel);
+    } catch (geminiErr: any) {
+      lastError = `Gemini (${activeModel}): ${geminiErr.message || geminiErr}`;
+      console.warn("Direct Gemini execution failed:", geminiErr);
+    }
+  } else if (isOpenRouterModel && openRouterKey) {
+    try {
+      return await runOpenRouterDirect(request, openRouterKey);
+    } catch (llmErr: any) {
+      lastError = `OpenRouter (${activeModel}): ${llmErr.message || llmErr}`;
+      console.warn("Direct OpenRouter execution failed:", llmErr);
     }
   }
 
-  // 5. Cross-provider fallback to whichever key exists
-  if (geminiKey) {
+  // 3. Cross-Provider Fallback to whichever active key is available
+  if (geminiKey && !isGeminiModel) {
     try {
       return await runGeminiDirect(request, geminiKey, "gemini-2.0-flash");
-    } catch {}
-  }
-  if (groqKey) {
-    try {
-      return await runGroqDirect(request, groqKey, "groq/llama-3.3-70b-versatile");
-    } catch {}
+    } catch (geminiErr: any) {
+      lastError = (lastError ? `${lastError} | ` : "") + `Gemini Fallback: ${geminiErr.message || geminiErr}`;
+    }
   }
 
-  // 6. Final guaranteed fallback to Autonomous Algorithmic Engine (offline / keyless guarantee)
-  return generateClientAlgorithmicSolution(request);
+  if (groqKey && !isGroqModel) {
+    try {
+      return await runGroqDirect(request, groqKey, "groq/llama-3.3-70b-versatile");
+    } catch (groqErr: any) {
+      lastError = (lastError ? `${lastError} | ` : "") + `Groq Fallback: ${groqErr.message || groqErr}`;
+    }
+  }
+
+  if (openRouterKey && !isOpenRouterModel) {
+    try {
+      return await runOpenRouterDirect(request, openRouterKey);
+    } catch (orErr: any) {
+      lastError = (lastError ? `${lastError} | ` : "") + `OpenRouter Fallback: ${orErr.message || orErr}`;
+    }
+  }
+
+  // 4. Final fallback to Autonomous Algorithmic Engine with explicit error metadata
+  const fallback = generateClientAlgorithmicSolution(request);
+  return {
+    ...fallback,
+    error: lastError || (!geminiKey && !groqKey && !openRouterKey ? "No API Key configured. Go to Settings to connect Google Gemini (100% Free) or Groq." : null),
+  };
 }
 
 // ─── Search ─────────────────────────────────────────────────

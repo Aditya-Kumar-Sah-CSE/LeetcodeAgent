@@ -13,6 +13,7 @@ import type {
   SearchResult,
 } from "../types";
 import { getApiKey, getModelId, saveSolutionLocal, getAllSolutionsLocal } from "./storage";
+import { generateClientAlgorithmicSolution } from "./algorithmicAgent";
 
 const API_BASE = "/api";
 
@@ -177,22 +178,31 @@ export async function fetchModels(apiKey?: string): Promise<AIModel[]> {
 // ─── AI Agent ───────────────────────────────────────────────
 
 export async function runAgentStage(request: AIRequest): Promise<AIResponse> {
-  // Try backend first
+  // 1. Try FastAPI backend first
   try {
-    return await apiFetch<AIResponse>("/agent/run", {
+    const res = await apiFetch<AIResponse>("/agent/run", {
       method: "POST",
       body: JSON.stringify(request),
     });
-  } catch (err) {
-    // If backend is unavailable, check if client has OpenRouter API key
-    const clientKey = request.api_key || getApiKey();
-    if (clientKey) {
-      return runOpenRouterDirect(request, clientKey);
+    if (res && (res.content || res.code)) {
+      return res;
     }
-    throw new Error(
-      "Backend is offline and no OpenRouter API key is configured. Please provide an API key in Settings."
-    );
+  } catch (backendErr) {
+    console.warn("Backend /agent/run unavailable, trying direct execution:", backendErr);
   }
+
+  // 2. If client has an OpenRouter API key, call OpenRouter directly
+  const clientKey = request.api_key || getApiKey();
+  if (clientKey) {
+    try {
+      return await runOpenRouterDirect(request, clientKey);
+    } catch (llmErr) {
+      console.warn("Direct OpenRouter call failed, falling back to Algorithmic Engine:", llmErr);
+    }
+  }
+
+  // 3. Fallback to Autonomous Algorithmic Engine (offline / keyless guarantee)
+  return generateClientAlgorithmicSolution(request);
 }
 
 /**

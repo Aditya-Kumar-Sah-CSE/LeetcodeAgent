@@ -29,6 +29,7 @@ class DailyProblem(BaseModel):
     url: str
     date: str  # YYYY-MM-DD
     fetched_at: str  # ISO timestamp
+    code_snippets: dict[str, str] = {}
 
 
 class ProblemBrief(BaseModel):

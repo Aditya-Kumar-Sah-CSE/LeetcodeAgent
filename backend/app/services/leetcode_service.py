@@ -164,6 +164,14 @@ async def fetch_daily_challenge() -> DailyProblem:
     question = daily_data["question"]
     content = question.get("content", "")
 
+    snippets: dict[str, str] = {}
+    for snip in question.get("codeSnippets", []) or []:
+        slug_key = snip.get("langSlug", "").lower()
+        code_str = snip.get("code", "")
+        snippets[slug_key] = code_str
+        if slug_key == "python3":
+            snippets["python"] = code_str
+
     problem = DailyProblem(
         id=int(question["questionId"]),
         title=question["title"],
@@ -176,6 +184,7 @@ async def fetch_daily_challenge() -> DailyProblem:
         url=f"https://leetcode.com/problems/{question['titleSlug']}/",
         date=daily_data.get("date", today),
         fetched_at=datetime.now(timezone.utc).isoformat(),
+        code_snippets=snippets,
     )
 
     # Cache
@@ -211,6 +220,14 @@ async def fetch_problem_by_slug(slug: str) -> DailyProblem:
     content = question.get("content", "")
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
+    snippets: dict[str, str] = {}
+    for snip in question.get("codeSnippets", []) or []:
+        slug_key = snip.get("langSlug", "").lower()
+        code_str = snip.get("code", "")
+        snippets[slug_key] = code_str
+        if slug_key == "python3":
+            snippets["python"] = code_str
+
     return DailyProblem(
         id=int(question["questionId"]),
         title=question["title"],
@@ -223,6 +240,7 @@ async def fetch_problem_by_slug(slug: str) -> DailyProblem:
         url=f"https://leetcode.com/problems/{question['titleSlug']}/",
         date=today,
         fetched_at=datetime.now(timezone.utc).isoformat(),
+        code_snippets=snippets,
     )
 
 

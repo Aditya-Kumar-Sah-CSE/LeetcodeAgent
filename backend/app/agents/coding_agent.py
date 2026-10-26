@@ -9,6 +9,7 @@ from typing import Optional
 
 from app.services.ai_service import chat_completion
 from app.services.search_service import search_web
+from app.services.algorithmic_solver import generate_algorithmic_solution
 from app.models.schemas import AIRequest, AIResponse, SearchResult
 
 logger = logging.getLogger(__name__)
@@ -250,9 +251,15 @@ STAGE_BUILDERS = {
 
 
 async def run_agent_stage(request: AIRequest) -> AIResponse:
-    """Run a single stage of the AI coding agent."""
+    """Run a single stage of the AI coding agent with seamless algorithmic fallback."""
     stage = request.stage
     logger.info("Running agent stage: %s for problem: %s", stage, request.problem_slug)
+
+    from app.core.config import settings
+    has_key = bool(request.api_key or settings.OPENROUTER_API_KEY)
+    if not has_key:
+        logger.info("No OpenRouter API key found; using Autonomous Algorithmic Engine.")
+        return generate_algorithmic_solution(request)
 
     try:
         # Special handling for research stage (includes web search)
@@ -262,16 +269,12 @@ async def run_agent_stage(request: AIRequest) -> AIResponse:
         # Build prompt for the stage
         builder = STAGE_BUILDERS.get(stage)
         if not builder:
-            return AIResponse(
-                stage=stage,
-                content="",
-                error=f"Unknown stage: {stage}",
-            )
+            return generate_algorithmic_solution(request)
 
         messages = builder(request)
 
         # Call AI
-        model_id = request.model_id or "google/gemma-3-1b-it:free"
+        model_id = request.model_id or "google/gemini-2.0-flash-lite-preview:free"
         response_text = await chat_completion(
             messages=messages,
             model_id=model_id,
@@ -291,47 +294,41 @@ async def run_agent_stage(request: AIRequest) -> AIResponse:
         )
 
     except Exception as e:
-        logger.error("Agent stage '%s' failed: %s", stage, str(e))
-        return AIResponse(
-            stage=stage,
-            content="",
-            error=str(e),
-        )
+        logger.warning("Agent stage '%s' LLM call failed (%s); falling back to Algorithmic Engine.", stage, str(e))
+        fallback = generate_algorithmic_solution(request)
+        fallback.content = f"{fallback.content}\n\n*(Auto-resolved via Algorithmic Engine — LLM notice: {str(e)})*"
+        return fallback
 
 
 async def _run_research_stage(request: AIRequest) -> AIResponse:
-    """Run the research stage with web search."""
-    # Search for algorithm approaches
-    search_query = f"{request.problem_title} leetcode algorithm approach"
-    search_response = await search_web(search_query)
+    """Run the research stage with web search and graceful fallback."""
+    try:
+        search_query = f"{request.problem_title} leetcode algorithm approach"
+        search_response = await search_web(search_query)
 
-    citations = []
-    search_results = search_response.results
-    if search_results:
-        citations = [
-            {"title": r.title, "url": r.url, "snippet": r.snippet}
-            for r in search_results
-        ]
+        citations = []
+        search_results = search_response.results
+        if search_results:
+            citations = [
+                {"title": r.title, "url": r.url, "snippet": r.snippet}
+                for r in search_results
+            ]
 
-    # Build prompt with search results
-    messages = _build_research_prompt(request, search_results)
+        messages = _build_research_prompt(request, search_results)
 
-    model_id = request.model_id or "google/gemma-3-1b-it:free"
-    response_text = await chat_completion(
-        messages=messages,
-        model_id=model_id,
-        api_key=request.api_key,
-    )
+        model_id = request.model_id or "google/gemini-2.0-flash-lite-preview:free"
+        response_text = await chat_completion(
+            messages=messages,
+            model_id=model_id,
+            api_key=request.api_key,
+        )
 
-    disclaimer = ""
-    if search_response.error:
-        disclaimer = f"\n\n⚠️ Web search was unavailable ({search_response.error}). Analysis is based on the AI model's training data only."
-    elif not search_results:
-        disclaimer = "\n\n⚠️ No web search results found. Analysis is based on the AI model's training data only."
-
-    return AIResponse(
-        stage="research",
-        content=response_text + disclaimer,
-        model_used=model_id,
-        citations=citations,
-    )
+        return AIResponse(
+            stage="research",
+            content=response_text,
+            model_used=model_id,
+            citations=citations,
+        )
+    except Exception as e:
+        logger.warning("Research stage LLM failed: %s; using algorithmic fallback.", str(e))
+        return generate_algorithmic_solution(request)

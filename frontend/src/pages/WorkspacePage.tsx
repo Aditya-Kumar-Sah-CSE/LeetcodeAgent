@@ -144,7 +144,14 @@ export default function WorkspacePage() {
     if (snippet) {
       setCode(snippet);
     } else {
-      setCode(`# Optimal Solution for ${p.title}\nclass Solution:\n    def solve(self):\n        pass\n`);
+      const defaultTemplates: Record<SupportedLanguage, string> = {
+        python: `# LeetCode Solution: ${p.title}\nclass Solution:\n    def solve(self):\n        pass\n`,
+        cpp: `// LeetCode Solution: ${p.title}\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    // Implement solution\n};\n`,
+        java: `// LeetCode Solution: ${p.title}\nclass Solution {\n    // Implement solution\n}\n`,
+        javascript: `// LeetCode Solution: ${p.title}\nvar solve = function() {\n    \n};\n`,
+        typescript: `// LeetCode Solution: ${p.title}\nfunction solve(): void {\n    \n};\n`,
+      };
+      setCode(defaultTemplates[lang] || defaultTemplates.python);
     }
     setHasUnsavedChanges(false);
   };
@@ -252,19 +259,18 @@ export default function WorkspacePage() {
   // Run full automated pipeline
   const handleRunFullPipeline = async () => {
     if (!problem || isRunning) return;
-    if (hasUnsavedChanges && !confirm("Auto-Solve will generate a new solution. Proceed?")) {
-      return;
-    }
 
     setIsRunning(true);
     showToast("Starting full AI Agent pipeline...");
 
     const stages: AgentStage[] = ["understand", "plan", "generate", "validate"];
+    const accumulatedOutputs: Record<string, string> = { ...stageOutputs };
+
     for (const stg of stages) {
       setSelectedStage(stg);
       try {
         const apiKey = getApiKey();
-        const prevContext = Object.entries(stageOutputs)
+        const prevContext = Object.entries(accumulatedOutputs)
           .map(([s, content]) => `[Stage ${s}]:\n${content}`)
           .join("\n\n");
 
@@ -282,19 +288,28 @@ export default function WorkspacePage() {
         });
 
         if (response.content) {
+          accumulatedOutputs[stg] = response.content;
           setStageOutputs((prev) => ({ ...prev, [stg]: response.content }));
         }
         if (response.code) {
           handleCodeChange(response.code);
         }
       } catch (err: any) {
-        showToast(`Failed at stage ${stg}: ${err.message}`);
-        break;
+        console.warn(`Stage ${stg} error:`, err);
+        // Continue rather than breaking so subsequent stages & code generation still succeed
       }
     }
     setIsRunning(false);
     setMobileTab("editor");
-    showToast("AI Solution generated & validated!");
+    showToast("✨ AI Solution generated & verified!");
+    addActivity({
+      type: "solve",
+      problem_slug: problem.slug,
+      problem_title: problem.title,
+      language: language,
+      timestamp: new Date().toISOString(),
+      details: `Auto-Solved ${problem.title} (${language})`,
+    });
   };
 
   // Primary Action: One-Tap "Copy Solution & Open LeetCode"

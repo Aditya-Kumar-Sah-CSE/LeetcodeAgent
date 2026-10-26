@@ -32,6 +32,8 @@ import {
   isSyncDue24Hr,
 } from "./storage";
 import { generateClientAlgorithmicSolution } from "./algorithmicAgent";
+import contestsArchiveData from "../assets/contests_archive.json";
+import contestsQuestionsArchiveData from "../assets/contests_questions_archive.json";
 
 const API_BASE = "/api";
 
@@ -173,9 +175,66 @@ export async function refreshDailyChallenge(): Promise<DailyProblem> {
 export async function fetchProblem(slug: string): Promise<DailyProblem> {
   try {
     return await apiFetch<DailyProblem>(`/problem/${slug}`);
-  } catch {
-    if (slug === "two-sum") return FALLBACK_DAILY;
-    throw new Error(`Problem '${slug}' could not be loaded.`);
+  } catch (err) {
+    console.warn(`Backend unreachable for /problem/${slug}, checking local archives & generating client problem:`, err);
+
+    if (slug === FALLBACK_DAILY.slug) return FALLBACK_DAILY;
+
+    const foundCurated = CURATED_PRACTICE_PROBLEMS.find((p) => p.slug === slug);
+    const archiveMap = (contestsQuestionsArchiveData as Record<string, ContestQuestion[]>) || {};
+    let foundContestQ: ContestQuestion | undefined;
+    for (const qs of Object.values(archiveMap)) {
+      const match = qs.find((q) => q.slug === slug);
+      if (match) {
+        foundContestQ = match;
+        break;
+      }
+    }
+
+    const title =
+      foundCurated?.title ||
+      foundContestQ?.title ||
+      slug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+    const difficulty = ((foundCurated?.difficulty || foundContestQ?.difficulty || "Medium") as
+      | "Easy"
+      | "Medium"
+      | "Hard");
+    const id = foundCurated?.id || (foundContestQ?.id ? parseInt(foundContestQ.id, 10) : 0);
+    const tags = foundCurated?.tags || (foundContestQ ? ["Contest", "Algorithms"] : ["Algorithms"]);
+
+    return {
+      id,
+      title,
+      slug,
+      difficulty,
+      description: `<p><strong>${title}</strong></p><p>Practice this algorithmic problem directly in your AI workspace with step-by-step reasoning, test cases, and multi-language code generation, or view the official description on <a href="https://leetcode.com/problems/${slug}/" target="_blank" rel="noopener noreferrer">LeetCode</a>.</p>`,
+      examples: [
+        {
+          input: "See official test cases on LeetCode",
+          output: "Expected output",
+          explanation: `Algorithmic problem #${id || slug}`,
+        },
+      ],
+      constraints: [
+        "Standard LeetCode execution limits apply (1-2s time limit, 256MB memory)",
+      ],
+      tags,
+      url: `https://leetcode.com/problems/${slug}/`,
+      date: new Date().toISOString().split("T")[0],
+      fetched_at: new Date().toISOString(),
+      code_snippets: {
+        python: `# LeetCode Problem: ${title}\nclass Solution:\n    def solve(self):\n        pass\n`,
+        cpp: `// LeetCode Problem: ${title}\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    // Implement solution\n};\n`,
+        java: `// LeetCode Problem: ${title}\nclass Solution {\n    public void solve() {\n        \n    }\n}\n`,
+        javascript: `// LeetCode Problem: ${title}\nvar solve = function() {\n    \n};\n`,
+        typescript: `// LeetCode Problem: ${title}\nfunction solve(): void {\n    \n};\n`,
+      },
+      is_solved: isProblemSolved(slug),
+    };
   }
 }
 
@@ -1044,13 +1103,13 @@ const FALLBACK_CONTEST_QUESTIONS: Record<string, ContestQuestion[]> = {
   ],
 };
 
-export async function fetchContests(limit = 40): Promise<ContestBrief[]> {
+export async function fetchContests(limit = 1000): Promise<ContestBrief[]> {
   try {
     const list = await apiFetch<ContestBrief[]>(`/contests?limit=${limit}`);
-    return list;
-  } catch {
-    return FALLBACK_CONTESTS;
-  }
+    if (list && list.length > 0) return list;
+  } catch {}
+  const archive = (contestsArchiveData as ContestBrief[]) || [];
+  return archive.slice(0, limit);
 }
 
 export async function fetchContestQuestions(
@@ -1061,15 +1120,18 @@ export async function fetchContestQuestions(
     const qs = await apiFetch<ContestQuestion[]>(
       `/contests/${contestSlug}/questions?username=${encodeURIComponent(username)}`
     );
-    return qs.map((q) => ({
-      ...q,
-      is_solved: isProblemSolved(q.slug) || !!q.is_solved,
-    }));
-  } catch {
-    const fallback = FALLBACK_CONTEST_QUESTIONS[contestSlug] || [];
-    return fallback.map((q) => ({
-      ...q,
-      is_solved: isProblemSolved(q.slug),
-    }));
-  }
+    if (qs && qs.length > 0) {
+      return qs.map((q) => ({
+        ...q,
+        is_solved: isProblemSolved(q.slug) || !!q.is_solved,
+      }));
+    }
+  } catch {}
+
+  const archiveMap = (contestsQuestionsArchiveData as Record<string, ContestQuestion[]>) || {};
+  const fallback = archiveMap[contestSlug] || FALLBACK_CONTEST_QUESTIONS[contestSlug] || [];
+  return fallback.map((q) => ({
+    ...q,
+    is_solved: isProblemSolved(q.slug) || !!q.is_solved,
+  }));
 }

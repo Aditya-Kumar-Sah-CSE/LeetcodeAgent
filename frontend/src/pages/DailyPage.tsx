@@ -72,6 +72,9 @@ export default function DailyPage() {
   const [contestQuestions, setContestQuestions] = useState<ContestQuestion[]>([]);
   const [loadingContestQuestions, setLoadingContestQuestions] = useState<boolean>(false);
   const [contestSubTab, setContestSubTab] = useState<"virtual" | "upcoming" | "all">("virtual");
+  const [contestSearchQuery, setContestSearchQuery] = useState<string>("");
+  const [contestTypeFilter, setContestTypeFilter] = useState<"all" | "weekly" | "biweekly">("all");
+  const [contestPageLimit, setContestPageLimit] = useState<number>(48);
 
   // Virtual Contest Simulator state
   const [isVirtualActive, setIsVirtualActive] = useState<boolean>(false);
@@ -297,8 +300,43 @@ export default function DailyPage() {
     try {
       const fullProblem = await fetchProblem(q.slug);
       navigate("/workspace", { state: { problem: fullProblem } });
-    } catch (err: any) {
-      alert(`Could not load full problem: ${err.message}`);
+    } catch {
+      const title =
+        q.title ||
+        q.slug
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+      const fallbackProblem: DailyProblem = {
+        id: parseInt(q.id, 10) || 0,
+        title,
+        slug: q.slug,
+        difficulty: q.difficulty || "Medium",
+        description: `<p><strong>LeetCode Contest Problem: ${title}</strong></p><p>Difficulty: <strong>${q.difficulty}</strong> · Worth <strong>${q.credit || 5}</strong> contest points.</p><p>Solve this contest question directly in the workspace with step-by-step AI reasoning and multi-language generation, or open the official page on <a href="${q.url || `https://leetcode.com/problems/${q.slug}/`}" target="_blank" rel="noopener noreferrer">LeetCode</a>.</p>`,
+        examples: [
+          {
+            input: `See problem examples on LeetCode for ${title}`,
+            output: "Optimal output",
+            explanation: `Contest problem #${q.id || q.slug} (${q.credit || 5} pts)`,
+          },
+        ],
+        constraints: [
+          "Standard LeetCode contest limits (Time: 1-2s, Memory: 256MB)",
+        ],
+        tags: ["Contest", "Algorithms"],
+        url: q.url || `https://leetcode.com/problems/${q.slug}/`,
+        date: new Date().toISOString().split("T")[0],
+        fetched_at: new Date().toISOString(),
+        code_snippets: {
+          python: `# LeetCode Contest Problem: ${title}\nclass Solution:\n    def solve(self):\n        pass\n`,
+          cpp: `// LeetCode Contest Problem: ${title}\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    // Implement solution\n};\n`,
+          java: `// LeetCode Contest Problem: ${title}\nclass Solution {\n    public void solve() {\n        \n    }\n}\n`,
+          javascript: `// LeetCode Contest Problem: ${title}\nvar solve = function() {\n    \n};\n`,
+          typescript: `// LeetCode Contest Problem: ${title}\nfunction solve(): void {\n    \n};\n`,
+        },
+        is_solved: isProblemSolved(q.slug),
+      };
+      navigate("/workspace", { state: { problem: fallbackProblem } });
     } finally {
       setNavigatingSlug(null);
     }
@@ -321,8 +359,35 @@ export default function DailyPage() {
         fullProblem = await fetchProblem(p.slug);
       }
       navigate("/workspace", { state: { problem: fullProblem } });
-    } catch (err: any) {
-      alert(`Could not load full problem: ${err.message}`);
+    } catch {
+      const fallbackProblem: DailyProblem = {
+        id: p.id || 0,
+        title: p.title,
+        slug: p.slug,
+        difficulty: p.difficulty,
+        description: `<p><strong>${p.title}</strong></p><p>Practice this algorithmic problem directly in your AI workspace or view details on <a href="${p.url || `https://leetcode.com/problems/${p.slug}/`}" target="_blank" rel="noopener noreferrer">LeetCode</a>.</p>`,
+        examples: [
+          {
+            input: "See official test cases on LeetCode",
+            output: "Expected output",
+            explanation: `Problem #${p.id || p.slug}`,
+          },
+        ],
+        constraints: ["Standard LeetCode execution limits apply"],
+        tags: p.tags || ["Algorithms"],
+        url: p.url || `https://leetcode.com/problems/${p.slug}/`,
+        date: new Date().toISOString().split("T")[0],
+        fetched_at: new Date().toISOString(),
+        code_snippets: {
+          python: `# LeetCode Problem: ${p.title}\nclass Solution:\n    def solve(self):\n        pass\n`,
+          cpp: `// LeetCode Problem: ${p.title}\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    // Implement solution\n};\n`,
+          java: `// LeetCode Problem: ${p.title}\nclass Solution {\n    public void solve() {\n        \n    }\n}\n`,
+          javascript: `// LeetCode Problem: ${p.title}\nvar solve = function() {\n    \n};\n`,
+          typescript: `// LeetCode Problem: ${p.title}\nfunction solve(): void {\n    \n};\n`,
+        },
+        is_solved: isProblemSolved(p.slug),
+      };
+      navigate("/workspace", { state: { problem: fallbackProblem } });
     } finally {
       setNavigatingSlug(null);
     }
@@ -349,6 +414,18 @@ export default function DailyPage() {
 
   const upcomingContests = contests.filter((c) => c.status === "UPCOMING" || c.status === "LIVE");
   const pastContests = contests.filter((c) => c.status === "PAST");
+  const pastWeeklyCount = pastContests.filter((c) => c.slug.startsWith("weekly-contest")).length;
+  const pastBiweeklyCount = pastContests.filter((c) => c.slug.startsWith("biweekly-contest")).length;
+
+  const filteredPastContests = pastContests.filter((c) => {
+    if (contestTypeFilter === "weekly" && !c.slug.startsWith("weekly-contest")) return false;
+    if (contestTypeFilter === "biweekly" && !c.slug.startsWith("biweekly-contest")) return false;
+    if (contestSearchQuery.trim()) {
+      const q = contestSearchQuery.toLowerCase().trim();
+      return c.title.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-5 max-w-5xl mx-auto w-full max-w-full overflow-x-hidden pb-safe relative">
@@ -1322,51 +1399,162 @@ export default function DailyPage() {
           {/* Sub-Tab 3: Past Contest Bank */}
           {contestSubTab === "all" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <Award size={16} className="text-accent" />
-                  Past Contests Archive
-                </h3>
-                <span className="text-xs text-muted">
-                  Select any contest to load its 4 problems into the simulator or AI workspace
-                </span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <Award size={16} className="text-accent" />
+                    Complete Past Contests Archive ({pastContests.length} Available)
+                  </h3>
+                  <p className="text-xs text-muted mt-0.5">
+                    Browse all official Weekly & Biweekly contests from LeetCode. Select any contest to load its 4 problems into the simulator or AI workspace.
+                  </p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {pastContests.slice(0, 30).map((c) => {
-                  const isSelected = selectedContestSlug === c.slug;
-                  return (
-                    <div
-                      key={c.slug}
-                      className="card p-3.5 space-y-2.5 transition-all cursor-pointer border hover:border-accent"
-                      style={{
-                        borderColor: isSelected ? "var(--color-accent)" : undefined,
-                        background: isSelected ? "var(--color-accent-glow)" : undefined,
+              {/* Search & Filter Controls */}
+              <div
+                className="card p-3 sm:p-4 space-y-3"
+                style={{ borderColor: "rgba(99, 102, 241, 0.2)" }}
+              >
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  <div className="relative flex-1">
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                    <input
+                      type="text"
+                      value={contestSearchQuery}
+                      onChange={(e) => {
+                        setContestSearchQuery(e.target.value);
+                        setContestPageLimit(48);
                       }}
+                      placeholder="Search past contests (e.g. 525, 420, Weekly 300, Biweekly 190)..."
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border outline-none text-white focus:border-accent"
+                      style={{
+                        background: "var(--color-bg-primary)",
+                        borderColor: "var(--color-border)",
+                      }}
+                    />
+                  </div>
+
+                  {/* Filter by Type */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
                       onClick={() => {
-                        handleSelectContest(c.slug);
-                        setContestSubTab("virtual");
+                        setContestTypeFilter("all");
+                        setContestPageLimit(48);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border touch-target"
+                      style={{
+                        background: contestTypeFilter === "all" ? "var(--color-accent)" : "var(--color-bg-elevated)",
+                        borderColor: contestTypeFilter === "all" ? "var(--color-accent)" : "var(--color-border-subtle)",
+                        color: contestTypeFilter === "all" ? "#fff" : "var(--color-text-secondary)",
                       }}
                     >
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-bold text-white truncate">{c.title}</h4>
-                        <span className="text-[11px] font-mono text-muted">90m</span>
-                      </div>
+                      All ({pastContests.length})
+                    </button>
 
-                      <p className="text-xs text-muted">
-                        Date: {formatContestTime(c.start_time)}
-                      </p>
+                    <button
+                      onClick={() => {
+                        setContestTypeFilter("weekly");
+                        setContestPageLimit(48);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border touch-target"
+                      style={{
+                        background: contestTypeFilter === "weekly" ? "var(--color-accent)" : "var(--color-bg-elevated)",
+                        borderColor: contestTypeFilter === "weekly" ? "var(--color-accent)" : "var(--color-border-subtle)",
+                        color: contestTypeFilter === "weekly" ? "#fff" : "var(--color-text-secondary)",
+                      }}
+                    >
+                      Weekly ({pastWeeklyCount})
+                    </button>
 
-                      <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
-                        <span className="text-[11px] text-accent font-semibold">
-                          {isSelected ? "Currently Selected ✓" : "Click to Simulate"}
-                        </span>
-                        <ChevronRight size={14} className="text-muted" />
-                      </div>
-                    </div>
-                  );
-                })}
+                    <button
+                      onClick={() => {
+                        setContestTypeFilter("biweekly");
+                        setContestPageLimit(48);
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border touch-target"
+                      style={{
+                        background: contestTypeFilter === "biweekly" ? "var(--color-accent)" : "var(--color-bg-elevated)",
+                        borderColor: contestTypeFilter === "biweekly" ? "var(--color-accent)" : "var(--color-border-subtle)",
+                        color: contestTypeFilter === "biweekly" ? "#fff" : "var(--color-text-secondary)",
+                      }}
+                    >
+                      Biweekly ({pastBiweeklyCount})
+                    </button>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-muted flex items-center justify-between">
+                  <span>Showing {Math.min(contestPageLimit, filteredPastContests.length)} of {filteredPastContests.length} contests</span>
+                  {selectedContest && (
+                    <span className="text-accent font-medium">Selected: {selectedContest.title}</span>
+                  )}
+                </div>
               </div>
+
+              {filteredPastContests.length === 0 ? (
+                <div className="card text-center py-10 space-y-2">
+                  <Award size={28} className="mx-auto text-muted" />
+                  <p className="text-sm text-white font-semibold">No contests match &quot;{contestSearchQuery}&quot;</p>
+                  <p className="text-xs text-muted">Try clearing the search or switching between Weekly / Biweekly filters.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {filteredPastContests.slice(0, contestPageLimit).map((c) => {
+                      const isSelected = selectedContestSlug === c.slug;
+                      return (
+                        <div
+                          key={c.slug}
+                          className="card p-3.5 space-y-2.5 transition-all cursor-pointer border hover:border-accent"
+                          style={{
+                            borderColor: isSelected ? "var(--color-accent)" : undefined,
+                            background: isSelected ? "var(--color-accent-glow)" : undefined,
+                          }}
+                          onClick={() => {
+                            handleSelectContest(c.slug);
+                            setContestSubTab("virtual");
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-white truncate">{c.title}</h4>
+                            <span className="text-[11px] font-mono text-muted">90m</span>
+                          </div>
+
+                          <p className="text-xs text-muted">
+                            Date: {formatContestTime(c.start_time)}
+                          </p>
+
+                          <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
+                            <span className="text-[11px] text-accent font-semibold">
+                              {isSelected ? "Currently Selected ✓" : "Click to Simulate"}
+                            </span>
+                            <ChevronRight size={14} className="text-muted" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {filteredPastContests.length > contestPageLimit && (
+                    <div className="flex items-center justify-center gap-3 pt-2">
+                      <button
+                        onClick={() => setContestPageLimit((prev) => prev + 48)}
+                        className="px-5 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer touch-target text-white hover:border-accent"
+                        style={{ background: "var(--color-bg-elevated)", borderColor: "var(--color-border)" }}
+                      >
+                        Load More Contests ({filteredPastContests.length - contestPageLimit} remaining)
+                      </button>
+                      <button
+                        onClick={() => setContestPageLimit(filteredPastContests.length)}
+                        className="px-4 py-2 text-xs font-semibold rounded-xl text-accent transition-all cursor-pointer hover:underline"
+                      >
+                        Show All ({filteredPastContests.length})
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

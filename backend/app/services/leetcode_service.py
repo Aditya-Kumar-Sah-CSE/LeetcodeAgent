@@ -502,7 +502,7 @@ _contests_cache = None
 _contests_cache_time = 0
 
 
-async def fetch_contests(limit: int = 40) -> list[ContestBrief]:
+async def fetch_contests(limit: int = 1000) -> list[ContestBrief]:
     """Fetch live, upcoming, and past virtual contests from LeetCode."""
     import time
     global _contests_cache, _contests_cache_time

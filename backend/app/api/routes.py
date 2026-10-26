@@ -212,7 +212,7 @@ async def get_profile(username: str):
 # ─── Live & Virtual Contests ──────────────────────────────────
 
 @router.get("/contests")
-async def get_contests(limit: int = Query(40, ge=1, le=100)):
+async def get_contests(limit: int = Query(1000, ge=1, le=1000)):
     """Fetch live, upcoming, and past virtual contests."""
     try:
         contests = await fetch_contests(limit=limit)

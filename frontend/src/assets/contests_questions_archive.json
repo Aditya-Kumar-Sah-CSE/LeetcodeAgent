@@ -1,0 +1,1022 @@
+{
+  "weekly-contest-525": [
+    {
+      "id": "4449",
+      "title": "Binary Digit Score",
+      "slug": "binary-digit-score",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/binary-digit-score/"
+    },
+    {
+      "id": "4311",
+      "title": "Maximize Sum After At Most K Digit Rearrangements",
+      "slug": "maximize-sum-after-at-most-k-digit-rearrangements",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximize-sum-after-at-most-k-digit-rearrangements/"
+    },
+    {
+      "id": "4441",
+      "title": "Count Frequency Staircase Subarrays I",
+      "slug": "count-frequency-staircase-subarrays-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-frequency-staircase-subarrays-i/"
+    },
+    {
+      "id": "4443",
+      "title": "Count Frequency Staircase Subarrays II",
+      "slug": "count-frequency-staircase-subarrays-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-frequency-staircase-subarrays-ii/"
+    }
+  ],
+  "biweekly-contest-194": [
+    {
+      "id": "4436",
+      "title": "Difference Between Peaks and Valleys",
+      "slug": "difference-between-peaks-and-valleys",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/difference-between-peaks-and-valleys/"
+    },
+    {
+      "id": "4391",
+      "title": "Count Subarrays With Loose Bounds",
+      "slug": "count-subarrays-with-loose-bounds",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-subarrays-with-loose-bounds/"
+    },
+    {
+      "id": "4402",
+      "title": "Count Magical Substring Pairs I",
+      "slug": "count-magical-substring-pairs-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-magical-substring-pairs-i/"
+    },
+    {
+      "id": "4403",
+      "title": "Count Magical Substring Pairs II",
+      "slug": "count-magical-substring-pairs-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-magical-substring-pairs-ii/"
+    }
+  ],
+  "weekly-contest-524": [
+    {
+      "id": "4430",
+      "title": "Minimum Deletions to Make Array Sharp",
+      "slug": "minimum-deletions-to-make-array-sharp",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/minimum-deletions-to-make-array-sharp/"
+    },
+    {
+      "id": "4456",
+      "title": "Last Visited Cell in a Directional Grid",
+      "slug": "last-visited-cell-in-a-directional-grid",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/last-visited-cell-in-a-directional-grid/"
+    },
+    {
+      "id": "3968",
+      "title": "Find Root of a Colored Tree",
+      "slug": "find-root-of-a-colored-tree",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/find-root-of-a-colored-tree/"
+    },
+    {
+      "id": "3769",
+      "title": "Minimum Interval Selection to Cover Target Intervals",
+      "slug": "minimum-interval-selection-to-cover-target-intervals",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-interval-selection-to-cover-target-intervals/"
+    }
+  ],
+  "weekly-contest-523": [
+    {
+      "id": "4450",
+      "title": "Three Fibonacci Sum",
+      "slug": "three-fibonacci-sum",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/three-fibonacci-sum/"
+    },
+    {
+      "id": "4433",
+      "title": "Prime Subset Selection I",
+      "slug": "prime-subset-selection-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/prime-subset-selection-i/"
+    },
+    {
+      "id": "4377",
+      "title": "Design Bus Seat Booking System",
+      "slug": "design-bus-seat-booking-system",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/design-bus-seat-booking-system/"
+    },
+    {
+      "id": "4434",
+      "title": "Prime Subset Selection II",
+      "slug": "prime-subset-selection-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/prime-subset-selection-ii/"
+    }
+  ],
+  "biweekly-contest-193": [
+    {
+      "id": "4444",
+      "title": "Maximum Product Pair With Target Sum",
+      "slug": "maximum-product-pair-with-target-sum",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/maximum-product-pair-with-target-sum/"
+    },
+    {
+      "id": "4438",
+      "title": "Longest Resilient Subarray I",
+      "slug": "longest-resilient-subarray-i",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/longest-resilient-subarray-i/"
+    },
+    {
+      "id": "4439",
+      "title": "Longest Resilient Subarray II",
+      "slug": "longest-resilient-subarray-ii",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/longest-resilient-subarray-ii/"
+    },
+    {
+      "id": "4254",
+      "title": "Minimize Inversions in a Prefix Tree",
+      "slug": "minimize-inversions-in-a-prefix-tree",
+      "credit": 7,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimize-inversions-in-a-prefix-tree/"
+    }
+  ],
+  "weekly-contest-522": [
+    {
+      "id": "4404",
+      "title": "Minimum Rotations to Dial a Number I",
+      "slug": "minimum-rotations-to-dial-a-number-i",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/minimum-rotations-to-dial-a-number-i/"
+    },
+    {
+      "id": "4405",
+      "title": "Minimum Rotations to Dial a Number II",
+      "slug": "minimum-rotations-to-dial-a-number-ii",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-rotations-to-dial-a-number-ii/"
+    },
+    {
+      "id": "4393",
+      "title": "Maximum Alternating Subarray Sum With One Deletion",
+      "slug": "maximum-alternating-subarray-sum-with-one-deletion",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-alternating-subarray-sum-with-one-deletion/"
+    },
+    {
+      "id": "4327",
+      "title": "Count Good Strings",
+      "slug": "count-good-strings",
+      "credit": 7,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-good-strings/"
+    }
+  ],
+  "weekly-contest-521": [
+    {
+      "id": "4429",
+      "title": "Rearrange Array by Removing Distinct Values",
+      "slug": "rearrange-array-by-removing-distinct-values",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/rearrange-array-by-removing-distinct-values/"
+    },
+    {
+      "id": "4420",
+      "title": "Maximum Equal Adjacent Pairs After at Most One Replacement",
+      "slug": "maximum-equal-adjacent-pairs-after-at-most-one-replacement",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-equal-adjacent-pairs-after-at-most-one-replacement/"
+    },
+    {
+      "id": "3985",
+      "title": "Longest Subarray With Restricted Pair Sums",
+      "slug": "longest-subarray-with-restricted-pair-sums",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/longest-subarray-with-restricted-pair-sums/"
+    },
+    {
+      "id": "4314",
+      "title": "Maximize Meeting Earnings with Idle Gaps",
+      "slug": "maximize-meeting-earnings-with-idle-gaps",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/maximize-meeting-earnings-with-idle-gaps/"
+    }
+  ],
+  "biweekly-contest-192": [
+    {
+      "id": "4421",
+      "title": "Minimum Queen Moves to Reach Target",
+      "slug": "minimum-queen-moves-to-reach-target",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/minimum-queen-moves-to-reach-target/"
+    },
+    {
+      "id": "4398",
+      "title": "Transform Array Using Pair Operations",
+      "slug": "transform-array-using-pair-operations",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/transform-array-using-pair-operations/"
+    },
+    {
+      "id": "4374",
+      "title": "Longest Subarray Divisible by K with At Most One Negation I",
+      "slug": "longest-subarray-divisible-by-k-with-at-most-one-negation-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/longest-subarray-divisible-by-k-with-at-most-one-negation-i/"
+    },
+    {
+      "id": "4422",
+      "title": "Longest Subarray Divisible by K with At Most One Negation II",
+      "slug": "longest-subarray-divisible-by-k-with-at-most-one-negation-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/longest-subarray-divisible-by-k-with-at-most-one-negation-ii/"
+    }
+  ],
+  "weekly-contest-520": [
+    {
+      "id": "4418",
+      "title": "Number of Intersecting Interval Pairs I",
+      "slug": "number-of-intersecting-interval-pairs-i",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/number-of-intersecting-interval-pairs-i/"
+    },
+    {
+      "id": "4417",
+      "title": "Number of Intersecting Interval Pairs II",
+      "slug": "number-of-intersecting-interval-pairs-ii",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/number-of-intersecting-interval-pairs-ii/"
+    },
+    {
+      "id": "4196",
+      "title": "Maximum Pulse Value After One Subarray Rotation",
+      "slug": "maximum-pulse-value-after-one-subarray-rotation",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-pulse-value-after-one-subarray-rotation/"
+    },
+    {
+      "id": "4028",
+      "title": "Lexicographically Largest Power Array",
+      "slug": "lexicographically-largest-power-array",
+      "credit": 7,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/lexicographically-largest-power-array/"
+    }
+  ],
+  "weekly-contest-519": [
+    {
+      "id": "4416",
+      "title": "Cyclically Shift Rows and Columns",
+      "slug": "cyclically-shift-rows-and-columns",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/cyclically-shift-rows-and-columns/"
+    },
+    {
+      "id": "4344",
+      "title": "Minimum Operations to Make Every Element Palindromic",
+      "slug": "minimum-operations-to-make-every-element-palindromic",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-operations-to-make-every-element-palindromic/"
+    },
+    {
+      "id": "4328",
+      "title": "Count Shadow Pairs I",
+      "slug": "count-shadow-pairs-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-shadow-pairs-i/"
+    },
+    {
+      "id": "4326",
+      "title": "Count Shadow Pairs II",
+      "slug": "count-shadow-pairs-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-shadow-pairs-ii/"
+    }
+  ],
+  "biweekly-contest-191": [
+    {
+      "id": "4415",
+      "title": "Count Values With Equally Spaced Occurrences I",
+      "slug": "count-values-with-equally-spaced-occurrences-i",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/count-values-with-equally-spaced-occurrences-i/"
+    },
+    {
+      "id": "4414",
+      "title": "Count Values With Equally Spaced Occurrences II",
+      "slug": "count-values-with-equally-spaced-occurrences-ii",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-values-with-equally-spaced-occurrences-ii/"
+    },
+    {
+      "id": "4406",
+      "title": "Minimum Days to Score Exactly N Points",
+      "slug": "minimum-days-to-score-exactly-n-points",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-days-to-score-exactly-n-points/"
+    },
+    {
+      "id": "4317",
+      "title": "Count Subarrays with Distant Sums",
+      "slug": "count-subarrays-with-distant-sums",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-subarrays-with-distant-sums/"
+    }
+  ],
+  "weekly-contest-518": [
+    {
+      "id": "4411",
+      "title": "Count Rotations With Exactly K Equal Adjacent Pairs",
+      "slug": "count-rotations-with-exactly-k-equal-adjacent-pairs",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/count-rotations-with-exactly-k-equal-adjacent-pairs/"
+    },
+    {
+      "id": "4412",
+      "title": "Count Good Cyclic Rotations",
+      "slug": "count-good-cyclic-rotations",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-good-cyclic-rotations/"
+    },
+    {
+      "id": "4382",
+      "title": "Count Robot Groups",
+      "slug": "count-robot-groups",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-robot-groups/"
+    },
+    {
+      "id": "4367",
+      "title": "Minimum Cost Path With At Most K Turns",
+      "slug": "minimum-cost-path-with-at-most-k-turns",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-cost-path-with-at-most-k-turns/"
+    }
+  ],
+  "weekly-contest-517": [
+    {
+      "id": "4410",
+      "title": "Count Integers Appearing in a Single Block",
+      "slug": "count-integers-appearing-in-a-single-block",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/count-integers-appearing-in-a-single-block/"
+    },
+    {
+      "id": "4401",
+      "title": "Sum of Decoded Numbers",
+      "slug": "sum-of-decoded-numbers",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/sum-of-decoded-numbers/"
+    },
+    {
+      "id": "4379",
+      "title": "Minimum Operations to Form Subset Sum I",
+      "slug": "minimum-operations-to-form-subset-sum-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-operations-to-form-subset-sum-i/"
+    },
+    {
+      "id": "4380",
+      "title": "Minimum Operations to Form Subset Sum II",
+      "slug": "minimum-operations-to-form-subset-sum-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-operations-to-form-subset-sum-ii/"
+    }
+  ],
+  "biweekly-contest-190": [
+    {
+      "id": "4390",
+      "title": "Minimum Bishop Moves to Reach Target",
+      "slug": "minimum-bishop-moves-to-reach-target",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-bishop-moves-to-reach-target/"
+    },
+    {
+      "id": "4373",
+      "title": "Maximum Valid Split Positions I",
+      "slug": "maximum-valid-split-positions-i",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-valid-split-positions-i/"
+    },
+    {
+      "id": "4366",
+      "title": "Lexicographically Largest String After Pair Transformations",
+      "slug": "lexicographically-largest-string-after-pair-transformations",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/lexicographically-largest-string-after-pair-transformations/"
+    },
+    {
+      "id": "4388",
+      "title": "Maximum Valid Split Positions II",
+      "slug": "maximum-valid-split-positions-ii",
+      "credit": 7,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/maximum-valid-split-positions-ii/"
+    }
+  ],
+  "weekly-contest-516": [
+    {
+      "id": "4381",
+      "title": "Check ASCII Palindromic",
+      "slug": "check-ascii-palindromic",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/check-ascii-palindromic/"
+    },
+    {
+      "id": "4383",
+      "title": "Find All Numbers Disappeared in an Array II",
+      "slug": "find-all-numbers-disappeared-in-an-array-ii",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array-ii/"
+    },
+    {
+      "id": "4370",
+      "title": "Longest Subarray With at Most K Distinct Prime Factors",
+      "slug": "longest-subarray-with-at-most-k-distinct-prime-factors",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/longest-subarray-with-at-most-k-distinct-prime-factors/"
+    },
+    {
+      "id": "3988",
+      "title": "Valid K-Unique Subarrays I",
+      "slug": "valid-k-unique-subarrays-i",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/valid-k-unique-subarrays-i/"
+    }
+  ],
+  "weekly-contest-515": [
+    {
+      "id": "4378",
+      "title": "Nearest Available Drone",
+      "slug": "nearest-available-drone",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/nearest-available-drone/"
+    },
+    {
+      "id": "4375",
+      "title": "Minimize the Maximum Waiting Time at Synchronized Traffic Lights",
+      "slug": "minimize-the-maximum-waiting-time-at-synchronized-traffic-lights",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimize-the-maximum-waiting-time-at-synchronized-traffic-lights/"
+    },
+    {
+      "id": "4034",
+      "title": "Maximum Gap Between Stations",
+      "slug": "maximum-gap-between-stations",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-gap-between-stations/"
+    },
+    {
+      "id": "4386",
+      "title": "Elevator Requests III",
+      "slug": "elevator-requests-iii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/elevator-requests-iii/"
+    }
+  ],
+  "biweekly-contest-189": [
+    {
+      "id": "4384",
+      "title": "Elevator Requests I",
+      "slug": "elevator-requests-i",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/elevator-requests-i/"
+    },
+    {
+      "id": "4350",
+      "title": "Minimum Operations to Make a Rotated Palindrome I",
+      "slug": "minimum-operations-to-make-a-rotated-palindrome-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-operations-to-make-a-rotated-palindrome-i/"
+    },
+    {
+      "id": "4331",
+      "title": "K-th Digit in Infinite String",
+      "slug": "k-th-digit-in-infinite-string",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/k-th-digit-in-infinite-string/"
+    },
+    {
+      "id": "4385",
+      "title": "Elevator Requests II",
+      "slug": "elevator-requests-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/elevator-requests-ii/"
+    }
+  ],
+  "weekly-contest-514": [
+    {
+      "id": "4363",
+      "title": "Minimum Total Price After Applying Discounts",
+      "slug": "minimum-total-price-after-applying-discounts",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-total-price-after-applying-discounts/"
+    },
+    {
+      "id": "4352",
+      "title": "Weighted Sum of a Tree",
+      "slug": "weighted-sum-of-a-tree",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/weighted-sum-of-a-tree/"
+    },
+    {
+      "id": "4120",
+      "title": "Maximum Area of Two Non-Overlapping Square Submatrices",
+      "slug": "maximum-area-of-two-non-overlapping-square-submatrices",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-area-of-two-non-overlapping-square-submatrices/"
+    },
+    {
+      "id": "4336",
+      "title": "Peaks in Array II",
+      "slug": "peaks-in-array-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/peaks-in-array-ii/"
+    }
+  ],
+  "weekly-contest-513": [
+    {
+      "id": "4371",
+      "title": "Maximize Pair Strength Using GCD",
+      "slug": "maximize-pair-strength-using-gcd",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/maximize-pair-strength-using-gcd/"
+    },
+    {
+      "id": "4323",
+      "title": "Count Subarrays With Even Odd Ratio I",
+      "slug": "count-subarrays-with-even-odd-ratio-i",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-subarrays-with-even-odd-ratio-i/"
+    },
+    {
+      "id": "4203",
+      "title": "Count of Unfinished Tasks After Each Shift",
+      "slug": "count-of-unfinished-tasks-after-each-shift",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-of-unfinished-tasks-after-each-shift/"
+    },
+    {
+      "id": "4324",
+      "title": "Count Subarrays With Even Odd Ratio II",
+      "slug": "count-subarrays-with-even-odd-ratio-ii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-subarrays-with-even-odd-ratio-ii/"
+    }
+  ],
+  "biweekly-contest-188": [
+    {
+      "id": "4365",
+      "title": "Count Valid Prefixes",
+      "slug": "count-valid-prefixes",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/count-valid-prefixes/"
+    },
+    {
+      "id": "4362",
+      "title": "Widest Possible Fence",
+      "slug": "widest-possible-fence",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/widest-possible-fence/"
+    },
+    {
+      "id": "4349",
+      "title": "Minimum Initial Strength to Defeat All Monsters",
+      "slug": "minimum-initial-strength-to-defeat-all-monsters",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-initial-strength-to-defeat-all-monsters/"
+    },
+    {
+      "id": "4244",
+      "title": "Minimum Possible Maximum Waiting Time",
+      "slug": "minimum-possible-maximum-waiting-time",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-possible-maximum-waiting-time/"
+    }
+  ],
+  "weekly-contest-512": [
+    {
+      "id": "4353",
+      "title": "Largest Integer With Given Digit Sum",
+      "slug": "largest-integer-with-given-digit-sum",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/largest-integer-with-given-digit-sum/"
+    },
+    {
+      "id": "4338",
+      "title": "Aggregate Two Time Series",
+      "slug": "aggregate-two-time-series",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/aggregate-two-time-series/"
+    },
+    {
+      "id": "4345",
+      "title": "Count Valid Sequences",
+      "slug": "count-valid-sequences",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-valid-sequences/"
+    },
+    {
+      "id": "3926",
+      "title": "Minimum Cost Path with Alternating Directions III",
+      "slug": "minimum-cost-path-with-alternating-directions-iii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-cost-path-with-alternating-directions-iii/"
+    }
+  ],
+  "weekly-contest-511": [
+    {
+      "id": "4369",
+      "title": "Even Number of Knight Moves",
+      "slug": "even-number-of-knight-moves",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/even-number-of-knight-moves/"
+    },
+    {
+      "id": "4358",
+      "title": "Count Dominant Nodes in a Binary Tree",
+      "slug": "count-dominant-nodes-in-a-binary-tree",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/count-dominant-nodes-in-a-binary-tree/"
+    },
+    {
+      "id": "3993",
+      "title": "Transform Binary String Using Subsequence Sort",
+      "slug": "transform-binary-string-using-subsequence-sort",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/transform-binary-string-using-subsequence-sort/"
+    },
+    {
+      "id": "3895",
+      "title": "Minimum Number of String Groups Through Transformations",
+      "slug": "minimum-number-of-string-groups-through-transformations",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-number-of-string-groups-through-transformations/"
+    }
+  ],
+  "biweekly-contest-187": [
+    {
+      "id": "4355",
+      "title": "Rearrange String to Avoid Character Pair",
+      "slug": "rearrange-string-to-avoid-character-pair",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/rearrange-string-to-avoid-character-pair/"
+    },
+    {
+      "id": "4364",
+      "title": "Maximum Value of an Alternating Sequence",
+      "slug": "maximum-value-of-an-alternating-sequence",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-value-of-an-alternating-sequence/"
+    },
+    {
+      "id": "4335",
+      "title": "Minimum Adjacent Swaps to Partition Array",
+      "slug": "minimum-adjacent-swaps-to-partition-array",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-adjacent-swaps-to-partition-array/"
+    },
+    {
+      "id": "4088",
+      "title": "Minimum Cost to Convert String III",
+      "slug": "minimum-cost-to-convert-string-iii",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-cost-to-convert-string-iii/"
+    }
+  ],
+  "weekly-contest-510": [
+    {
+      "id": "4357",
+      "title": "Number of Elapsed Seconds Between Two Times",
+      "slug": "number-of-elapsed-seconds-between-two-times",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/number-of-elapsed-seconds-between-two-times/"
+    },
+    {
+      "id": "4351",
+      "title": "Minimum Total Cost to Process All Elements",
+      "slug": "minimum-total-cost-to-process-all-elements",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-total-cost-to-process-all-elements/"
+    },
+    {
+      "id": "4343",
+      "title": "Create Grid With Exactly K Paths I",
+      "slug": "create-grid-with-exactly-k-paths-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/create-grid-with-exactly-k-paths-i/"
+    },
+    {
+      "id": "4225",
+      "title": "Maximum Consistent Columns in a Grid",
+      "slug": "maximum-consistent-columns-in-a-grid",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/maximum-consistent-columns-in-a-grid/"
+    }
+  ],
+  "weekly-contest-509": [
+    {
+      "id": "4356",
+      "title": "Sum of Integers with Maximum Digit Range",
+      "slug": "sum-of-integers-with-maximum-digit-range",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/sum-of-integers-with-maximum-digit-range/"
+    },
+    {
+      "id": "4346",
+      "title": "Subsequence After One Replacement",
+      "slug": "subsequence-after-one-replacement",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/subsequence-after-one-replacement/"
+    },
+    {
+      "id": "4188",
+      "title": "Divisible Game",
+      "slug": "divisible-game",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/divisible-game/"
+    },
+    {
+      "id": "4031",
+      "title": "Palindromic Subarray Sum",
+      "slug": "palindromic-subarray-sum",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/palindromic-subarray-sum/"
+    }
+  ],
+  "biweekly-contest-186": [
+    {
+      "id": "4354",
+      "title": "Unique Middle Element",
+      "slug": "unique-middle-element",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/unique-middle-element/"
+    },
+    {
+      "id": "4341",
+      "title": "Maximum Valid Pair Sum",
+      "slug": "maximum-valid-pair-sum",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-valid-pair-sum/"
+    },
+    {
+      "id": "4334",
+      "title": "Minimum Operations to Transform Binary String",
+      "slug": "minimum-operations-to-transform-binary-string",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-operations-to-transform-binary-string/"
+    },
+    {
+      "id": "4082",
+      "title": "Count Distinct Ways to Form Target from Two Strings",
+      "slug": "count-distinct-ways-to-form-target-from-two-strings",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-distinct-ways-to-form-target-from-two-strings/"
+    }
+  ],
+  "weekly-contest-508": [
+    {
+      "id": "4348",
+      "title": "Maximum Total Sum of K Selected Elements",
+      "slug": "maximum-total-sum-of-k-selected-elements",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-total-sum-of-k-selected-elements/"
+    },
+    {
+      "id": "3724",
+      "title": "Filter Occupied Intervals",
+      "slug": "filter-occupied-intervals",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/filter-occupied-intervals/"
+    },
+    {
+      "id": "3730",
+      "title": "Maximum Subarray Sum After Multiplier",
+      "slug": "maximum-subarray-sum-after-multiplier",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-subarray-sum-after-multiplier/"
+    },
+    {
+      "id": "4206",
+      "title": "Minimum Time to Reach Target With Limited Power",
+      "slug": "minimum-time-to-reach-target-with-limited-power",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/minimum-time-to-reach-target-with-limited-power/"
+    }
+  ],
+  "weekly-contest-507": [
+    {
+      "id": "4340",
+      "title": "Maximum Manhattan Distance After All Moves",
+      "slug": "maximum-manhattan-distance-after-all-moves",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximum-manhattan-distance-after-all-moves/"
+    },
+    {
+      "id": "4318",
+      "title": "Valid Subarrays With Matching Sum Digits I",
+      "slug": "valid-subarrays-with-matching-sum-digits-i",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/valid-subarrays-with-matching-sum-digits-i/"
+    },
+    {
+      "id": "4104",
+      "title": "Shortest Path With At Most K Consecutive Identical Characters",
+      "slug": "shortest-path-with-at-most-k-consecutive-identical-characters",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/"
+    },
+    {
+      "id": "4274",
+      "title": "Maximum Total Value",
+      "slug": "maximum-total-value",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/maximum-total-value/"
+    }
+  ],
+  "biweekly-contest-185": [
+    {
+      "id": "4342",
+      "title": "Create Grid With Exactly One Path",
+      "slug": "create-grid-with-exactly-one-path",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/create-grid-with-exactly-one-path/"
+    },
+    {
+      "id": "4330",
+      "title": "Minimum Lights to Illuminate a Road",
+      "slug": "minimum-lights-to-illuminate-a-road",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/minimum-lights-to-illuminate-a-road/"
+    },
+    {
+      "id": "4092",
+      "title": "Finish Time of Tasks I",
+      "slug": "finish-time-of-tasks-i",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/finish-time-of-tasks-i/"
+    },
+    {
+      "id": "4310",
+      "title": "Count Good Integers in a Range",
+      "slug": "count-good-integers-in-a-range",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/count-good-integers-in-a-range/"
+    }
+  ],
+  "weekly-contest-506": [
+    {
+      "id": "4332",
+      "title": "Check Good Integer",
+      "slug": "check-good-integer",
+      "credit": 3,
+      "difficulty": "Easy",
+      "url": "https://leetcode.com/problems/check-good-integer/"
+    },
+    {
+      "id": "4322",
+      "title": "Frequency Balance Subarray",
+      "slug": "frequency-balance-subarray",
+      "credit": 4,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/frequency-balance-subarray/"
+    },
+    {
+      "id": "4004",
+      "title": "Maximize Sum of Device Ratings",
+      "slug": "maximize-sum-of-device-ratings",
+      "credit": 5,
+      "difficulty": "Medium",
+      "url": "https://leetcode.com/problems/maximize-sum-of-device-ratings/"
+    },
+    {
+      "id": "4246",
+      "title": "Maximum Subarray Sum After at Most K Swaps",
+      "slug": "maximum-subarray-sum-after-at-most-k-swaps",
+      "credit": 6,
+      "difficulty": "Hard",
+      "url": "https://leetcode.com/problems/maximum-subarray-sum-after-at-most-k-swaps/"
+    }
+  ]
+}

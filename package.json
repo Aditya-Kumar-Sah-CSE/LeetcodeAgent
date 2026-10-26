@@ -4,6 +4,7 @@
   "private": true,
   "description": "LeetCode Agent root workspace scripts",
   "scripts": {
+    "start": "cmd /c run-all.bat",
     "dev": "npm --prefix frontend run dev",
     "frontend": "npm --prefix frontend run dev",
     "backend": "backend\\.venv\\Scripts\\uvicorn.exe app.main:app --reload --port 8000 --app-dir backend",

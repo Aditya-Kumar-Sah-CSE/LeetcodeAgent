@@ -297,8 +297,15 @@ export default function WorkspacePage() {
         setMobileTab("reasoning");
       }
 
-      if (response.code) {
-        handleCodeChange(response.code);
+      let codeToApply = response.code;
+      if (!codeToApply && response.content && (stageToRun === "generate" || stageToRun === "explain")) {
+        const match = response.content.match(/```(?:[a-zA-Z0-9_#+-]+)?\s*\n([\s\S]*?)```/);
+        if (match) {
+          codeToApply = match[1].trim();
+        }
+      }
+      if (codeToApply && (stageToRun === "generate" || !code || code.includes("// Implement solution") || code.includes("def solve(self):\n        pass"))) {
+        handleCodeChange(codeToApply);
       }
 
       showToast(`Stage "${stageToRun}" complete!`);
@@ -352,14 +359,31 @@ export default function WorkspacePage() {
           accumulatedOutputs[stg] = response.content;
           setStageOutputs((prev) => ({ ...prev, [stg]: response.content }));
         }
-        if (response.code) {
-          handleCodeChange(response.code);
+
+        let codeToApply = response.code;
+        if (!codeToApply && response.content && stg === "generate") {
+          const match = response.content.match(/```(?:[a-zA-Z0-9_#+-]+)?\s*\n([\s\S]*?)```/);
+          if (match) {
+            codeToApply = match[1].trim();
+          }
+        }
+        if (codeToApply && (stg === "generate" || !code || code.includes("// Implement solution") || code.includes("def solve(self):\n        pass"))) {
+          handleCodeChange(codeToApply);
         }
       } catch (err: any) {
         console.warn(`Stage ${stg} error:`, err);
         // Continue rather than breaking so subsequent stages & code generation still succeed
       }
     }
+
+    // Safety check: ensure editor has the generated code if available
+    if (accumulatedOutputs["generate"]) {
+      const match = accumulatedOutputs["generate"].match(/```(?:[a-zA-Z0-9_#+-]+)?\s*\n([\s\S]*?)```/);
+      if (match && (!code || code.includes("// Implement solution") || code.includes("def solve(self):\n        pass"))) {
+        handleCodeChange(match[1].trim());
+      }
+    }
+
     setIsRunning(false);
     setMobileTab("editor");
     showToast("✨ AI Solution generated & verified!");

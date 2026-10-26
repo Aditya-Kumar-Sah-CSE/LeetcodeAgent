@@ -69,38 +69,48 @@ export async function checkHealth(): Promise<{ status: string }> {
 
 // ─── Free Model Presets ─────────────────────────────────────
 
+// ─── Free Model Presets ─────────────────────────────────────
+
 const DEFAULT_MODELS: AIModel[] = [
   {
-    id: "google/gemini-2.0-flash-lite-preview:free",
-    name: "Gemini 2.0 Flash Lite (Free)",
-    provider: "Google",
-    context_length: 1048576,
-    is_free: true,
-    description: "Ultra-fast Google model, outstanding for coding and explanation.",
-  },
-  {
-    id: "meta-llama/llama-3.3-70b-instruct:free",
-    name: "Llama 3.3 70B Instruct (Free)",
-    provider: "Meta",
+    id: "openrouter/free",
+    name: "OpenRouter Free Router (Auto Best Model)",
+    provider: "OpenRouter",
     context_length: 131072,
     is_free: true,
-    description: "Highly capable open model for algorithmic reasoning.",
+    description: "Automatically routes to the best available free model with highest reliability.",
   },
   {
-    id: "mistralai/mistral-7b-instruct:free",
-    name: "Mistral 7B Instruct (Free)",
-    provider: "Mistral",
+    id: "google/gemma-4-31b-it:free",
+    name: "Gemma 4 31B (Free)",
+    provider: "Google",
     context_length: 32768,
     is_free: true,
-    description: "Lightweight and efficient coding assistant.",
+    description: "High-capability Google reasoning and coding model.",
   },
   {
-    id: "qwen/qwen-2.5-coder-32b-instruct:free",
-    name: "Qwen 2.5 Coder 32B (Free)",
-    provider: "Qwen",
+    id: "cohere/north-mini-code:free",
+    name: "North Mini Code (Free)",
+    provider: "Cohere",
     context_length: 32768,
     is_free: true,
-    description: "Specialized open-weight coding LLM.",
+    description: "Fast code synthesis and algorithmic problem solving.",
+  },
+  {
+    id: "nvidia/nemotron-3-ultra-550b-a55b:free",
+    name: "Nemotron 3 Ultra 550B (Free)",
+    provider: "NVIDIA",
+    context_length: 32768,
+    is_free: true,
+    description: "Massive scale model for complex multi-step reasoning.",
+  },
+  {
+    id: "liquid/lfm-2.5-2.6b:free",
+    name: "LFM 2.5 2.6B (Free)",
+    provider: "LiquidAI",
+    context_length: 32768,
+    is_free: true,
+    description: "Ultra-fast low-latency coding model.",
   },
 ];
 
@@ -528,7 +538,7 @@ async function runOpenRouterDirect(
   req: AIRequest,
   apiKey: string
 ): Promise<AIResponse> {
-  const model = req.model_id || getModelId() || "google/gemini-2.0-flash-lite-preview:free";
+  const model = req.model_id || getModelId() || "openrouter/free";
 
   const stagePrompts: Record<string, string> = {
     understand: `Analyze this LeetCode problem:
@@ -618,6 +628,10 @@ Explain:
   const codeBlockMatch = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)```/);
   if (codeBlockMatch) {
     extractedCode = codeBlockMatch[1].trim();
+  }
+  if (req.stage === "generate" && !extractedCode) {
+    const fallbackAlgo = generateClientAlgorithmicSolution(req);
+    extractedCode = fallbackAlgo.code;
   }
 
   return {

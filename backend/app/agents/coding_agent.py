@@ -274,7 +274,7 @@ async def run_agent_stage(request: AIRequest) -> AIResponse:
         messages = builder(request)
 
         # Call AI
-        model_id = request.model_id or "google/gemini-2.0-flash-lite-preview:free"
+        model_id = request.model_id or "openrouter/free"
         response_text = await chat_completion(
             messages=messages,
             model_id=model_id,
@@ -285,6 +285,10 @@ async def run_agent_stage(request: AIRequest) -> AIResponse:
         code = None
         if stage == "generate":
             code = _extract_code(response_text, request.language)
+            if not code:
+                # Fallback guarantee: use algorithmic engine's generated code
+                algo_res = generate_algorithmic_solution(request)
+                code = algo_res.code
 
         return AIResponse(
             stage=stage,

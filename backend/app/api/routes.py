@@ -26,9 +26,11 @@ from app.services.solution_service import (
 )
 from app.services.profile_service import fetch_public_profile
 from app.agents.coding_agent import run_agent_stage
+from app.services.chat_service import save_chat_history, get_chat_history
 from app.models.schemas import (
     AIRequest,
     SaveSolutionRequest,
+    SaveChatRequest,
 )
 
 router = APIRouter()
@@ -232,3 +234,46 @@ async def get_contest_questions(
         return questions
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Failed to fetch contest questions: {str(e)}")
+
+
+# ─── AI Assistant Chat Session Persistence & GitHub Sync ──────
+
+@router.get("/chat/{slug}")
+async def get_chat(slug: str):
+    """Retrieve saved chat history for a problem slug."""
+    chat = get_chat_history(slug)
+    if not chat:
+        raise HTTPException(status_code=404, detail=f"No saved chat history found for '{slug}'")
+    return chat
+
+
+@router.post("/chat/{slug}")
+async def save_chat(slug: str, request: SaveChatRequest):
+    """Save chat session to solutions directory as JSON and Markdown, with optional git push."""
+    try:
+        messages_data = [m.model_dump() for m in request.messages]
+        result = save_chat_history(
+            slug=slug,
+            messages=messages_data,
+            problem_title=request.problem_title,
+            push_to_git=request.push_to_git,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save chat history: {str(e)}")
+
+
+@router.post("/chat/{slug}/push-github")
+async def push_chat_github(slug: str, request: SaveChatRequest):
+    """Save chat history and commit + push to GitHub repository."""
+    try:
+        messages_data = [m.model_dump() for m in request.messages]
+        result = save_chat_history(
+            slug=slug,
+            messages=messages_data,
+            problem_title=request.problem_title,
+            push_to_git=True,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to push chat to GitHub: {str(e)}")

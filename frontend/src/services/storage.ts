@@ -4,7 +4,7 @@
  */
 
 import { get, set, del, keys } from "idb-keyval";
-import type { StoredSolution, ActivityEntry } from "../types";
+import type { StoredSolution, ActivityEntry, ChatMessage, ChatSession } from "../types";
 
 // ─── LocalStorage (preferences) ───────────────────────────
 
@@ -19,6 +19,8 @@ const LS_KEYS = {
   apiKeyHash: "lca-api-key-configured",
   editorFontSize: "lca-editor-font-size",
   editorWordWrap: "lca-editor-word-wrap",
+  githubToken: "lca-github-token",
+  githubRepo: "lca-github-repo",
 } as const;
 
 export function getTheme(): string {
@@ -112,13 +114,65 @@ export function isApiKeyConfigured(): boolean {
   return !!_sessionApiKey || localStorage.getItem(LS_KEYS.apiKeyHash) === "configured";
 }
 
-// ─── IndexedDB (solutions, history) ────────────────────────
+// ─── GitHub Token & Repo Configuration ────────────────────
+
+export function getGithubToken(): string {
+  return localStorage.getItem(LS_KEYS.githubToken) || "";
+}
+
+export function setGithubToken(token: string) {
+  if (token) {
+    localStorage.setItem(LS_KEYS.githubToken, token.trim());
+  } else {
+    localStorage.removeItem(LS_KEYS.githubToken);
+  }
+}
+
+export function getGithubRepo(): string {
+  return localStorage.getItem(LS_KEYS.githubRepo) || "Aditya-Kumar-Sah-CSE/LeetcodeAgent";
+}
+
+export function setGithubRepo(repo: string) {
+  localStorage.setItem(LS_KEYS.githubRepo, repo.trim());
+}
+
+// ─── IndexedDB (solutions, chat sessions, history) ─────────
 
 const IDB_PREFIX = {
   solution: "sol:",
   activity: "act:",
   problem: "prob:",
+  chat: "chat:",
 };
+
+// Chat Sessions
+export async function saveChatSessionLocal(
+  slug: string,
+  messages: ChatMessage[],
+  problemTitle?: string,
+  syncedToGithub = false
+): Promise<void> {
+  if (!slug) return;
+  const session: ChatSession = {
+    slug,
+    problem_title: problemTitle,
+    messages,
+    updated_at: new Date().toISOString(),
+    synced_to_github: syncedToGithub,
+  };
+  await set(`${IDB_PREFIX.chat}${slug}`, session);
+}
+
+export async function getChatSessionLocal(slug: string): Promise<ChatSession | null> {
+  if (!slug) return null;
+  const session = await get<ChatSession>(`${IDB_PREFIX.chat}${slug}`);
+  return session || null;
+}
+
+export async function clearChatSessionLocal(slug: string): Promise<void> {
+  if (!slug) return;
+  await del(`${IDB_PREFIX.chat}${slug}`);
+}
 
 // Solutions
 export async function saveSolutionLocal(solution: StoredSolution): Promise<void> {

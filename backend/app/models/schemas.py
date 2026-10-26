@@ -194,3 +194,35 @@ class LeetCodeProfile(BaseModel):
     reputation: Optional[int] = None
     verified: bool = False
     solved_slugs: list[str] = []
+
+
+# ─── Chat Assistant Models ────────────────────────────────────
+
+class ToolCallItem(BaseModel):
+    """Tool invocation item displayed in agent reasoning trace."""
+    name: str
+    label: str
+    status: str = "completed"
+    args: Optional[dict] = None
+    result: Optional[str] = None
+
+
+class ChatMessageModel(BaseModel):
+    """A chat message in a conversation session."""
+    model_config = {"protected_namespaces": ()}
+
+    id: str
+    role: str  # "user" | "assistant" | "system"
+    content: str
+    reasoning: Optional[str] = None
+    tool_calls: Optional[list[ToolCallItem]] = None
+    timestamp: int
+    model_used: Optional[str] = None
+
+
+class SaveChatRequest(BaseModel):
+    """Request to persist or git-push chat session."""
+    slug: str
+    problem_title: Optional[str] = None
+    messages: list[ChatMessageModel]
+    push_to_git: bool = False

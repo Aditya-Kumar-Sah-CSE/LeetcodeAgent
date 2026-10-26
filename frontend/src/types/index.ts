@@ -218,3 +218,31 @@ export const AGENT_STAGES: { key: AgentStage; label: string; icon: string; descr
   { key: "validate", label: "Validate", icon: "✅", description: "Trace against example test cases and verify time/space complexities." },
   { key: "explain", label: "Explain", icon: "💡", description: "Provide an intuitive explanation and complexity breakdown." },
 ];
+
+export interface ToolCallItem {
+  name: string;
+  label: string;
+  status: "running" | "completed" | "failed";
+  args?: Record<string, any>;
+  result?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  reasoning?: string;
+  tool_calls?: ToolCallItem[];
+  timestamp: number;
+  status?: "thinking" | "streaming" | "done" | "error";
+  model_used?: string;
+}
+
+export interface ChatSession {
+  slug: string;
+  problem_title?: string;
+  messages: ChatMessage[];
+  updated_at: string;
+  synced_to_github?: boolean;
+}
+

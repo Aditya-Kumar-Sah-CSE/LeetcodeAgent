@@ -69,6 +69,7 @@ import {
 } from "../services/leetcodeNavigation";
 import DifficultyBadge, { ProblemStatusBadge } from "../components/UIComponents";
 import SubmissionModal from "../components/SubmissionModal";
+import { ProblemAIChat } from "../components/ProblemAIChat";
 
 export default function WorkspacePage() {
   const location = useLocation();
@@ -616,7 +617,7 @@ export default function WorkspacePage() {
               color: mobileTab === tab ? "#fff" : "var(--color-text-secondary)",
             }}
           >
-            {tab === "editor" ? "Code" : tab}
+            {tab === "editor" ? "Code" : tab === "research" ? "AI Chat" : tab}
           </button>
         ))}
       </div>
@@ -660,7 +661,7 @@ export default function WorkspacePage() {
             </button>
             <button
               onClick={() => setMobileTab("research")}
-              className={`px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer ${
+              className={`px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
                 mobileTab === "research" ? "border-b-2 text-white" : "text-muted hover:text-white"
               }`}
               style={{
@@ -668,12 +669,18 @@ export default function WorkspacePage() {
                 color: mobileTab === "research" ? "var(--color-accent)" : "var(--color-text-secondary)",
               }}
             >
-              Web Research
+              <Sparkles size={13} className="text-cyan-400" />
+              <span>AI Assistant</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             </button>
           </div>
 
           {/* Left Content Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div
+            className={`flex-1 overflow-y-auto ${
+              mobileTab === "research" ? "p-2 flex flex-col h-full" : "p-4 space-y-4"
+            }`}
+          >
             {/* 1. Problem Description */}
             {(mobileTab === "problem" || (mobileTab === "editor" && typeof window !== "undefined" && window.innerWidth >= 1024)) && problem && (
               <div className="space-y-4 text-xs">
@@ -775,66 +782,18 @@ export default function WorkspacePage() {
               </div>
             )}
 
-            {/* 3. Research Tab */}
+            {/* 3. AI Assistant Smart Chat Tab */}
             {mobileTab === "research" && (
-              <div className="space-y-4">
-                <form onSubmit={handleSearch} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search algorithm or topic (e.g. Monotonic Stack)..."
-                    className="flex-1 px-3 py-2 text-xs rounded-lg border outline-none touch-target"
-                    style={{
-                      background: "var(--color-bg-primary)",
-                      borderColor: "var(--color-border)",
-                      color: "var(--color-text-primary)",
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    disabled={searching}
-                    className="px-4 py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer touch-target"
-                    style={{ background: "var(--color-accent)", color: "#fff" }}
-                  >
-                    <Search size={14} className={searching ? "animate-spin" : ""} />
-                    Search
-                  </button>
-                </form>
-
-                {searchResults.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {searchResults.map((res, i) => (
-                      <div
-                        key={i}
-                        className="p-3 rounded-lg border space-y-1.5"
-                        style={{
-                          background: "var(--color-bg-primary)",
-                          borderColor: "var(--color-border-subtle)",
-                        }}
-                      >
-                        <a
-                          href={res.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-xs flex items-center gap-1.5 hover:underline"
-                          style={{ color: "var(--color-accent)" }}
-                        >
-                          <BookOpen size={13} />
-                          {res.title}
-                          <ExternalLink size={10} />
-                        </a>
-                        <p className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
-                          {res.snippet}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-10 text-xs" style={{ color: "var(--color-text-muted)" }}>
-                    Search algorithm patterns, editorials, and complexity analysis.
-                  </div>
-                )}
+              <div className="flex-1 h-full min-h-[460px] flex flex-col">
+                <ProblemAIChat
+                  problem={problem}
+                  code={code}
+                  language={language}
+                  onApplyCode={(newCode) => {
+                    handleCodeChange(newCode);
+                    showToast("Code applied to editor!");
+                  }}
+                />
               </div>
             )}
           </div>

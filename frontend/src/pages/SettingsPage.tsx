@@ -15,6 +15,7 @@ import {
   Sparkles,
   Trophy,
   Smartphone,
+  GitBranch,
 } from "lucide-react";
 import { InstallPwaButton } from "../components/InstallPwaPrompt";
 
@@ -27,6 +28,10 @@ import {
   setUsername,
   getLanguage,
   setLanguage,
+  getGithubToken,
+  setGithubToken,
+  getGithubRepo,
+  setGithubRepo,
   exportAllData,
   importData,
   clearAllData,
@@ -37,6 +42,9 @@ import { LANGUAGES, type AIModel, type LeetCodeProfile } from "../types";
 export default function SettingsPage() {
   const [apiKeyInput, setApiKeyInput] = useState(getApiKey());
   const [showKey, setShowKey] = useState(false);
+  const [githubTokenInput, setGithubTokenInput] = useState(getGithubToken());
+  const [githubRepoInput, setGithubRepoInput] = useState(getGithubRepo());
+  const [showGithubToken, setShowGithubToken] = useState(false);
   const [models, setModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState(getModelId());
   const [usernameInput, setUsernameInput] = useState(getUsername() || "Aditya_Kumar_Sah-28");
@@ -66,6 +74,12 @@ export default function SettingsPage() {
   const handleSaveApiKey = () => {
     setApiKey(apiKeyInput.trim());
     showToast("OpenRouter API key saved (session memory)");
+  };
+
+  const handleSaveGithubSettings = () => {
+    setGithubToken(githubTokenInput.trim());
+    setGithubRepo(githubRepoInput.trim() || "Aditya-Kumar-Sah-CSE/LeetcodeAgent");
+    showToast("GitHub sync settings saved!");
   };
 
   const handleModelChange = (id: string) => {
@@ -305,6 +319,71 @@ export default function SettingsPage() {
             className="px-5 py-2.5 text-xs font-bold rounded-xl bg-accent text-white cursor-pointer hover:opacity-90 touch-target shadow-md"
           >
             Save Key
+          </button>
+        </div>
+      </div>
+
+      {/* 2.5 GitHub Integration & Chat Persistence */}
+      <div className="card space-y-3">
+        <div className="flex items-center gap-2">
+          <GitBranch size={18} style={{ color: "var(--color-accent)" }} />
+          <h2 className="text-sm sm:text-base font-semibold text-white">GitHub Persistence & Remote Sync</h2>
+        </div>
+        <p className="text-xs text-secondary">
+          Allows pushing AI assistant chat logs, solutions, and reasoning traces directly to your GitHub repository so conversation context is permanently preserved.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-gray-300">Repository (owner/repo):</label>
+            <input
+              type="text"
+              value={githubRepoInput}
+              onChange={(e) => setGithubRepoInput(e.target.value)}
+              placeholder="Aditya-Kumar-Sah-CSE/LeetcodeAgent"
+              className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono"
+              style={{
+                background: "var(--color-bg-primary)",
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-primary)",
+              }}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-gray-300">GitHub Personal Access Token (repo scope):</label>
+            <div className="relative">
+              <input
+                type={showGithubToken ? "text" : "password"}
+                value={githubTokenInput}
+                onChange={(e) => setGithubTokenInput(e.target.value)}
+                placeholder="ghp_..."
+                className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
+                style={{
+                  background: "var(--color-bg-primary)",
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-text-primary)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowGithubToken(!showGithubToken)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer"
+                aria-label={showGithubToken ? "Hide token" : "Show token"}
+              >
+                {showGithubToken ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={handleSaveGithubSettings}
+            className="px-5 py-2 text-xs font-bold rounded-xl bg-accent text-white cursor-pointer hover:opacity-90 touch-target shadow-md flex items-center gap-1.5"
+          >
+            <GitBranch size={13} />
+            <span>Save GitHub Settings</span>
           </button>
         </div>
       </div>

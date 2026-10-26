@@ -20,6 +20,7 @@ import {
   WrapText,
   RotateCcw,
   Smartphone,
+  Code2,
   ChevronDown,
   ChevronUp,
   GripVertical,
@@ -149,6 +150,26 @@ export default function WorkspacePage() {
     typeof window !== "undefined" ? window.innerWidth >= 1024 : true
   );
   const workspaceContainerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<any>(null);
+
+  const handleEditorDidMount = (editor: any) => {
+    editorRef.current = editor;
+    try {
+      editor.layout();
+    } catch {}
+  };
+
+  // Keep editor layout responsive to panel resizing and tab switching
+  useEffect(() => {
+    if (editorRef.current) {
+      const timer = setTimeout(() => {
+        try {
+          editorRef.current?.layout();
+        } catch {}
+      }, 30);
+      return () => clearTimeout(timer);
+    }
+  }, [splitRatio, isDesktop, mobileTab]);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -217,7 +238,10 @@ export default function WorkspacePage() {
   // Load problem on mount
   useEffect(() => {
     if (!problem) {
-      const slugToLoad = slugFromUrl || cachedProblem?.slug;
+      const slugToLoad =
+        slugFromUrl ||
+        new URLSearchParams(window.location.hash.split("?")[1] || "").get("slug") ||
+        cachedProblem?.slug;
       if (slugToLoad) {
         fetchProblem(slugToLoad)
           .then((p) => {
@@ -254,6 +278,37 @@ export default function WorkspacePage() {
     });
   }, []);
 
+  // Reactive problem loading whenever URL slug changes
+  useEffect(() => {
+    const currentSlug =
+      slugFromUrl ||
+      new URLSearchParams(window.location.hash.split("?")[1] || "").get("slug");
+    if (currentSlug && (!problem || problem.slug !== currentSlug)) {
+      setLoadingProblem(true);
+      fetchProblem(currentSlug)
+        .then((p) => {
+          setProblem(p);
+          setIsSolved(isProblemSolved(p.slug));
+          initCodeForProblem(p, language);
+        })
+        .catch(() => {
+          fetchDailyChallenge().then((p) => {
+            setProblem(p);
+            setIsSolved(isProblemSolved(p.slug));
+            initCodeForProblem(p, language);
+          });
+        })
+        .finally(() => setLoadingProblem(false));
+    }
+  }, [slugFromUrl, location.search, location.hash]);
+
+  // Safety guard: ensure starter code is never left blank if problem is loaded
+  useEffect(() => {
+    if (problem && (!code || !code.trim())) {
+      initCodeForProblem(problem, language);
+    }
+  }, [problem?.slug, language]);
+
   const initCodeForProblem = (p: DailyProblem, lang: SupportedLanguage) => {
     const draft = getDraftCode(p.slug, lang);
     if (draft && draft.trim()) {
@@ -263,7 +318,7 @@ export default function WorkspacePage() {
     }
 
     const snippet = p.code_snippets?.[lang];
-    if (snippet) {
+    if (snippet && snippet.trim()) {
       setCode(snippet);
     } else {
       const defaultTemplates: Record<SupportedLanguage, string> = {
@@ -316,13 +371,27 @@ export default function WorkspacePage() {
   // Reset to starter template
   const handleResetStarter = () => {
     if (!problem) return;
-    if (confirm("Revert code to starter snippet? This will overwrite current edits.")) {
-      clearDraftCode(problem.slug, language);
-      const snippet = problem.code_snippets?.[language] || "class Solution:\n    pass\n";
-      setCode(snippet);
-      setHasUnsavedChanges(false);
-      showToast("Reverted to starter code");
+    if (code && code.trim()) {
+      if (!confirm("Revert code to official starter template? This will replace your current edits.")) {
+        return;
+      }
     }
+    clearDraftCode(problem.slug, language);
+    const snippet = problem.code_snippets?.[language];
+    if (snippet && snippet.trim()) {
+      setCode(snippet);
+    } else {
+      const defaultTemplates: Record<SupportedLanguage, string> = {
+        python: `# LeetCode Solution: ${problem.title}\nclass Solution:\n    def solve(self):\n        pass\n`,
+        cpp: `// LeetCode Solution: ${problem.title}\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    // Implement solution\n};\n`,
+        java: `// LeetCode Solution: ${problem.title}\nclass Solution {\n    // Implement solution\n}\n`,
+        javascript: `// LeetCode Solution: ${problem.title}\nvar solve = function() {\n    \n};\n`,
+        typescript: `// LeetCode Solution: ${problem.title}\nfunction solve(): void {\n    \n};\n`,
+      };
+      setCode(defaultTemplates[language] || defaultTemplates.python);
+    }
+    setHasUnsavedChanges(false);
+    showToast("Reverted code to official starter template ✓");
   };
 
   // Run single stage
@@ -685,11 +754,11 @@ export default function WorkspacePage() {
       {/* Main Workspace Layout: Responsive Resizable Flex Container */}
       <div
         ref={workspaceContainerRef}
-        className="flex flex-col lg:flex-row gap-0 flex-1 min-h-0 w-full relative"
+        className="flex flex-col lg:flex-row gap-0 flex-1 min-h-[550px] lg:h-[calc(100vh-10.5rem)] w-full relative"
       >
         {/* Left Column: Problem / Reasoning / AI Assistant */}
         <div
-          className={`flex-col card p-0 overflow-hidden min-h-[460px] lg:min-h-0 h-full ${
+          className={`flex-col card p-0 overflow-hidden min-h-[460px] h-full ${
             mobileTab !== "editor" ? "flex" : "hidden lg:flex"
           }`}
           style={{
@@ -935,7 +1004,7 @@ export default function WorkspacePage() {
 
         {/* Right Column: Code Editor */}
         <div
-          className={`flex flex-col card p-0 overflow-hidden min-h-[420px] lg:min-h-0 h-full ${
+          className={`flex flex-col card p-0 overflow-hidden min-h-[460px] h-full ${
             mobileTab === "editor" ? "flex" : "hidden lg:flex"
           }`}
           style={{
@@ -993,9 +1062,20 @@ export default function WorkspacePage() {
               <button
                 onClick={handleResetStarter}
                 className="p-1.5 rounded hover:bg-white/10 text-muted hover:text-white cursor-pointer touch-target flex items-center justify-center text-xs"
-                title="Reset to Starter Template"
+                title="Reset to Official Starter Template"
               >
                 <RotateCcw size={13} />
+              </button>
+
+              {/* Toggle Lightweight/Monaco Editor */}
+              <button
+                onClick={() => setUseSimpleEditor((prev) => !prev)}
+                className={`p-1.5 rounded hover:bg-white/10 cursor-pointer touch-target flex items-center justify-center text-xs transition-colors ${
+                  useSimpleEditor ? "text-cyan-400 bg-cyan-950/40 border border-cyan-500/30" : "text-muted hover:text-white"
+                }`}
+                title={useSimpleEditor ? "Switch to Monaco Pro Editor" : "Switch to Lightweight Editor"}
+              >
+                <Code2 size={13} />
               </button>
 
               {/* Download */}
@@ -1024,36 +1104,104 @@ export default function WorkspacePage() {
           </div>
 
           {/* Code Editor Body */}
-          <div className="flex-1 w-full min-h-[350px] lg:min-h-0 relative">
-            {!useSimpleEditor ? (
-              <Editor
-                height="100%"
-                language={currentLangObj.monacoLang}
-                value={code}
-                theme="vs-dark"
-                onChange={(val) => handleCodeChange(val || "")}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: fontSize,
-                  fontFamily: "var(--font-mono)",
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  tabSize: 4,
-                  wordWrap: wordWrap ? "on" : "off",
-                  lineNumbers: "on",
-                  renderLineHighlight: "all",
-                  cursorSmoothCaretAnimation: "on",
-                }}
-              />
-            ) : (
-              /* Accessible Textarea Editor Fallback for Mobile */
-              <textarea
-                value={code}
-                onChange={(e) => handleCodeChange(e.target.value)}
-                className="w-full h-full p-3 font-mono text-xs bg-transparent text-gray-200 outline-none resize-none leading-relaxed"
-                style={{ fontSize: `${fontSize}px`, whiteSpace: wordWrap ? "pre-wrap" : "pre" }}
-                spellCheck={false}
-              />
+          <div className="flex-1 w-full h-full min-h-[380px] relative overflow-hidden bg-[#1e1e1e]">
+            <div className="absolute inset-0 w-full h-full">
+              {!useSimpleEditor ? (
+                <Editor
+                  height="100%"
+                  language={currentLangObj.monacoLang}
+                  value={code}
+                  theme="vs-dark"
+                  onMount={handleEditorDidMount}
+                  loading={
+                    <div className="flex flex-col items-center justify-center h-full gap-2 text-muted text-xs bg-[#1e1e1e]">
+                      <Sparkles className="animate-spin text-cyan-400" size={24} />
+                      <span className="font-mono text-gray-400">Loading Code Editor...</span>
+                    </div>
+                  }
+                  onChange={(val) => handleCodeChange(val || "")}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: fontSize,
+                    fontFamily: "'Fira Code', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace",
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    tabSize: 4,
+                    wordWrap: wordWrap ? "on" : "off",
+                    lineNumbers: "on",
+                    renderLineHighlight: "all",
+                    cursorSmoothCaretAnimation: "on",
+                    smoothScrolling: true,
+                    padding: { top: 12, bottom: 12 },
+                  }}
+                />
+              ) : (
+                /* Accessible & Lightweight Styled Code Editor */
+                <div className="flex w-full h-full bg-[#1e1e1e] font-mono text-xs overflow-hidden">
+                  <div className="select-none py-3 px-2.5 text-right text-gray-600 bg-[#181818] border-r border-white/5 font-mono text-[11px] min-w-[38px]">
+                    {(code || "").split("\n").map((_, i) => (
+                      <div key={i} className="leading-5 h-5">
+                        {i + 1}
+                      </div>
+                    ))}
+                  </div>
+                  <textarea
+                    value={code}
+                    onChange={(e) => handleCodeChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Tab") {
+                        e.preventDefault();
+                        const target = e.currentTarget;
+                        const start = target.selectionStart;
+                        const end = target.selectionEnd;
+                        const nextVal = code.substring(0, start) + "    " + code.substring(end);
+                        handleCodeChange(nextVal);
+                        setTimeout(() => {
+                          target.selectionStart = target.selectionEnd = start + 4;
+                        }, 0);
+                      }
+                    }}
+                    className="flex-1 h-full p-3 font-mono bg-transparent text-gray-200 outline-none resize-none leading-5"
+                    style={{ fontSize: `${fontSize}px`, whiteSpace: wordWrap ? "pre-wrap" : "pre" }}
+                    spellCheck={false}
+                    placeholder="// Write your solution here..."
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Empty State Overlay */}
+            {(!code || !code.trim()) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 bg-[var(--color-bg-card)]/95 backdrop-blur-xs">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-3 text-cyan-400">
+                  <FileCode size={24} />
+                </div>
+                <h3 className="text-sm font-bold text-white mb-1">Editor is Empty</h3>
+                <p className="text-xs text-muted mb-4 max-w-xs">
+                  No code snippet is loaded for {problem?.title || "this problem"} in {currentLangObj.label}.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={handleResetStarter}
+                    className="px-3.5 py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-white hover:border-cyan-400/50 transition-colors shadow-sm"
+                  >
+                    <RotateCcw size={13} className="text-cyan-400" />
+                    <span>Load Starter Template</span>
+                  </button>
+                  <button
+                    onClick={handleRunFullPipeline}
+                    disabled={isRunning || !problem}
+                    className="px-3.5 py-2 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer text-white shadow-md transition-all hover:scale-105"
+                    style={{
+                      background: "var(--color-accent)",
+                      boxShadow: "0 0 14px var(--color-accent-glow)",
+                    }}
+                  >
+                    <Sparkles size={13} />
+                    <span>Auto-Solve with AI</span>
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

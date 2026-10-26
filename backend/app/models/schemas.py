@@ -106,6 +106,12 @@ class AIModel(BaseModel):
     specification: Optional[str] = None
     speed: Optional[str] = None
     reasoning_power: Optional[str] = None
+    required_key: Optional[str] = "openrouter"  # "gemini" | "groq" | "openrouter" | "none"
+    required_key_name: Optional[str] = "OpenRouter API Key"
+    key_url: Optional[str] = "https://openrouter.ai/keys"
+    pricing_type: Optional[str] = "Free Tier"
+    token_limit: Optional[str] = None
+    best_for: Optional[str] = None
 
 
 class AIRequest(BaseModel):

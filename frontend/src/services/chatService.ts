@@ -18,6 +18,7 @@ import {
   getGroqApiKey,
   getOpenRouterApiKey,
   getActiveProvider,
+  isApiKeyConfigured,
   saveChatSessionLocal,
   getChatSessionLocal,
   getGithubToken,
@@ -439,8 +440,13 @@ async function runClientAutonomousStreaming({
     code.includes("return total;") ||
     (!codeLower.includes("for") && !codeLower.includes("while") && !codeLower.includes("map") && !codeLower.includes("switch") && !codeLower.includes("if"));
 
-  const noticeBanner = `> ⚠️ **Live AI Model Disconnected (No API Key Configured)**
-> Real-time **DeepSeek R1 / Google Gemini 2.5** streaming ke liye **[🔑 Free Google Gemini Key Connect Karein](#/settings)** (Google AI Studio se 100% free key lein). Abhi local heuristic mode active hai.
+  const hasConfiguredKey = isApiKeyConfigured();
+  const noticeBanner = hasConfiguredKey
+    ? `> ℹ️ **Note**: Cloud provider temporary rate-limit / timeout detected. Seamlessly fell back to **Local Autonomous Heuristic Engine** so your workflow continues uninterrupted.
+
+`
+    : `> ⚠️ **Live AI Model Disconnected (No API Key Configured)**
+> Real-time **Google Gemini 2.0 / DeepSeek R1** streaming ke liye **[🔑 Free Google Gemini Key Connect Karein](#/settings)** (Google AI Studio se 100% free key lein). Abhi local heuristic mode active hai.
 
 `;
 
@@ -648,12 +654,17 @@ async function streamGoogleGemini({
   abortSignal?: AbortSignal;
 }): Promise<boolean> {
   const cleanModel = modelId.replace(/^models\//, "").replace(/^google\//, "");
-  const candidateModels = [
-    cleanModel.startsWith("gemini") ? cleanModel : null,
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-  ].filter(Boolean) as string[];
+  const candidateModels = Array.from(
+    new Set(
+      [
+        cleanModel.startsWith("gemini") ? cleanModel : null,
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-2.0-flash-lite-preview-02-05",
+      ].filter(Boolean) as string[]
+    )
+  );
 
   if (onReasoning) {
     onReasoning("⚡ Connecting to Google AI Studio Gemini API directly from browser...");
@@ -670,16 +681,27 @@ async function streamGoogleGemini({
   const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
   for (const m of messages) {
     if (m.role === "user" || m.role === "assistant") {
-      contents.push({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      });
+      const role = m.role === "assistant" ? "model" : "user";
+      if (contents.length > 0 && contents[contents.length - 1].role === role) {
+        contents[contents.length - 1].parts[0].text += `\n\n${m.content}`;
+      } else {
+        contents.push({
+          role,
+          parts: [{ text: m.content }],
+        });
+      }
     }
   }
-  contents.push({
-    role: "user",
-    parts: [{ text: currentQuery }],
-  });
+
+  // Ensure alternating roles and include currentQuery in last user turn
+  if (contents.length === 0 || contents[contents.length - 1].role !== "user") {
+    contents.push({
+      role: "user",
+      parts: [{ text: currentQuery }],
+    });
+  } else if (!contents[contents.length - 1].parts[0].text.includes(currentQuery)) {
+    contents[contents.length - 1].parts[0].text += `\n\n${currentQuery}`;
+  }
 
   const payload = {
     systemInstruction: {
@@ -942,11 +964,18 @@ export async function streamChatMessage({
 
   const isGroqModel =
     activeModel.toLowerCase().startsWith("groq/") ||
-    activeModel.toLowerCase().includes("r1") ||
     activeModel.toLowerCase().includes("llama-3");
 
   const isGeminiModel =
     activeModel.toLowerCase().includes("gemini");
+
+  const isOpenRouterModel =
+    !isGroqModel &&
+    !isGeminiModel &&
+    activeModel !== "autonomous/local-engine" &&
+    activeProvider !== "local";
+
+  const resolvedOpenRouterKey = openRouterKey || fallbackKey;
 
   // 1. Direct match: Groq model with Groq key
   if (groqKey && (isGroqModel || activeProvider === "groq")) {
@@ -996,65 +1025,11 @@ export async function streamChatMessage({
     }
   }
 
-  // 3. Smart Cross-Provider Fallback (User has ONE active key but selected another provider's model)
-  if (geminiKey) {
-    if (onReasoning) {
-      onReasoning("⚡ Auto-routing to your active Google Gemini 2.5 Flash engine for live reasoning...");
-    }
-    try {
-      const ok = await streamGoogleGemini({
-        geminiKey,
-        modelId: "gemini-2.5-flash",
-        systemPrompt,
-        messages,
-        currentQuery,
-        code,
-        language,
-        onReasoning,
-        onToolCall,
-        onDelta,
-        onDone,
-        abortSignal,
-      });
-      if (ok) return;
-    } catch (geminiErr: any) {
-      if (abortSignal?.aborted) return;
-      console.warn("Cross-provider Gemini fallback failed:", geminiErr);
-    }
-  }
-
-  if (groqKey) {
-    if (onReasoning) {
-      onReasoning("⚡ Auto-routing to your active Groq LPU engine...");
-    }
-    try {
-      const ok = await streamGroqChat({
-        groqKey,
-        modelId: "groq/deepseek-r1-distill-llama-70b",
-        systemPrompt,
-        messages,
-        currentQuery,
-        code,
-        language,
-        onReasoning,
-        onToolCall,
-        onDelta,
-        onDone,
-        abortSignal,
-      });
-      if (ok) return;
-    } catch (groqErr: any) {
-      if (abortSignal?.aborted) return;
-      console.warn("Cross-provider Groq fallback failed:", groqErr);
-    }
-  }
-
-  // 3. Check if OpenRouter streaming should be executed
-  const resolvedOpenRouterKey = openRouterKey || fallbackKey;
-  if (resolvedOpenRouterKey && activeProvider !== "local" && activeModel !== "autonomous/local-engine") {
+  // 3. Direct match: OpenRouter model with OpenRouter key
+  if (resolvedOpenRouterKey && (isOpenRouterModel || activeProvider === "openrouter")) {
     try {
       if (onReasoning) {
-        onReasoning("🔍 Initializing agent reasoning & inspecting active editor context...");
+        onReasoning("🔍 Initializing agent reasoning & inspecting active editor context via OpenRouter...");
       }
       if (onToolCall) {
         onToolCall({
@@ -1072,13 +1047,18 @@ export async function streamChatMessage({
         orModel = orModel.replace("groq/", "");
       }
 
-      const messagesPayload = [
+      const messagesPayload: Array<{ role: string; content: string }> = [
         { role: "system", content: systemPrompt },
-        ...messages
-          .filter((m) => m.role === "user" || m.role === "assistant")
-          .map((m) => ({ role: m.role, content: m.content })),
-        { role: "user", content: currentQuery },
       ];
+      for (const m of messages) {
+        if (m.role === "user" || m.role === "assistant") {
+          messagesPayload.push({ role: m.role, content: m.content });
+        }
+      }
+      const lastMsg = messagesPayload[messagesPayload.length - 1];
+      if (!lastMsg || lastMsg.role !== "user" || !lastMsg.content.includes(currentQuery)) {
+        messagesPayload.push({ role: "user", content: currentQuery });
+      }
 
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -1158,7 +1138,60 @@ export async function streamChatMessage({
       return;
     } catch (err: any) {
       if (abortSignal?.aborted) return;
-      console.warn("OpenRouter streaming failed, switching to Autonomous Generative Engine:", err);
+      console.warn("OpenRouter streaming failed, trying cross-provider fallback:", err);
+    }
+  }
+
+  // 4. Smart Cross-Provider Fallback: User has ONE active key but selected another provider's model
+  if (geminiKey) {
+    if (onReasoning) {
+      onReasoning("⚡ Auto-routing to your active Google Gemini 2.0 Flash engine for live reasoning...");
+    }
+    try {
+      const ok = await streamGoogleGemini({
+        geminiKey,
+        modelId: "gemini-2.0-flash",
+        systemPrompt,
+        messages,
+        currentQuery,
+        code,
+        language,
+        onReasoning,
+        onToolCall,
+        onDelta,
+        onDone,
+        abortSignal,
+      });
+      if (ok) return;
+    } catch (geminiErr: any) {
+      if (abortSignal?.aborted) return;
+      console.warn("Cross-provider Gemini fallback failed:", geminiErr);
+    }
+  }
+
+  if (groqKey) {
+    if (onReasoning) {
+      onReasoning("⚡ Auto-routing to your active Groq LPU engine...");
+    }
+    try {
+      const ok = await streamGroqChat({
+        groqKey,
+        modelId: "groq/deepseek-r1-distill-llama-70b",
+        systemPrompt,
+        messages,
+        currentQuery,
+        code,
+        language,
+        onReasoning,
+        onToolCall,
+        onDelta,
+        onDone,
+        abortSignal,
+      });
+      if (ok) return;
+    } catch (groqErr: any) {
+      if (abortSignal?.aborted) return;
+      console.warn("Cross-provider Groq fallback failed:", groqErr);
     }
   }
 

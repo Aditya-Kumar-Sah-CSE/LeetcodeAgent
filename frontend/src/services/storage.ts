@@ -183,6 +183,21 @@ export function isApiKeyConfigured(): boolean {
   return !!(getGeminiApiKey() || getGroqApiKey() || getOpenRouterApiKey() || _sessionApiKey);
 }
 
+export function isModelKeyConfigured(model?: { id: string; required_key?: string; tier?: string } | null): boolean {
+  if (!model) return false;
+  const reqKey = model.required_key || (
+    model.id.includes("gemini") ? "gemini" :
+    (model.id.includes("groq") || model.id.includes("llama-3") || model.id.includes("deepseek-r1-distill")) ? "groq" :
+    model.id.includes("local") || model.tier === "local" ? "none" :
+    "openrouter"
+  );
+  if (reqKey === "none") return true;
+  if (reqKey === "gemini") return Boolean(getGeminiApiKey());
+  if (reqKey === "groq") return Boolean(getGroqApiKey());
+  if (reqKey === "openrouter") return Boolean(getOpenRouterApiKey() || getApiKey());
+  return false;
+}
+
 // ─── GitHub Token & Repo Configuration ────────────────────
 
 export function getGithubToken(): string {

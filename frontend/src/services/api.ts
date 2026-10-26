@@ -20,6 +20,9 @@ import type {
 } from "../types";
 import {
   getApiKey,
+  getGeminiApiKey,
+  getGroqApiKey,
+  getOpenRouterApiKey,
   getModelId,
   saveSolutionLocal,
   getAllSolutionsLocal,
@@ -74,8 +77,8 @@ import { queryProblemBank, getDetailedProblemFallback } from "./problemBank";
 export const DEFAULT_MODELS: AIModel[] = [
   // ─── Fast / Low-Latency Tier (Easy & Quick Problems) ───
   {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash (Google AI Studio)",
+    id: "gemini-2.0-flash",
+    name: "Gemini 2.0 Flash (Google AI Studio)",
     provider: "Google",
     context_length: 1048576,
     is_free: true,
@@ -84,42 +87,30 @@ export const DEFAULT_MODELS: AIModel[] = [
     speed: "⚡ Ultra-Fast (<0.8s)",
     reasoning_power: "High",
     description: "Google's ultra-fast flagship multimodal model with generous free tier limits on Google AI Studio.",
+    required_key: "gemini",
+    required_key_name: "Google Gemini API Key",
+    key_url: "https://aistudio.google.com/app/apikey",
+    pricing_type: "100% Free (Google AI Studio)",
+    token_limit: "1,048,576 Tokens (1M Ctx)",
+    best_for: "Real-time coding hints, sliding window, graph algorithms",
   },
   {
-    id: "google/gemma-2-9b-it:free",
-    name: "Gemma 2 9B (Free)",
+    id: "gemini-1.5-flash",
+    name: "Gemini 1.5 Flash (Google AI Studio)",
     provider: "Google",
-    context_length: 8192,
+    context_length: 1048576,
     is_free: true,
     tier: "low",
-    specification: "Low Latency • 8K Context • Fast Logic Checks",
-    speed: "⚡ Fast (1.0s)",
-    reasoning_power: "Good",
-    description: "Lightweight and efficient code assistant for rapid problem solving.",
-  },
-  {
-    id: "meta-llama/llama-3.2-3b-instruct:free",
-    name: "Llama 3.2 3B Instruct (Free)",
-    provider: "Meta",
-    context_length: 131072,
-    is_free: true,
-    tier: "low",
-    specification: "Low Latency • 128K Context • Sub-second Latency",
-    speed: "⚡ Ultra-Fast (<0.6s)",
-    reasoning_power: "Good",
-    description: "Ultra-fast compact model for real-time intuition and complexity calculations.",
-  },
-  {
-    id: "qwen/qwen-2.5-coder-7b-instruct:free",
-    name: "Qwen 2.5 Coder 7B (Free)",
-    provider: "Qwen",
-    context_length: 32768,
-    is_free: true,
-    tier: "low",
-    specification: "Low Latency • 32K Context • Specialized Code Generation",
-    speed: "⚡ Fast (0.9s)",
+    specification: "Low Latency • 1M Context • Rock-Solid Stability",
+    speed: "⚡ Fast (~1.0s)",
     reasoning_power: "High",
-    description: "Code-specialized low latency model for instant syntax and error detection.",
+    description: "High-throughput low-latency model for rapid DSA code analysis.",
+    required_key: "gemini",
+    required_key_name: "Google Gemini API Key",
+    key_url: "https://aistudio.google.com/app/apikey",
+    pricing_type: "100% Free (Google AI Studio)",
+    token_limit: "1,048,576 Tokens (1M Ctx)",
+    best_for: "Instant syntax review and test case analysis",
   },
   {
     id: "groq/llama-3.1-8b-instant",
@@ -132,21 +123,33 @@ export const DEFAULT_MODELS: AIModel[] = [
     speed: "⚡ Instant (<0.3s)",
     reasoning_power: "Good",
     description: "Ultra-fast inference powered by Groq LPU chipsets, delivering rapid code insights.",
-  },
-  {
-    id: "liquid/lfm-2.5-2.6b:free",
-    name: "LFM 2.5 2.6B (Free)",
-    provider: "LiquidAI",
-    context_length: 32768,
-    is_free: true,
-    tier: "low",
-    specification: "Low Latency • 32K Context • Real-Time Stream",
-    speed: "⚡ Ultra-Fast (<0.5s)",
-    reasoning_power: "Medium",
-    description: "Ultra-fast low-latency neural coding model.",
+    required_key: "groq",
+    required_key_name: "Groq API Key",
+    key_url: "https://console.groq.com/keys",
+    pricing_type: "100% Free (Groq Tier)",
+    token_limit: "131,072 Tokens (128K Ctx)",
+    best_for: "Instant syntax hints, complexity calculations",
   },
 
   // ─── Balanced / Medium Tier (Optimal DSA & Coding) ───
+  {
+    id: "groq/llama-3.3-70b-versatile",
+    name: "Llama 3.3 70B Versatile (Groq LPU)",
+    provider: "Groq",
+    context_length: 131072,
+    is_free: true,
+    tier: "medium",
+    specification: "Balanced • 128K Context • 300+ Tokens/Sec LPU Speed",
+    speed: "⚡ Ultra-Fast (~0.4s • 300+ T/s)",
+    reasoning_power: "Very High",
+    description: "Groq LPU accelerated 70B model with blazing fast inference for optimal DSA logic.",
+    required_key: "groq",
+    required_key_name: "Groq API Key",
+    key_url: "https://console.groq.com/keys",
+    pricing_type: "100% Free (Groq Tier)",
+    token_limit: "131,072 Tokens (128K Ctx)",
+    best_for: "Medium LeetCode problems, clean bug-free code generation",
+  },
   {
     id: "openrouter/free",
     name: "OpenRouter Free Router (Auto Best Model)",
@@ -158,30 +161,12 @@ export const DEFAULT_MODELS: AIModel[] = [
     speed: "🚀 Normal (~1.5s)",
     reasoning_power: "Very High",
     description: "Automatically routes to the highest-performing available free model with 99.9% uptime.",
-  },
-  {
-    id: "meta-llama/llama-3.3-70b-instruct:free",
-    name: "Llama 3.3 70B Instruct (Free)",
-    provider: "Meta",
-    context_length: 131072,
-    is_free: true,
-    tier: "medium",
-    specification: "Balanced • 128K Context • 70B Flagship Intelligence",
-    speed: "🚀 Normal (~1.8s)",
-    reasoning_power: "Very High",
-    description: "Full-scale 70B reasoning powerhouse for Medium LeetCode problems and optimal DP proofs.",
-  },
-  {
-    id: "mistralai/mistral-small-3.1-24b-instruct:free",
-    name: "Mistral Small 24B (Free)",
-    provider: "Mistral",
-    context_length: 32768,
-    is_free: true,
-    tier: "medium",
-    specification: "Balanced • 32K Context • Precision Edge-Case Analysis",
-    speed: "🚀 Fast (~1.2s)",
-    reasoning_power: "Very High",
-    description: "Exceptional precision in catching off-by-one errors and pointer edge-cases.",
+    required_key: "openrouter",
+    required_key_name: "OpenRouter API Key",
+    key_url: "https://openrouter.ai/keys",
+    pricing_type: "Free Tier (Rate-Limited)",
+    token_limit: "131,072 Tokens (128K Ctx)",
+    best_for: "Reliable all-round problem solving",
   },
   {
     id: "qwen/qwen-2.5-coder-32b-instruct:free",
@@ -194,48 +179,54 @@ export const DEFAULT_MODELS: AIModel[] = [
     speed: "🚀 Normal (~1.6s)",
     reasoning_power: "Very High",
     description: "World-class coding benchmarks, ideal for writing complete bug-free solutions.",
+    required_key: "openrouter",
+    required_key_name: "OpenRouter API Key",
+    key_url: "https://openrouter.ai/keys",
+    pricing_type: "Free Tier (Rate-Limited)",
+    token_limit: "32,768 Tokens (32K Ctx)",
+    best_for: "Competitive coding, strict constraint compliance",
   },
   {
-    id: "google/gemma-2-27b-it:free",
-    name: "Gemma 2 27B (Free)",
-    provider: "Google",
-    context_length: 8192,
-    is_free: true,
-    tier: "medium",
-    specification: "Balanced • 8K Context • DeepMind Algorithmic Logic",
-    speed: "🚀 Fast (~1.4s)",
-    reasoning_power: "Very High",
-    description: "DeepMind architectural innovation with strong mathematical and algorithmic abilities.",
-  },
-  {
-    id: "groq/llama-3.3-70b-versatile",
-    name: "Llama 3.3 70B Versatile (Groq LPU)",
-    provider: "Groq",
+    id: "meta-llama/llama-3.3-70b-instruct:free",
+    name: "Llama 3.3 70B Instruct (Free)",
+    provider: "Meta",
     context_length: 131072,
     is_free: true,
     tier: "medium",
-    specification: "Balanced • 128K Context • 300+ Tokens/Sec LPU Speed",
-    speed: "⚡ Ultra-Fast (~0.5s)",
+    specification: "Balanced • 128K Context • 70B Flagship Intelligence",
+    speed: "🚀 Normal (~1.8s)",
     reasoning_power: "Very High",
-    description: "Groq LPU accelerated 70B model with blazing fast inference for optimal DSA logic.",
+    description: "Full-scale 70B reasoning powerhouse for Medium LeetCode problems and optimal DP proofs.",
+    required_key: "openrouter",
+    required_key_name: "OpenRouter API Key",
+    key_url: "https://openrouter.ai/keys",
+    pricing_type: "Free Tier (Rate-Limited)",
+    token_limit: "131,072 Tokens (128K Ctx)",
+    best_for: "Algorithmic explanation, edge cases",
   },
   {
-    id: "cohere/north-mini-code:free",
-    name: "North Mini Code (Free)",
-    provider: "Cohere",
+    id: "mistralai/mistral-small-3.1-24b-instruct:free",
+    name: "Mistral Small 24B (Free)",
+    provider: "Mistral",
     context_length: 32768,
     is_free: true,
     tier: "medium",
-    specification: "Balanced • 32K Context • Algorithmic Problem Solving",
-    speed: "🚀 Fast (~1.1s)",
-    reasoning_power: "High",
-    description: "Fast code synthesis and algorithmic pattern matching.",
+    specification: "Balanced • 32K Context • Precision Edge-Case Analysis",
+    speed: "🚀 Fast (~1.2s)",
+    reasoning_power: "Very High",
+    description: "Exceptional precision in catching off-by-one errors and pointer edge-cases.",
+    required_key: "openrouter",
+    required_key_name: "OpenRouter API Key",
+    key_url: "https://openrouter.ai/keys",
+    pricing_type: "Free Tier (Rate-Limited)",
+    token_limit: "32,768 Tokens (32K Ctx)",
+    best_for: "Pointer edge cases, off-by-one bugs",
   },
 
-  // ─── High Reasoning / Heavy Tier (Hard DP & Mathematical Proofs) ───
+  // ─── High Reasoning Tier (Hard DP & Mathematical Proofs) ───
   {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro (Google AI Studio)",
+    id: "gemini-1.5-pro",
+    name: "Gemini 1.5 Pro (Google AI Studio)",
     provider: "Google",
     context_length: 2097152,
     is_free: true,
@@ -244,6 +235,12 @@ export const DEFAULT_MODELS: AIModel[] = [
     speed: "🧠 Deep Think (~2.5s)",
     reasoning_power: "Maximum",
     description: "Google's most capable thinking model for complex Hard graphs, DP transitions, and mathematical induction.",
+    required_key: "gemini",
+    required_key_name: "Google Gemini API Key",
+    key_url: "https://aistudio.google.com/app/apikey",
+    pricing_type: "100% Free (Google AI Studio)",
+    token_limit: "2,097,152 Tokens (2M Ctx)",
+    best_for: "Hard DP transitions, complex recursion trees, mathematical induction",
   },
   {
     id: "groq/deepseek-r1-distill-llama-70b",
@@ -253,9 +250,15 @@ export const DEFAULT_MODELS: AIModel[] = [
     is_free: true,
     tier: "high",
     specification: "High Reasoning • 128K Context • Ultra-Fast Chain-of-Thought",
-    speed: "⚡ Rapid Deep Think (~0.8s)",
+    speed: "⚡ Rapid Deep Think (<0.8s)",
     reasoning_power: "Maximum",
     description: "DeepSeek R1 reasoning architecture accelerated by Groq LPU hardware for instant math proofs.",
+    required_key: "groq",
+    required_key_name: "Groq API Key",
+    key_url: "https://console.groq.com/keys",
+    pricing_type: "100% Free (Groq Tier)",
+    token_limit: "131,072 Tokens (128K Ctx)",
+    best_for: "Deep algorithmic reasoning, Hard problems, step-by-step thinking",
   },
   {
     id: "deepseek/deepseek-r1:free",
@@ -268,42 +271,12 @@ export const DEFAULT_MODELS: AIModel[] = [
     speed: "🧠 Deep Think (~3.0s)",
     reasoning_power: "Maximum",
     description: "Open reasoning model that outputs deep step-by-step thinking traces before coding.",
-  },
-  {
-    id: "deepseek/deepseek-chat:free",
-    name: "DeepSeek V3 671B MoE (Free)",
-    provider: "DeepSeek",
-    context_length: 65536,
-    is_free: true,
-    tier: "high",
-    specification: "High Reasoning • 64K Context • 671B MoE Supermodel",
-    speed: "🚀 Normal (~1.8s)",
-    reasoning_power: "Maximum",
-    description: "Massive 671-billion parameter Mixture of Experts architecture for comprehensive problem breakdown.",
-  },
-  {
-    id: "qwen/qwen-2.5-72b-instruct:free",
-    name: "Qwen 2.5 72B Instruct (Free)",
-    provider: "Qwen",
-    context_length: 65536,
-    is_free: true,
-    tier: "high",
-    specification: "High Reasoning • 64K Context • Flagship CP Heavyweight",
-    speed: "🚀 Normal (~2.0s)",
-    reasoning_power: "Maximum",
-    description: "Flagship 72B reasoning model dominating open competitive programming leaderboards.",
-  },
-  {
-    id: "nvidia/nemotron-3-ultra-550b-a55b:free",
-    name: "Nemotron 3 Ultra 550B (Free)",
-    provider: "NVIDIA",
-    context_length: 32768,
-    is_free: true,
-    tier: "high",
-    specification: "High Reasoning • 32K Context • 550B Multi-Step Architecture",
-    speed: "🚀 Normal (~2.2s)",
-    reasoning_power: "Maximum",
-    description: "550B ultra-large model from NVIDIA for intricate algorithmic problem solving.",
+    required_key: "openrouter",
+    required_key_name: "OpenRouter API Key",
+    key_url: "https://openrouter.ai/keys",
+    pricing_type: "Free Tier (Rate-Limited)",
+    token_limit: "65,536 Tokens (64K Ctx)",
+    best_for: "Hard problems, math induction, proof of correctness",
   },
 
   // ─── Autonomous Local Engine ───
@@ -315,9 +288,15 @@ export const DEFAULT_MODELS: AIModel[] = [
     is_free: true,
     tier: "local",
     specification: "Zero-Config • 100% Free • Works Offline • Instant Tools",
-    speed: "⚡ Instant (<0.2s)",
+    speed: "⚡ Instant (<0.1s)",
     reasoning_power: "High",
     description: "Built-in autonomous engine running directly in your browser. Requires zero API keys or external servers.",
+    required_key: "none",
+    required_key_name: "No API Key Required",
+    key_url: "",
+    pricing_type: "100% Free & Offline",
+    token_limit: "Offline / Infinite",
+    best_for: "Offline usage, instant explanation without keys or network limits",
   },
 ];
 
@@ -702,51 +681,51 @@ export async function fetchModels(apiKey?: string): Promise<AIModel[]> {
   try {
     const params = apiKey ? `?api_key=${encodeURIComponent(apiKey)}` : "";
     const data = await apiFetch<{ models: AIModel[] }>(`/models${params}`);
-    return data.models;
+    if (data && Array.isArray(data.models) && data.models.length > 0) {
+      return data.models.map((m) => {
+        const isGemini = m.id.includes("gemini") || m.provider?.toLowerCase().includes("google");
+        const isGroq = m.id.startsWith("groq/") || m.provider?.toLowerCase().includes("groq");
+        const isLocal = m.id.includes("local") || m.tier === "local";
+
+        const reqKey = (m.required_key as any) || (isGemini ? "gemini" : isGroq ? "groq" : isLocal ? "none" : "openrouter");
+        const reqKeyName = m.required_key_name || (
+          reqKey === "gemini" ? "Google Gemini API Key" :
+          reqKey === "groq" ? "Groq API Key" :
+          reqKey === "none" ? "No API Key Required" : "OpenRouter API Key"
+        );
+        const keyUrl = m.key_url || (
+          reqKey === "gemini" ? "https://aistudio.google.com/app/apikey" :
+          reqKey === "groq" ? "https://console.groq.com/keys" :
+          reqKey === "none" ? "" : "https://openrouter.ai/keys"
+        );
+        const pricingType = m.pricing_type || (
+          reqKey === "gemini" ? "100% Free (Google AI Studio)" :
+          reqKey === "groq" ? "100% Free (Groq Tier)" :
+          reqKey === "none" ? "100% Free & Offline" : "Free Tier (Rate-Limited)"
+        );
+        const tokenLimit = m.token_limit || (
+          m.context_length ? `${(m.context_length / 1000).toFixed(0)}K Tokens` : "32K Tokens"
+        );
+
+        return {
+          ...m,
+          required_key: reqKey,
+          required_key_name: reqKeyName,
+          key_url: keyUrl,
+          pricing_type: pricingType,
+          token_limit: tokenLimit,
+        };
+      });
+    }
+    return DEFAULT_MODELS;
   } catch {
     return DEFAULT_MODELS;
   }
 }
 
-// ─── AI Agent ───────────────────────────────────────────────
+// ─── Stage Prompt Generators ────────────────────────────────
 
-export async function runAgentStage(request: AIRequest): Promise<AIResponse> {
-  // 1. Try FastAPI backend first
-  try {
-    const res = await apiFetch<AIResponse>("/agent/run", {
-      method: "POST",
-      body: JSON.stringify(request),
-    });
-    if (res && (res.content || res.code)) {
-      return res;
-    }
-  } catch (backendErr) {
-    console.warn("Backend /agent/run unavailable, trying direct execution:", backendErr);
-  }
-
-  // 2. If client has an OpenRouter API key, call OpenRouter directly
-  const clientKey = request.api_key || getApiKey();
-  if (clientKey) {
-    try {
-      return await runOpenRouterDirect(request, clientKey);
-    } catch (llmErr) {
-      console.warn("Direct OpenRouter call failed, falling back to Algorithmic Engine:", llmErr);
-    }
-  }
-
-  // 3. Fallback to Autonomous Algorithmic Engine (offline / keyless guarantee)
-  return generateClientAlgorithmicSolution(request);
-}
-
-/**
- * Direct browser call to OpenRouter API for standalone client-side execution.
- */
-async function runOpenRouterDirect(
-  req: AIRequest,
-  apiKey: string
-): Promise<AIResponse> {
-  const model = req.model_id || getModelId() || "openrouter/free";
-
+function getStagePrompt(req: AIRequest): string {
   const stagePrompts: Record<string, string> = {
     understand: `Analyze this LeetCode problem:
 Title: ${req.problem_title}
@@ -794,7 +773,137 @@ Explain:
 4. Space Complexity: O(...) and why`,
   };
 
-  const userPrompt = stagePrompts[req.stage] || stagePrompts.generate;
+  return stagePrompts[req.stage] || stagePrompts.generate;
+}
+
+/**
+ * Direct browser call to Google Gemini API (Google AI Studio - 100% Free).
+ */
+async function runGeminiDirect(
+  req: AIRequest,
+  apiKey: string,
+  modelId?: string
+): Promise<AIResponse> {
+  const cleanModel = (modelId || "gemini-2.0-flash").replace(/^models\//, "").replace(/^google\//, "");
+  const mName = cleanModel.startsWith("gemini") ? cleanModel : "gemini-2.0-flash";
+  const userPrompt = getStagePrompt(req);
+  const systemPrompt =
+    "You are an expert algorithmic competitive programmer and LeetCode coach. Provide concise, rigorous, and optimal analysis.";
+
+  const contents = [
+    ...(req.previous_context ? [{ role: "user", parts: [{ text: `Previous context:\n${req.previous_context}` }] }] : []),
+    { role: "user", parts: [{ text: userPrompt }] },
+  ];
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `Google Gemini HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  let extractedCode: string | null = null;
+  const codeBlockMatch = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) {
+    extractedCode = codeBlockMatch[1].trim();
+  }
+  if (req.stage === "generate" && !extractedCode) {
+    const fallbackAlgo = generateClientAlgorithmicSolution(req);
+    extractedCode = fallbackAlgo.code;
+  }
+
+  return {
+    stage: req.stage,
+    content: rawText,
+    code: extractedCode,
+    model_used: mName,
+    citations: [],
+    error: null,
+  };
+}
+
+/**
+ * Direct browser call to Groq LPU API (<300ms ultra-fast inference).
+ */
+async function runGroqDirect(
+  req: AIRequest,
+  apiKey: string,
+  modelId?: string
+): Promise<AIResponse> {
+  const actualModel = (modelId || "groq/llama-3.3-70b-versatile").replace(/^groq\//, "");
+  const userPrompt = getStagePrompt(req);
+  const systemPrompt =
+    "You are an expert algorithmic competitive programmer and LeetCode coach. Provide concise, rigorous, and optimal analysis.";
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: actualModel,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...(req.previous_context ? [{ role: "user", content: `Previous context:\n${req.previous_context}` }] : []),
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.2,
+      max_tokens: 2048,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `Groq HTTP ${res.status}: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.choices?.[0]?.message?.content || "";
+
+  let extractedCode: string | null = null;
+  const codeBlockMatch = rawText.match(/```(?:[a-zA-Z0-9_-]+)?\s*([\s\S]*?)```/);
+  if (codeBlockMatch) {
+    extractedCode = codeBlockMatch[1].trim();
+  }
+  if (req.stage === "generate" && !extractedCode) {
+    const fallbackAlgo = generateClientAlgorithmicSolution(req);
+    extractedCode = fallbackAlgo.code;
+  }
+
+  return {
+    stage: req.stage,
+    content: rawText,
+    code: extractedCode,
+    model_used: actualModel,
+    citations: [],
+    error: null,
+  };
+}
+
+/**
+ * Direct browser call to OpenRouter API for standalone client-side execution.
+ */
+async function runOpenRouterDirect(
+  req: AIRequest,
+  apiKey: string
+): Promise<AIResponse> {
+  const model = req.model_id || getModelId() || "openrouter/free";
+  const userPrompt = getStagePrompt(req);
   const systemPrompt =
     "You are an expert algorithmic competitive programmer and LeetCode coach. Provide concise, rigorous, and optimal analysis.";
 
@@ -803,7 +912,7 @@ Explain:
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": window.location.origin,
+      "HTTP-Referer": typeof window !== "undefined" ? window.location.origin : "http://localhost:5173",
       "X-Title": "LeetCode AI Agent",
     },
     body: JSON.stringify({
@@ -849,6 +958,71 @@ Explain:
     citations: [],
     error: null,
   };
+}
+
+// ─── AI Agent ───────────────────────────────────────────────
+
+export async function runAgentStage(request: AIRequest): Promise<AIResponse> {
+  // 1. Try FastAPI backend first if available
+  try {
+    const res = await apiFetch<AIResponse>("/agent/run", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+    if (res && (res.content || res.code)) {
+      return res;
+    }
+  } catch (backendErr) {
+    console.warn("Backend /agent/run unavailable, trying direct browser execution:", backendErr);
+  }
+
+  const geminiKey = getGeminiApiKey();
+  const groqKey = getGroqApiKey();
+  const openRouterKey = getOpenRouterApiKey();
+  const activeModel = request.model_id || getModelId() || "gemini-2.0-flash";
+
+  // 2. Direct Google Gemini call if user configured Gemini Key
+  if (geminiKey && (activeModel.includes("gemini") || (!groqKey && !openRouterKey))) {
+    try {
+      return await runGeminiDirect(request, geminiKey, activeModel);
+    } catch (geminiErr) {
+      console.warn("Direct Gemini execution failed, trying alternative keys:", geminiErr);
+    }
+  }
+
+  // 3. Direct Groq LPU call if user configured Groq Key
+  if (groqKey && (activeModel.startsWith("groq/") || (!geminiKey && !openRouterKey))) {
+    try {
+      return await runGroqDirect(request, groqKey, activeModel);
+    } catch (groqErr) {
+      console.warn("Direct Groq execution failed, trying alternative keys:", groqErr);
+    }
+  }
+
+  // 4. Direct OpenRouter call if user configured OpenRouter Key
+  const clientKey = request.api_key || openRouterKey;
+  if (clientKey) {
+    try {
+      return await runOpenRouterDirect(request, clientKey);
+    } catch (llmErr) {
+      console.warn("Direct OpenRouter call failed, trying secondary providers:", llmErr);
+    }
+  }
+
+  // 5. Cross-provider fallback to whichever key exists
+  if (geminiKey) {
+    try {
+      return await runGeminiDirect(request, geminiKey, "gemini-2.0-flash");
+    } catch {}
+  }
+  if (groqKey) {
+    try {
+      return await runGroqDirect(request, groqKey, "groq/llama-3.3-70b-versatile");
+    } catch {}
+  }
+
+  // 6. Final guaranteed fallback to Autonomous Algorithmic Engine (offline / keyless guarantee)
+  return generateClientAlgorithmicSolution(request);
 }
 
 // ─── Search ─────────────────────────────────────────────────

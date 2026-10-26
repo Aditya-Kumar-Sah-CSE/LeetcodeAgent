@@ -34,6 +34,7 @@ import {
   setActiveProvider,
   getModelId,
   setModelId,
+  isModelKeyConfigured,
   getUsername,
   setUsername,
   getLanguage,
@@ -94,7 +95,10 @@ export default function SettingsPage() {
     fetchModels().then((m) => {
       setModels(m);
       if (!selectedModel && m.length > 0) {
-        setSelectedModel(m[0].id);
+        const readyModel = m.find((mod) => isModelKeyConfigured(mod));
+        const chosen = readyModel ? readyModel.id : m[0].id;
+        setSelectedModel(chosen);
+        setModelId(chosen);
       }
     });
 
@@ -482,6 +486,11 @@ export default function SettingsPage() {
                 type={showGeminiKey ? "text" : "password"}
                 value={geminiKeyInput}
                 onChange={(e) => setGeminiKeyInput(e.target.value)}
+                onBlur={() => {
+                  if (geminiKeyInput.trim()) {
+                    setGeminiApiKey(geminiKeyInput.trim());
+                  }
+                }}
                 placeholder="AIzaSy..."
                 className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
                 style={{
@@ -546,6 +555,11 @@ export default function SettingsPage() {
                 type={showGroqKey ? "text" : "password"}
                 value={groqKeyInput}
                 onChange={(e) => setGroqKeyInput(e.target.value)}
+                onBlur={() => {
+                  if (groqKeyInput.trim()) {
+                    setGroqApiKey(groqKeyInput.trim());
+                  }
+                }}
                 placeholder="gsk_..."
                 className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
                 style={{
@@ -610,6 +624,11 @@ export default function SettingsPage() {
                 type={showOpenRouterKey ? "text" : "password"}
                 value={openRouterKeyInput}
                 onChange={(e) => setOpenRouterKeyInput(e.target.value)}
+                onBlur={() => {
+                  if (openRouterKeyInput.trim()) {
+                    setOpenRouterApiKey(openRouterKeyInput.trim());
+                  }
+                }}
                 placeholder="sk-or-v1-..."
                 className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
                 style={{
@@ -744,53 +763,105 @@ export default function SettingsPage() {
           <optgroup label="⚡ Fast / Low-Latency Tier (Easy & Rapid Feedback)">
             {models
               .filter((m) => m.tier === "low")
-              .map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Low] {m.name} • {m.speed}
-                </option>
-              ))}
+              .map((m) => {
+                const ready = isModelKeyConfigured(m);
+                return (
+                  <option key={m.id} value={m.id}>
+                    [Low] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key_name || "Key"}`} • {m.pricing_type || "Free"} ({m.speed})
+                  </option>
+                );
+              })}
           </optgroup>
           <optgroup label="🚀 Balanced / Medium Tier (Optimal DSA & Coding)">
             {models
               .filter((m) => m.tier === "medium")
-              .map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Med] {m.name} • {m.speed}
-                </option>
-              ))}
+              .map((m) => {
+                const ready = isModelKeyConfigured(m);
+                return (
+                  <option key={m.id} value={m.id}>
+                    [Med] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key_name || "Key"}`} • {m.pricing_type || "Free"} ({m.speed})
+                  </option>
+                );
+              })}
           </optgroup>
           <optgroup label="🧠 High Reasoning / Heavy Tier (Hard DP & Proofs)">
             {models
               .filter((m) => m.tier === "high")
-              .map((m) => (
-                <option key={m.id} value={m.id}>
-                  [High] {m.name} • {m.speed}
-                </option>
-              ))}
+              .map((m) => {
+                const ready = isModelKeyConfigured(m);
+                return (
+                  <option key={m.id} value={m.id}>
+                    [High] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key_name || "Key"}`} • {m.pricing_type || "Free"} ({m.speed})
+                  </option>
+                );
+              })}
           </optgroup>
           <optgroup label="🛡️ Autonomous Local Engine (Offline / Zero-Config)">
             {models
               .filter((m) => m.tier === "local")
               .map((m) => (
                 <option key={m.id} value={m.id}>
-                  [Local] {m.name}
+                  [Local] {m.name} • ✓ Offline (Zero-Config)
                 </option>
               ))}
           </optgroup>
         </select>
 
-        {/* Selected Model Detailed Specification Card */}
+        {/* Selected Model Detailed Specification Card with Upfront Alert */}
         {(() => {
           const activeObj = models.find((m) => m.id === selectedModel);
           if (!activeObj) return null;
+          const isReady = isModelKeyConfigured(activeObj);
           return (
             <div
-              className="p-3.5 rounded-xl border space-y-2 text-xs"
+              className="p-4 rounded-xl border space-y-3 text-xs"
               style={{
                 background: "var(--color-bg-primary)",
-                borderColor: "var(--color-border-subtle)",
+                borderColor: isReady ? "var(--color-border-subtle)" : "rgba(245, 158, 11, 0.4)",
               }}
             >
+              {/* Upfront Key Alert if not ready */}
+              {!isReady && (
+                <div className="p-3 rounded-lg bg-amber-500/15 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-400 text-sm mt-0.5">⚠️</span>
+                    <div>
+                      <div className="font-bold text-amber-200 text-xs">
+                        Requires {activeObj.required_key_name || "API Key"} for Live Generation
+                      </div>
+                      <p className="text-[11px] text-amber-300/80 mt-0.5">
+                        Live requests will automatically fallback to the local heuristics engine if this key is missing. Free keys are available from official portals.
+                      </p>
+                    </div>
+                  </div>
+                  {activeObj.key_url && (
+                    <a
+                      href={activeObj.key_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-400 hover:bg-amber-300 text-black flex items-center justify-center gap-1.5 shrink-0 transition-transform hover:scale-105 shadow-sm"
+                    >
+                      <span>Get Free Key</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Ready Badge if configured */}
+              {isReady && activeObj.tier !== "local" && (
+                <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-emerald-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>✓ API Key Connected: Ready for live high-speed generation</span>
+                  </span>
+                  <span className="text-[10px] text-emerald-400/80 font-mono">
+                    Provider: {activeObj.required_key_name || "Active"}
+                  </span>
+                </div>
+              )}
+
+              {/* Header row */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span
@@ -806,15 +877,51 @@ export default function SettingsPage() {
                   >
                     {(activeObj.tier || "BALANCED").toUpperCase()} TIER
                   </span>
-                  <span className="font-semibold text-white">{activeObj.name}</span>
+                  <span className="font-semibold text-white text-sm">{activeObj.name}</span>
                 </div>
-                <div className="flex items-center gap-3 text-muted text-[11px]">
-                  <span>Speed: <strong className="text-white">{activeObj.speed || "Normal"}</strong></span>
-                  <span>Reasoning: <strong className="text-white">{activeObj.reasoning_power || "High"}</strong></span>
-                  <span>Context: <strong className="text-white">{Math.round((activeObj.context_length || 32768) / 1024)}K</strong></span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                    {activeObj.pricing_type || "Free Tier"}
+                  </span>
                 </div>
               </div>
-              <p className="text-secondary text-[11px] leading-relaxed">
+
+              {/* Specs Pills Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                <div className="p-2 rounded-lg bg-black/20 border border-white/5">
+                  <div className="text-[10px] text-muted">Required Key</div>
+                  <div className="font-semibold text-white text-xs truncate">
+                    {activeObj.required_key_name || "None (Offline)"}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-black/20 border border-white/5">
+                  <div className="text-[10px] text-muted">Token / Ctx Limit</div>
+                  <div className="font-semibold text-cyan-300 text-xs">
+                    {activeObj.token_limit || `${Math.round((activeObj.context_length || 32768) / 1024)}K Tokens`}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-black/20 border border-white/5">
+                  <div className="text-[10px] text-muted">Inference Speed</div>
+                  <div className="font-semibold text-emerald-300 text-xs">
+                    {activeObj.speed || "Ultra-fast"}
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg bg-black/20 border border-white/5">
+                  <div className="text-[10px] text-muted">Reasoning Power</div>
+                  <div className="font-semibold text-purple-300 text-xs">
+                    {activeObj.reasoning_power || "Optimal"}
+                  </div>
+                </div>
+              </div>
+
+              {activeObj.best_for && (
+                <div className="text-[11px] text-gray-300 flex items-center gap-1.5 pt-0.5">
+                  <span className="text-cyan-400 font-semibold">Recommended for:</span>
+                  <span>{activeObj.best_for}</span>
+                </div>
+              )}
+
+              <p className="text-secondary text-[11px] leading-relaxed pt-1 border-t border-white/5">
                 {activeObj.specification ? `${activeObj.specification} — ` : ""}{activeObj.description}
               </p>
             </div>

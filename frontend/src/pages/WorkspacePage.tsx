@@ -50,6 +50,8 @@ import {
   getLanguage,
   setLanguage as savePreferredLang,
   getModelId,
+  setModelId,
+  isModelKeyConfigured,
   getApiKey,
   addActivity,
   getDraftCode,
@@ -323,8 +325,14 @@ export default function WorkspacePage() {
 
     fetchModels().then((m) => {
       setModels(m);
-      if (!selectedModel && m.length > 0) {
-        setSelectedModel(m[0].id);
+      const savedModel = getModelId();
+      if (savedModel && m.some((mod) => mod.id === savedModel)) {
+        setSelectedModel(savedModel);
+      } else {
+        const readyModel = m.find((mod) => isModelKeyConfigured(mod));
+        const chosen = readyModel ? readyModel.id : (m[0]?.id || "gemini-2.0-flash");
+        setSelectedModel(chosen);
+        setModelId(chosen);
       }
     });
   }, []);
@@ -735,7 +743,11 @@ export default function WorkspacePage() {
           {/* Model Selector (Hidden on extra small screens) */}
           <select
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
+            onChange={(e) => {
+              const newModel = e.target.value;
+              setSelectedModel(newModel);
+              setModelId(newModel);
+            }}
             className="hidden sm:block px-2.5 py-1.5 text-xs font-medium rounded-lg cursor-pointer max-w-[240px] truncate border"
             title="Active Model & Reasoning Tier"
             style={{
@@ -745,30 +757,39 @@ export default function WorkspacePage() {
             }}
           >
             <optgroup label="⚡ Fast / Low-Latency Tier (<1.0s)">
-              {models.filter((m) => m.tier === "low").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Low] {m.name}
-                </option>
-              ))}
+              {models.filter((m) => m.tier === "low").map((m) => {
+                const ready = isModelKeyConfigured(m);
+                return (
+                  <option key={m.id} value={m.id}>
+                    [Low] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key_name || "Key"}`}
+                  </option>
+                );
+              })}
             </optgroup>
             <optgroup label="🚀 Balanced / Medium Tier (Optimal DSA)">
-              {models.filter((m) => m.tier === "medium").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Med] {m.name}
-                </option>
-              ))}
+              {models.filter((m) => m.tier === "medium").map((m) => {
+                const ready = isModelKeyConfigured(m);
+                return (
+                  <option key={m.id} value={m.id}>
+                    [Med] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key_name || "Key"}`}
+                  </option>
+                );
+              })}
             </optgroup>
             <optgroup label="🧠 High Reasoning Tier (Hard DP & Proofs)">
-              {models.filter((m) => m.tier === "high").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [High] {m.name}
-                </option>
-              ))}
+              {models.filter((m) => m.tier === "high").map((m) => {
+                const ready = isModelKeyConfigured(m);
+                return (
+                  <option key={m.id} value={m.id}>
+                    [High] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key_name || "Key"}`}
+                  </option>
+                );
+              })}
             </optgroup>
             <optgroup label="🛡️ Autonomous Local Engine">
               {models.filter((m) => m.tier === "local").map((m) => (
                 <option key={m.id} value={m.id}>
-                  [Local] {m.name}
+                  [Local] {m.name} • ✓ Offline
                 </option>
               ))}
             </optgroup>
@@ -1089,6 +1110,11 @@ export default function WorkspacePage() {
                   problem={problem}
                   code={code}
                   language={language}
+                  selectedModel={selectedModel}
+                  onModelChange={(newModel) => {
+                    setSelectedModel(newModel);
+                    setModelId(newModel);
+                  }}
                   onApplyCode={(newCode) => {
                     handleCodeChange(newCode);
                     showToast("Code applied to editor!");

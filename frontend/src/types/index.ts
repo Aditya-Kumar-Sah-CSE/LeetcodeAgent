@@ -84,6 +84,12 @@ export interface AIModel {
   specification?: string;
   speed?: string;
   reasoning_power?: string;
+  required_key?: "gemini" | "groq" | "openrouter" | "none";
+  required_key_name?: string;
+  key_url?: string;
+  pricing_type?: string;
+  token_limit?: string;
+  best_for?: string;
 }
 
 export interface AIRequest {

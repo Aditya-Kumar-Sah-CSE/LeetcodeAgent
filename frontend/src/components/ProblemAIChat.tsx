@@ -22,6 +22,7 @@ import {
   Key,
   X,
   Zap,
+  Info,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -44,7 +45,10 @@ import {
   getGroqApiKey,
   setGroqApiKey,
   getOpenRouterApiKey,
+  setOpenRouterApiKey,
+  getApiKey,
   setActiveProvider,
+  isModelKeyConfigured,
 } from "../services/storage";
 import { fetchModels } from "../services/api";
 
@@ -53,6 +57,8 @@ interface ProblemAIChatProps {
   code: string;
   language: SupportedLanguage;
   onApplyCode?: (newCode: string) => void;
+  selectedModel?: string;
+  onModelChange?: (modelId: string) => void;
 }
 
 export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
@@ -60,12 +66,22 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   code,
   language,
   onApplyCode,
+  selectedModel: propSelectedModel,
+  onModelChange,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [models, setModels] = useState<AIModel[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>(getModelId() || "openrouter/free");
+  const [selectedModel, setSelectedModel] = useState<string>(
+    () => propSelectedModel || getModelId() || "gemini-2.0-flash"
+  );
+
+  useEffect(() => {
+    if (propSelectedModel && propSelectedModel !== selectedModel) {
+      setSelectedModel(propSelectedModel);
+    }
+  }, [propSelectedModel]);
   const [syncedToGithub, setSyncedToGithub] = useState(false);
   const [syncingGit, setSyncingGit] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -75,10 +91,11 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
 
   // Quick API Key Modal & Status States
   const [showKeyModal, setShowKeyModal] = useState(false);
-  const [keyModalProvider, setKeyModalProvider] = useState<"gemini" | "groq">("gemini");
+  const [keyModalProvider, setKeyModalProvider] = useState<"gemini" | "groq" | "openrouter">("gemini");
   const [keyModalInput, setKeyModalInput] = useState(getGeminiApiKey());
   const [keyModalStatus, setKeyModalStatus] = useState<string | null>(null);
   const [keyModalLoading, setKeyModalLoading] = useState(false);
+  const [showModelSpecsModal, setShowModelSpecsModal] = useState(false);
 
   const [hasGeminiKey, setHasGeminiKey] = useState(() => Boolean(getGeminiApiKey()));
   const [hasGroqKey, setHasGroqKey] = useState(() => Boolean(getGroqApiKey()));
@@ -100,13 +117,13 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           setGeminiApiKey(k);
           setActiveProvider("gemini");
           setHasGeminiKey(true);
-          setKeyModalStatus("success: 🟢 Google Gemini API Connected!");
+          setKeyModalStatus("success: 🟢 Google Gemini API Connected & Verified!");
           setTimeout(() => setShowKeyModal(false), 1200);
         } else {
           const err = await res.json().catch(() => ({}));
           setKeyModalStatus(`error: ${err.error?.message || "Invalid Google Gemini Key"}`);
         }
-      } else {
+      } else if (keyModalProvider === "groq") {
         const res = await fetch("https://api.groq.com/openai/v1/models", {
           headers: { Authorization: `Bearer ${k}` },
         });
@@ -114,12 +131,18 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           setGroqApiKey(k);
           setActiveProvider("groq");
           setHasGroqKey(true);
-          setKeyModalStatus("success: 🟢 Groq LPU Connected!");
+          setKeyModalStatus("success: 🟢 Groq LPU Connected & Verified!");
           setTimeout(() => setShowKeyModal(false), 1200);
         } else {
           const err = await res.json().catch(() => ({}));
           setKeyModalStatus(`error: ${err.error?.message || "Invalid Groq Key"}`);
         }
+      } else {
+        setOpenRouterApiKey(k);
+        setActiveProvider("openrouter");
+        setHasOpenRouterKey(true);
+        setKeyModalStatus("success: 🟢 OpenRouter API Key Saved!");
+        setTimeout(() => setShowKeyModal(false), 1200);
       }
     } catch (e: any) {
       setKeyModalStatus(`error: ${e.message || "Network error"}`);
@@ -194,8 +217,15 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   useEffect(() => {
     fetchModels().then((m) => {
       setModels(m);
-      if (!selectedModel && m.length > 0) {
-        setSelectedModel(m[0].id);
+      const curr = propSelectedModel || getModelId();
+      if (curr && m.some((mod) => mod.id === curr)) {
+        setSelectedModel(curr);
+      } else {
+        const readyModel = m.find((mod) => isModelKeyConfigured(mod));
+        const chosen = readyModel ? readyModel.id : (m[0]?.id || "gemini-2.0-flash");
+        setSelectedModel(chosen);
+        setModelId(chosen);
+        onModelChange?.(chosen);
       }
     });
   }, []);
@@ -252,6 +282,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   const handleModelChange = (id: string) => {
     setSelectedModel(id);
     setModelId(id);
+    onModelChange?.(id);
   };
 
   // Dynamic contextual suggestions based on problem statement and active code
@@ -516,41 +547,67 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           )}
 
           {/* Model Switcher */}
-          <select
-            value={selectedModel}
-            onChange={(e) => handleModelChange(e.target.value)}
-            className="text-[11px] px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-gray-200 cursor-pointer max-w-[160px] sm:max-w-[210px] truncate"
-            title="Active Model & Reasoning Tier"
-          >
-            <optgroup label="⚡ Fast / Low (<1.0s)">
-              {models.filter((m) => m.tier === "low").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Low] {m.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="🚀 Balanced / Medium (Optimal DSA)">
-              {models.filter((m) => m.tier === "medium").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Med] {m.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="🧠 High Reasoning (DP & Proofs)">
-              {models.filter((m) => m.tier === "high").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [High] {m.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="🛡️ Autonomous Local Engine">
-              {models.filter((m) => m.tier === "local").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Local] {m.name}
-                </option>
-              ))}
-            </optgroup>
-          </select>
+          <div className="flex items-center gap-1">
+            <select
+              value={selectedModel}
+              onChange={(e) => handleModelChange(e.target.value)}
+              className="text-[11px] px-2 py-1 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-gray-200 cursor-pointer max-w-[170px] sm:max-w-[220px] truncate"
+              title="Active Model & Reasoning Tier"
+            >
+              <optgroup label="⚡ Fast / Low-Latency Tier (<1.0s)">
+                {models
+                  .filter((m) => m.tier === "low")
+                  .map((m) => {
+                    const ready = isModelKeyConfigured(m);
+                    return (
+                      <option key={m.id} value={m.id}>
+                        [Low] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key === "gemini" ? "Gemini" : m.required_key === "groq" ? "Groq" : "Key"}`}
+                      </option>
+                    );
+                  })}
+              </optgroup>
+              <optgroup label="🚀 Balanced / Medium Tier (Optimal DSA)">
+                {models
+                  .filter((m) => m.tier === "medium")
+                  .map((m) => {
+                    const ready = isModelKeyConfigured(m);
+                    return (
+                      <option key={m.id} value={m.id}>
+                        [Med] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key === "groq" ? "Groq" : m.required_key === "openrouter" ? "OpenRouter" : "Key"}`}
+                      </option>
+                    );
+                  })}
+              </optgroup>
+              <optgroup label="🧠 High Reasoning Tier (Hard DP & Proofs)">
+                {models
+                  .filter((m) => m.tier === "high")
+                  .map((m) => {
+                    const ready = isModelKeyConfigured(m);
+                    return (
+                      <option key={m.id} value={m.id}>
+                        [High] {m.name} • {ready ? "✓ Ready" : `⚠️ Needs ${m.required_key === "gemini" ? "Gemini" : m.required_key === "groq" ? "Groq" : "Key"}`}
+                      </option>
+                    );
+                  })}
+              </optgroup>
+              <optgroup label="🛡️ Autonomous Local Engine">
+                {models
+                  .filter((m) => m.tier === "local")
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      [Local] {m.name} • 100% Offline (No Key)
+                    </option>
+                  ))}
+              </optgroup>
+            </select>
+            <button
+              onClick={() => setShowModelSpecsModal(true)}
+              className="p-1 rounded-md text-muted hover:text-cyan-400 hover:bg-white/5 cursor-pointer"
+              title="View Model Specs, API Key, Free Tier & Token Limits"
+            >
+              <Info size={13} />
+            </button>
+          </div>
 
           {/* Sync / Push to GitHub */}
           <button
@@ -631,28 +688,201 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
         </span>
       </div>
 
-      {/* Missing Key Warning Banner */}
-      {!hasAnyKey && (
-        <div className="mx-3 mt-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={15} className="text-amber-400 shrink-0" />
-            <span className="text-amber-200 text-[11px]">
-              <strong>Live AI Offline</strong>: Connect your free Google Gemini API key for true DeepSeek R1 & Gemini 2.5 streaming responses.
-            </span>
+      {/* Upfront Model Status & API Key Alert Banner */}
+      {(() => {
+        const curModel = models.find((m) => m.id === selectedModel) || models[0];
+        if (!curModel) return null;
+        const isReady = isModelKeyConfigured(curModel);
+
+        if (!isReady) {
+          return (
+            <div className="mx-2 sm:mx-3 mt-2 p-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border border-amber-500/40 text-xs shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-fadeIn shrink-0">
+              <div className="flex items-start gap-2 min-w-0">
+                <AlertTriangle size={16} className="text-amber-400 mt-0.5 shrink-0 animate-bounce" />
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 font-bold text-white text-[11px]">
+                    <span className="truncate">{curModel.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-200 border border-amber-500/50 shrink-0">
+                      ⚠️ Needs {curModel.required_key_name || "API Key"}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 shrink-0">
+                      {curModel.pricing_type || "Free Tier"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] text-amber-200/90 mt-0.5">
+                    <span>Token Limit: <strong>{curModel.token_limit || "128K Ctx"}</strong></span>
+                    <span>• Speed: <strong>{curModel.speed || "Fast"}</strong></span>
+                    {curModel.best_for && <span className="hidden md:inline">• {curModel.best_for}</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                {curModel.key_url && (
+                  <a
+                    href={curModel.key_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 text-[10px] font-semibold rounded-md bg-white/10 hover:bg-white/20 text-white border border-white/20 flex items-center gap-1 transition-all"
+                  >
+                    <span>Get Free Key</span>
+                    <ExternalLink size={10} />
+                  </a>
+                )}
+                <button
+                  onClick={() => {
+                    setKeyModalProvider(
+                      curModel.required_key === "groq"
+                        ? "groq"
+                        : curModel.required_key === "openrouter"
+                        ? "openrouter"
+                        : "gemini"
+                    );
+                    setShowKeyModal(true);
+                  }}
+                  className="px-2.5 py-1 text-[10px] font-bold rounded-md bg-amber-400 hover:bg-amber-300 text-black shadow-sm cursor-pointer transition-transform hover:scale-105"
+                >
+                  Connect Key
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="mx-2 sm:mx-3 mt-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs flex flex-wrap items-center justify-between gap-1 shrink-0 animate-fadeIn">
+            <div className="flex items-center gap-2 text-[11px] min-w-0 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="font-semibold text-emerald-300 truncate">{curModel.name}</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-200 font-mono shrink-0">
+                {curModel.pricing_type || "100% Free"}
+              </span>
+              <span className="text-[10px] text-gray-300 font-mono hidden sm:inline shrink-0">
+                • {curModel.token_limit || "128K Ctx"}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowModelSpecsModal(true)}
+              className="text-[10px] text-muted hover:text-white flex items-center gap-1 cursor-pointer shrink-0 ml-auto"
+            >
+              <Info size={11} />
+              <span>View Specs</span>
+            </button>
           </div>
-          <button
-            onClick={() => setShowKeyModal(true)}
-            className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-[10px] cursor-pointer shrink-0 transition-transform hover:scale-105"
+        );
+      })()}
+
+      {/* Model Specifications & API Keys Modal */}
+      {showModelSpecsModal && (() => {
+        const cur = models.find((m) => m.id === selectedModel) || models[0];
+        if (!cur) return null;
+        const ready = isModelKeyConfigured(cur);
+        return (
+          <div
+            className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 animate-fadeIn"
+            onClick={() => setShowModelSpecsModal(false)}
           >
-            Connect Key (1-Click)
-          </button>
-        </div>
-      )}
+            <div
+              className="w-full max-w-lg rounded-2xl border p-4 shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto"
+              style={{
+                background: "var(--color-bg-secondary)",
+                borderColor: "var(--color-border)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b pb-2.5" style={{ borderColor: "var(--color-border-subtle)" }}>
+                <div className="flex items-center gap-2">
+                  <Info size={17} className="text-cyan-400" />
+                  <h3 className="text-sm font-bold text-white">Model Specs & Key Requirements</h3>
+                </div>
+                <button
+                  onClick={() => setShowModelSpecsModal(false)}
+                  className="p-1 rounded text-muted hover:text-white cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Model Header Card */}
+              <div className="p-3 rounded-xl border space-y-1.5" style={{ background: "var(--color-bg-primary)", borderColor: "var(--color-border-subtle)" }}>
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
+                  <span className="font-bold text-sm text-white">{cur.name}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    ready ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                  }`}>
+                    {ready ? "🟢 Key Connected & Ready" : `🔴 Missing ${cur.required_key_name || "Key"}`}
+                  </span>
+                </div>
+                <p className="text-[11px] text-secondary leading-relaxed">
+                  {cur.description}
+                </p>
+              </div>
+
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded-lg border bg-[var(--color-bg-primary)] border-[var(--color-border-subtle)] space-y-0.5">
+                  <span className="text-[10px] text-muted block uppercase font-mono">Required API</span>
+                  <span className="font-bold text-white">{cur.required_key_name || "None"}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border bg-[var(--color-bg-primary)] border-[var(--color-border-subtle)] space-y-0.5">
+                  <span className="text-[10px] text-muted block uppercase font-mono">Pricing & Cost</span>
+                  <span className="font-bold text-emerald-400">{cur.pricing_type || "Free Tier"}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border bg-[var(--color-bg-primary)] border-[var(--color-border-subtle)] space-y-0.5">
+                  <span className="text-[10px] text-muted block uppercase font-mono">Context / Token Limit</span>
+                  <span className="font-bold text-cyan-300">{cur.token_limit || (cur.context_length ? `${cur.context_length.toLocaleString()} Tokens` : "128K")}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border bg-[var(--color-bg-primary)] border-[var(--color-border-subtle)] space-y-0.5">
+                  <span className="text-[10px] text-muted block uppercase font-mono">Inference Speed</span>
+                  <span className="font-bold text-amber-300">{cur.speed || "Ultra-Fast"}</span>
+                </div>
+              </div>
+
+              {/* Best For Note */}
+              {cur.best_for && (
+                <div className="p-2.5 rounded-lg border bg-indigo-950/40 border-indigo-800/40 text-[11px] text-indigo-200">
+                  <strong>💡 Best For:</strong> {cur.best_for}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--color-border-subtle)]">
+                {cur.key_url ? (
+                  <a
+                    href={cur.key_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 flex items-center gap-1.5 transition-all"
+                  >
+                    <span>Get Free Key</span>
+                    <ExternalLink size={12} />
+                  </a>
+                ) : (
+                  <span className="text-[11px] text-muted">No external key required</span>
+                )}
+                {cur.required_key !== "none" && (
+                  <button
+                    onClick={() => {
+                      setShowModelSpecsModal(false);
+                      setKeyModalProvider(
+                        cur.required_key === "groq" ? "groq" : cur.required_key === "openrouter" ? "openrouter" : "gemini"
+                      );
+                      setShowKeyModal(true);
+                    }}
+                    className="px-4 py-1.5 text-xs font-bold rounded-xl bg-accent text-white hover:opacity-90 cursor-pointer shadow-md transition-transform hover:scale-105"
+                  >
+                    {ready ? "Edit / Re-verify Key" : "Connect Key Now"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Quick API Key Modal */}
       {showKeyModal && (
         <div
-          className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3"
+          className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 animate-fadeIn"
           onClick={() => setShowKeyModal(false)}
         >
           <div
@@ -677,7 +907,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
             </div>
 
             <p className="text-[11px] text-secondary leading-relaxed">
-              Google Gemini 2.5 aur DeepSeek R1 (Groq) models live chalane ke liye free API key enter karein. Key aapke device me strictly locally store hoti hai.
+              Real-time Google Gemini, Groq LPU, ya OpenRouter models live chalane ke liye free API key enter karein. Sabhi keys aapke local browser me encrypted store hoti hain.
             </p>
 
             {/* Provider Switch Tabs */}
@@ -688,11 +918,11 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                   setKeyModalInput(getGeminiApiKey());
                   setKeyModalStatus(null);
                 }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                  keyModalProvider === "gemini" ? "bg-accent text-white" : "text-muted hover:text-white"
+                className={`flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-all cursor-pointer ${
+                  keyModalProvider === "gemini" ? "bg-accent text-white shadow-sm" : "text-muted hover:text-white"
                 }`}
               >
-                Google Gemini (Free • Recommended)
+                Gemini (Free)
               </button>
               <button
                 onClick={() => {
@@ -700,22 +930,42 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                   setKeyModalInput(getGroqApiKey());
                   setKeyModalStatus(null);
                 }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                  keyModalProvider === "groq" ? "bg-accent text-white" : "text-muted hover:text-white"
+                className={`flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-all cursor-pointer ${
+                  keyModalProvider === "groq" ? "bg-accent text-white shadow-sm" : "text-muted hover:text-white"
                 }`}
               >
-                Groq LPU (DeepSeek R1)
+                Groq LPU (Fast)
+              </button>
+              <button
+                onClick={() => {
+                  setKeyModalProvider("openrouter");
+                  setKeyModalInput(getOpenRouterApiKey() || getApiKey());
+                  setKeyModalStatus(null);
+                }}
+                className={`flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-all cursor-pointer ${
+                  keyModalProvider === "openrouter" ? "bg-accent text-white shadow-sm" : "text-muted hover:text-white"
+                }`}
+              >
+                OpenRouter
               </button>
             </div>
 
             <div className="space-y-1.5">
               <label className="text-[11px] text-muted flex items-center justify-between">
-                <span>{keyModalProvider === "gemini" ? "Google Gemini API Key (AIzaSy...)" : "Groq API Key (gsk_...)"}</span>
+                <span>
+                  {keyModalProvider === "gemini"
+                    ? "Google Gemini API Key (AIzaSy...)"
+                    : keyModalProvider === "groq"
+                    ? "Groq API Key (gsk_...)"
+                    : "OpenRouter API Key (sk-or-v1-...)"}
+                </span>
                 <a
                   href={
                     keyModalProvider === "gemini"
-                      ? "https://aistudio.google.com/app/api-keys"
-                      : "https://console.groq.com/keys"
+                      ? "https://aistudio.google.com/app/apikey"
+                      : keyModalProvider === "groq"
+                      ? "https://console.groq.com/keys"
+                      : "https://openrouter.ai/keys"
                   }
                   target="_blank"
                   rel="noopener noreferrer"
@@ -728,7 +978,13 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                 type="password"
                 value={keyModalInput}
                 onChange={(e) => setKeyModalInput(e.target.value)}
-                placeholder={keyModalProvider === "gemini" ? "AIzaSy..." : "gsk_..."}
+                placeholder={
+                  keyModalProvider === "gemini"
+                    ? "AIzaSy..."
+                    : keyModalProvider === "groq"
+                    ? "gsk_..."
+                    : "sk-or-v1-..."
+                }
                 className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono"
                 style={{
                   background: "var(--color-bg-primary)",

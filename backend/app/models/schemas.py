@@ -1,0 +1,130 @@
+"""
+Pydantic models for API requests and responses.
+"""
+
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+
+# ─── LeetCode Models ───────────────────────────────────────────
+
+class ProblemExample(BaseModel):
+    """A single example from a LeetCode problem."""
+    input: str
+    output: str
+    explanation: Optional[str] = None
+
+
+class DailyProblem(BaseModel):
+    """The LeetCode daily challenge problem."""
+    id: int
+    title: str
+    slug: str
+    difficulty: str  # Easy, Medium, Hard
+    description: str  # HTML content
+    examples: list[ProblemExample] = []
+    constraints: list[str] = []
+    tags: list[str] = []
+    url: str
+    date: str  # YYYY-MM-DD
+    fetched_at: str  # ISO timestamp
+
+
+class ProblemBrief(BaseModel):
+    """Brief problem info for lists."""
+    id: int
+    title: str
+    slug: str
+    difficulty: str
+    tags: list[str] = []
+    url: str
+
+
+# ─── AI Models ─────────────────────────────────────────────────
+
+class AIModel(BaseModel):
+    """An available AI model from OpenRouter."""
+    id: str
+    name: str
+    provider: str = ""
+    context_length: Optional[int] = None
+    is_free: bool = False
+    description: Optional[str] = None
+
+
+class AIRequest(BaseModel):
+    """Request to the AI agent."""
+    problem_slug: str
+    problem_title: str
+    problem_description: str
+    examples: list[ProblemExample] = []
+    constraints: list[str] = []
+    language: str = "python"
+    stage: str = "generate"  # understand, research, plan, generate, validate, explain
+    api_key: Optional[str] = None  # User-provided key (not stored)
+    model_id: Optional[str] = None
+    previous_context: Optional[str] = None
+
+
+class AIResponse(BaseModel):
+    """Response from the AI agent."""
+    stage: str
+    content: str
+    code: Optional[str] = None
+    model_used: str = ""
+    citations: list[dict] = []
+    error: Optional[str] = None
+
+
+# ─── Search Models ─────────────────────────────────────────────
+
+class SearchResult(BaseModel):
+    """A single web search result."""
+    title: str
+    url: str
+    snippet: str
+
+
+class SearchResponse(BaseModel):
+    """Web search response."""
+    query: str
+    results: list[SearchResult] = []
+    error: Optional[str] = None
+
+
+# ─── Solution Models ───────────────────────────────────────────
+
+class SolutionFile(BaseModel):
+    """A local solution file."""
+    problem_slug: str
+    problem_title: str
+    language: str
+    filename: str
+    code: str
+    created_at: str
+    updated_at: str
+
+
+class SaveSolutionRequest(BaseModel):
+    """Request to save a solution file."""
+    problem_slug: str
+    problem_title: str
+    language: str
+    code: str
+
+
+# ─── Profile Models ───────────────────────────────────────────
+
+class LeetCodeProfile(BaseModel):
+    """Public LeetCode profile data."""
+    username: str
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    ranking: Optional[int] = None
+    solved_total: Optional[int] = None
+    solved_easy: Optional[int] = None
+    solved_medium: Optional[int] = None
+    solved_hard: Optional[int] = None
+    reputation: Optional[int] = None
+    verified: bool = False

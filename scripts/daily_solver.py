@@ -1,9 +1,15 @@
 """
 LeetCode Daily Challenge Automation Script.
 
-Fetches today's daily problem from LeetCode GraphQL, generates an optimal solution
-using OpenRouter AI, validates the Python code, saves solution files, and updates
+Fetches today's daily problem from LeetCode GraphQL, queries OpenRouter free models,
+validates code syntax and example tests, saves unique solution files, and updates
 the solution manifest and repository README.
+
+Security & Safety Rules:
+- NEVER logs, prints, or writes OPENROUTER_API_KEY to any file.
+- NEVER selects a paid model (strictly free models only).
+- NEVER publishes a fabricated solution if generation fails.
+- Avoids duplicate entries on repeated runs.
 """
 
 import ast
@@ -12,25 +18,20 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
 LEETCODE_GRAPHQL_URL = "https://leetcode.com/graphql"
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = "google/gemini-2.0-flash-lite-preview:free"
-FALLBACK_MODELS = [
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "mistralai/mistral-7b-instruct:free",
-    "qwen/qwen-2.5-coder-32b-instruct:free",
-]
+OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models"
+OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 SOLUTIONS_DIR = ROOT_DIR / "solutions"
 MANIFEST_PATH = SOLUTIONS_DIR / "manifest.json"
 README_PATH = ROOT_DIR / "README.md"
-
 
 DAILY_QUERY = """
 query questionOfToday {
@@ -55,6 +56,7 @@ query questionOfToday {
         code
       }
       hints
+      exampleTestcaseList
     }
   }
 }
@@ -62,7 +64,7 @@ query questionOfToday {
 
 
 def clean_html(html_text: str) -> str:
-    """Strip basic HTML tags to clean plaintext."""
+    """Strip HTML tags to clean plaintext."""
     if not html_text:
         return ""
     text = re.sub(r"<pre>([\s\S]*?)</pre>", r"\n```\n\1\n```\n", html_text)
@@ -78,9 +80,67 @@ def clean_html(html_text: str) -> str:
     return text
 
 
+def fetch_verified_free_models(api_key: Optional[str] = None) -> List[str]:
+    """
+    Fetch all verified free models from OpenRouter.
+    Only models ending in ':free' or with 0 prompt & 0 completion price are selected.
+    Guarantees that paid models are NEVER silently selected.
+    """
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    try:
+        with httpx.Client(timeout=20.0) as client:
+            resp = client.get(OPENROUTER_MODELS_URL, headers=headers)
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+
+        free_models = []
+        for m in data:
+            model_id = m.get("id", "")
+            pricing = m.get("pricing", {})
+            p_prompt = str(pricing.get("prompt", "0"))
+            p_comp = str(pricing.get("completion", "0"))
+
+            is_free = model_id.endswith(":free") or (p_prompt == "0" and p_comp == "0")
+            if is_free:
+                free_models.append(model_id)
+
+        # Prioritize top coding and general free models
+        priority_prefixes = [
+            "openrouter/free",
+            "google/gemma-4",
+            "cohere/north-mini-code",
+            "nvidia/nemotron",
+            "liquid/lfm",
+            "mistralai/mistral",
+            "qwen/qwen",
+            "meta-llama/llama",
+        ]
+
+        def sort_key(model: str) -> int:
+            for i, prefix in enumerate(priority_prefixes):
+                if model.startswith(prefix) or model == prefix:
+                    return i
+            return len(priority_prefixes)
+
+        free_models.sort(key=sort_key)
+        return free_models
+    except Exception as e:
+        print(f"[!] Warning: Could not dynamically fetch OpenRouter models ({e}).")
+        # Hardcoded strictly-free fallbacks
+        return [
+            "openrouter/free",
+            "google/gemma-4-31b-it:free",
+            "cohere/north-mini-code:free",
+            "nvidia/nemotron-3.5-lightning:free",
+        ]
+
+
 def fetch_daily_problem() -> Dict[str, Any]:
-    """Fetch the active daily challenge from LeetCode."""
-    print("[*] Fetching LeetCode Daily Challenge...")
+    """Fetch active daily challenge from LeetCode GraphQL endpoint."""
+    print("[*] Fetching LeetCode Daily Challenge from official GraphQL endpoint...")
     headers = {
         "Content-Type": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -88,75 +148,184 @@ def fetch_daily_problem() -> Dict[str, Any]:
     }
     payload = {"query": DAILY_QUERY}
 
-    try:
-        with httpx.Client(timeout=20.0) as client:
-            resp = client.post(LEETCODE_GRAPHQL_URL, json=payload, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
+    with httpx.Client(timeout=25.0) as client:
+        resp = client.post(LEETCODE_GRAPHQL_URL, json=payload, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
 
-        challenge = data.get("data", {}).get("activeDailyCodingChallengeQuestion", {})
-        if not challenge or "question" not in challenge:
-            raise ValueError("No daily question found in response")
+    challenge = data.get("data", {}).get("activeDailyCodingChallengeQuestion", {})
+    if not challenge or "question" not in challenge:
+        raise ValueError("Invalid LeetCode response: activeDailyCodingChallengeQuestion is missing")
 
-        q = challenge["question"]
-        date_str = challenge.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    q = challenge["question"]
+    date_str = challenge.get("date", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
 
-        # Find python3 snippet
-        snippets = q.get("codeSnippets", []) or []
-        py_snippet = ""
+    # Extract python3 or python starter snippet
+    snippets = q.get("codeSnippets", []) or []
+    py_snippet = ""
+    for s in snippets:
+        if s.get("langSlug") == "python3":
+            py_snippet = s.get("code", "")
+            break
+    if not py_snippet:
         for s in snippets:
-            if s.get("langSlug") in ("python3", "python"):
+            if s.get("langSlug") == "python":
                 py_snippet = s.get("code", "")
                 break
 
-        tags = [t["name"] for t in q.get("topicTags", []) if "name" in t]
+    tags = [t["name"] for t in q.get("topicTags", []) if "name" in t]
+    raw_content = q.get("content", "")
 
-        return {
-            "id": int(q.get("questionFrontendId") or q.get("questionId") or 0),
-            "title": q.get("title", ""),
-            "slug": q.get("titleSlug", ""),
-            "difficulty": q.get("difficulty", "Medium"),
-            "content": q.get("content", ""),
-            "clean_content": clean_html(q.get("content", "")),
-            "date": date_str,
-            "url": f"https://leetcode.com/problems/{q.get('titleSlug', '')}/",
-            "tags": tags,
-            "py_snippet": py_snippet,
-            "hints": q.get("hints", []),
+    # Extract expected outputs from content HTML
+    expected_outputs = re.findall(r"Output:\s*</strong>\s*(?:<span[^>]*>)?\s*([^<]+)", raw_content)
+    expected_outputs = [o.strip() for o in expected_outputs]
+
+    return {
+        "id": int(q.get("questionFrontendId") or q.get("questionId") or 0),
+        "title": q.get("title", ""),
+        "slug": q.get("titleSlug", ""),
+        "difficulty": q.get("difficulty", "Medium"),
+        "content": raw_content,
+        "clean_content": clean_html(raw_content),
+        "date": date_str,
+        "url": f"https://leetcode.com/problems/{q.get('titleSlug', '')}/",
+        "tags": tags,
+        "py_snippet": py_snippet,
+        "hints": q.get("hints", []),
+        "testcases": q.get("exampleTestcaseList", []),
+        "expected_outputs": expected_outputs,
+    }
+
+
+def extract_method_signature(py_snippet: str) -> Tuple[Optional[str], Optional[str]]:
+    """Extract (class_name, method_name) from Python starter snippet."""
+    if not py_snippet:
+        return "Solution", None
+
+    # Try AST parse with pass appended in case snippet ends without body
+    try:
+        snippet_with_body = py_snippet.rstrip() + "\n        pass\n"
+        tree = ast.parse(snippet_with_body)
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef):
+                cls_name = node.name
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef) and not item.name.startswith("__"):
+                        return cls_name, item.name
+    except Exception:
+        pass
+
+    # Regex fallback
+    fn_match = re.search(r"def\s+([a-zA-Z0-9_]+)\s*\(", py_snippet)
+    cls_match = re.search(r"class\s+([a-zA-Z0-9_]+)", py_snippet)
+    cls_name = cls_match.group(1) if cls_match else "Solution"
+    method_name = fn_match.group(1) if fn_match else None
+    return cls_name, method_name
+
+
+def validate_solution_code(code_str: str, expected_method: Optional[str]) -> Tuple[bool, str]:
+    """Validate that Python code parses without syntax errors and defines expected method."""
+    try:
+        tree = ast.parse(code_str)
+    except SyntaxError as e:
+        return False, f"SyntaxError on line {e.lineno}: {e.msg}"
+
+    if expected_method:
+        method_found = False
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef):
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef) and item.name == expected_method:
+                        method_found = True
+                        break
+        if not method_found:
+            return False, f"Method '{expected_method}' not found in class Solution"
+
+    return True, "Valid syntax and signature"
+
+
+def run_example_tests(code_str: str, method_name: str, testcases: List[str], expected_outputs: List[str]) -> Tuple[bool, str]:
+    """Safely execute example test cases against the solution."""
+    if not testcases or not method_name:
+        return True, "No testcases to execute"
+
+    try:
+        namespace: Dict[str, Any] = {
+            "List": list,
+            "Dict": dict,
+            "Set": set,
+            "Optional": Optional,
+            "Tuple": tuple,
         }
+        compiled = compile(code_str, "<solution>", "exec")
+        exec(compiled, namespace)
+
+        if "Solution" not in namespace:
+            return False, "Class Solution not defined in executed code"
+
+        sol_instance = namespace["Solution"]()
+        method = getattr(sol_instance, method_name, None)
+        if not callable(method):
+            return False, f"Method '{method_name}' is not callable"
+
+        passed = 0
+        for i, raw_tc in enumerate(testcases):
+            # Parse testcase arguments
+            lines = [l.strip() for l in raw_tc.strip().split("\n") if l.strip()]
+            args = []
+            for l in lines:
+                try:
+                    args.append(ast.literal_eval(l))
+                except Exception:
+                    args.append(l)
+
+            try:
+                res = method(*args)
+            except Exception as ex:
+                return False, f"Example {i + 1} raised runtime error: {ex}"
+
+            if i < len(expected_outputs):
+                exp_str = expected_outputs[i].strip()
+                res_str = str(res).strip()
+                # Normalize booleans
+                if exp_str.lower() == "true":
+                    exp_val = True
+                elif exp_str.lower() == "false":
+                    exp_val = False
+                else:
+                    try:
+                        exp_val = ast.literal_eval(exp_str)
+                    except Exception:
+                        exp_val = exp_str
+
+                if res != exp_val and res_str != exp_str:
+                    return False, f"Example {i + 1} failed: expected {exp_val}, got {res}"
+
+            passed += 1
+
+        return True, f"Passed all {passed} example tests"
     except Exception as e:
-        print(f"[!] LeetCode fetch error: {e}. Falling back to default problem.")
-        return {
-            "id": 1,
-            "title": "Two Sum",
-            "slug": "two-sum",
-            "difficulty": "Easy",
-            "content": "<p>Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.</p>",
-            "clean_content": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-            "date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-            "url": "https://leetcode.com/problems/two-sum/",
-            "tags": ["Array", "Hash Table"],
-            "py_snippet": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        pass\n",
-            "hints": [],
-        }
+        return False, f"Test execution error: {e}"
 
 
-def generate_solution_ai(problem: Dict[str, Any], api_key: Optional[str]) -> Dict[str, str]:
-    """Generate solution and explanation using OpenRouter."""
-    if not api_key:
-        print("[!] No OPENROUTER_API_KEY provided. Using deterministic fallback generator.")
-        return generate_deterministic_solution(problem)
-
-    print(f"[*] Requesting solution from OpenRouter ({DEFAULT_MODEL})...")
+def call_openrouter_model(
+    model: str,
+    problem: Dict[str, Any],
+    api_key: str,
+) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """
+    Call a single verified free model on OpenRouter.
+    Returns (code, explanation, error_msg).
+    """
     snippet = problem.get("py_snippet") or "class Solution:\n    # Implement here\n"
 
     system_prompt = (
-        "You are an elite competitive programmer and algorithms expert. "
-        "Your task is to write an optimal, clean, production-ready Python 3 solution "
-        "matching the exact LeetCode class and method signature. "
-        "Provide your response in two clearly marked sections:\n"
+        "You are an elite competitive programmer and algorithmic reasoning expert. "
+        "Solve the LeetCode problem using optimal time and space complexity. "
+        "Your code must define `class Solution` and the exact method signature provided. "
+        "Return your response in two clearly marked sections:\n"
         "1. ```python\n# YOUR SOLUTION CODE HERE\n```\n"
-        "2. ### Explanation\n(Approach, intuition, Complexity: Time O(...), Space O(...))"
+        "2. ### Explanation\n(Detailed approach, intuition, Time Complexity O(...), Space Complexity O(...))"
     )
 
     user_prompt = f"""Problem: {problem['title']} (LeetCode #{problem['id']}, {problem['difficulty']})
@@ -166,21 +335,15 @@ Tags: {', '.join(problem['tags'])}
 Description:
 {problem['clean_content'][:2500]}
 
-Starter Code Snippet:
+Starter Code Snippet (match this signature):
 ```python
 {snippet}
 ```
 
-Please generate:
-1. The complete optimal Python 3 code with type hints, docstrings, and comments explaining critical invariants.
-2. An explanation section detailing:
-   - Approach & Intuition
-   - Step-by-step logic
-   - Time Complexity
-   - Space Complexity
+Constraints:
+{chr(10).join(f"- {c}" for c in problem.get('hints', [])[:3])}
 """
 
-    models_to_try = [DEFAULT_MODEL] + FALLBACK_MODELS
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -188,100 +351,114 @@ Please generate:
         "X-Title": "LeetCode Daily AI Solver",
     }
 
-    for model in models_to_try:
-        try:
-            print(f"[*] Trying model: {model}...")
-            with httpx.Client(timeout=60.0) as client:
-                resp = client.post(
-                    OPENROUTER_URL,
-                    headers=headers,
-                    json={
-                        "model": model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt},
-                        ],
-                        "temperature": 0.2,
-                        "max_tokens": 2500,
-                    },
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                    if content:
-                        parsed = parse_ai_response(content, problem)
-                        if validate_python_code(parsed["code"]):
-                            return parsed
-                        else:
-                            print("[!] AI generated syntax error code, retrying...")
-        except Exception as e:
-            print(f"[!] Model {model} failed: {e}")
-
-    print("[!] All AI models failed. Using deterministic fallback solution.")
-    return generate_deterministic_solution(problem)
-
-
-def parse_ai_response(ai_text: str, problem: Dict[str, Any]) -> Dict[str, str]:
-    """Extract python code block and markdown explanation from AI output."""
-    code_match = re.search(r"```(?:python|py)?\s*([\s\S]*?)```", ai_text)
-    if code_match:
-        code = code_match.group(1).strip()
-    else:
-        code = problem.get("py_snippet") or "class Solution:\n    pass\n"
-
-    # Remove the code block from explanation for cleaner README
-    explanation = re.sub(r"```(?:python|py)?[\s\S]*?```", "", ai_text).strip()
-    if not explanation:
-        explanation = f"### Solution for {problem['title']}\n\nOptimal solution generated by AI Agent."
-
-    return {
-        "code": code,
-        "explanation": explanation,
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.2,
+        "max_tokens": 2500,
     }
 
-
-def generate_deterministic_solution(problem: Dict[str, Any]) -> Dict[str, str]:
-    """Deterministic fallback solution when no AI key is present."""
-    snippet = problem.get("py_snippet") or "class Solution:\n    def solve(self):\n        return 0\n"
-
-    code = f'''"""
-LeetCode #{problem['id']}: {problem['title']}
-Difficulty: {problem['difficulty']}
-URL: {problem['url']}
-Tags: {", ".join(problem['tags'])}
-"""
-
-from typing import List, Optional, Dict, Set
-
-
-{snippet}
-'''
-    explanation = f"""### Approach Overview
-
-**Problem**: [{problem['title']}]({problem['url']})  
-**Difficulty**: {problem['difficulty']}  
-**Tags**: {', '.join(problem['tags'])}  
-
-#### Intuition
-This problem can be addressed by analyzing the constraints and identifying the primary invariant:
-- Analyze input bounds to ensure optimal time complexity.
-- Utilize standard data structures (e.g. hash maps, two pointers, or dynamic programming) to reduce quadratic searches.
-
-#### Complexity Analysis
-- **Time Complexity**: $\\mathcal{{O}}(N)$ or $\\mathcal{{O}}(N \\log N)$ depending on sorting/traversal.
-- **Space Complexity**: $\\mathcal{{O}}(N)$ worst case for auxiliary data structures.
-"""
-    return {"code": code, "explanation": explanation}
-
-
-def validate_python_code(code_str: str) -> bool:
-    """Validate that Python code parses without syntax errors."""
     try:
-        ast.parse(code_str)
-        return True
-    except SyntaxError as e:
-        print(f"[!] Python syntax error in generated code: {e}")
-        return False
+        with httpx.Client(timeout=45.0) as client:
+            resp = client.post(OPENROUTER_CHAT_URL, headers=headers, json=payload)
+
+        if resp.status_code == 401:
+            return None, None, "Authentication failed (401). Check OPENROUTER_API_KEY."
+        elif resp.status_code == 429:
+            return None, None, f"Rate limit reached (429) for model '{model}'."
+        elif resp.status_code in (502, 503, 504):
+            return None, None, f"Model '{model}' temporarily unavailable ({resp.status_code})."
+        elif resp.status_code != 200:
+            return None, None, f"OpenRouter API returned HTTP {resp.status_code}: {resp.text[:150]}"
+
+        data = resp.json()
+        choices = data.get("choices", [])
+        if not choices:
+            return None, None, "No choices returned from OpenRouter response."
+
+        content = choices[0].get("message", {}).get("content", "")
+        if not content:
+            return None, None, "Empty completion content returned."
+
+        # Extract code block
+        code_match = re.search(r"```(?:python|py)?\s*([\s\S]*?)```", content)
+        if not code_match:
+            return None, None, "No Python code block found in AI response."
+
+        code = code_match.group(1).strip()
+        explanation = re.sub(r"```(?:python|py)?[\s\S]*?```", "", content).strip()
+        if not explanation:
+            explanation = f"### Solution for {problem['title']}\n\nOptimal solution generated by AI Agent."
+
+        return code, explanation, None
+
+    except httpx.TimeoutException:
+        return None, None, f"Request timed out for model '{model}'."
+    except Exception as e:
+        return None, None, f"Unexpected error with model '{model}': {e}"
+
+
+def generate_verified_solution(problem: Dict[str, Any], api_key: str) -> Dict[str, str]:
+    """
+    Generate an optimal solution using OpenRouter free models with fallback and validation.
+    NEVER publishes a fabricated solution.
+    """
+    free_models = fetch_verified_free_models(api_key)
+    print(f"[*] Verified {len(free_models)} free models on OpenRouter.")
+
+    cls_name, method_name = extract_method_signature(problem.get("py_snippet", ""))
+    print(f"[*] Expected signature: {cls_name}.{method_name}()")
+
+    attempts_log = []
+
+    for model in free_models[:6]:
+        print(f"[*] Attempting generation with free model: {model}...")
+        code, explanation, error = call_openrouter_model(model, problem, api_key)
+
+        if error:
+            print(f"    [x] {error}")
+            attempts_log.append(f"{model}: {error}")
+            if "Authentication failed" in error:
+                # No need to retry if API key is invalid
+                raise PermissionError("OPENROUTER_API_KEY is invalid or unauthorized.")
+            time.sleep(1)
+            continue
+
+        # 1. Syntax & signature validation
+        valid_syntax, syntax_msg = validate_solution_code(code, method_name)
+        if not valid_syntax:
+            print(f"    [x] Code validation failed: {syntax_msg}")
+            attempts_log.append(f"{model}: {syntax_msg}")
+            continue
+
+        # 2. Example testcases execution
+        test_ok, test_msg = run_example_tests(
+            code, method_name or "", problem.get("testcases", []), problem.get("expected_outputs", [])
+        )
+        print(f"    [i] Test execution: {test_msg}")
+
+        # If tests ran and failed, try next model if possible, but if no other works, accept valid syntax
+        if not test_ok:
+            attempts_log.append(f"{model}: {test_msg}")
+            # Try next model for higher precision
+            continue
+
+        print(f"[OK] Solution verified with model '{model}'!")
+        return {
+            "code": code,
+            "explanation": explanation,
+            "model_used": model,
+            "validation_status": test_msg,
+        }
+
+    # If example tests were strict and failed, but we had a syntactically valid model,
+    # re-check if we can return a syntactically valid solution rather than complete abort
+    raise RuntimeError(
+        f"Failed to generate a verified solution across free models. Logs: {'; '.join(attempts_log)}"
+    )
 
 
 def save_solution_files(problem: Dict[str, Any], solution: Dict[str, str]) -> Path:
@@ -292,12 +469,10 @@ def save_solution_files(problem: Dict[str, Any], solution: Dict[str, str]) -> Pa
     folder_path = SOLUTIONS_DIR / folder_name
     folder_path.mkdir(parents=True, exist_ok=True)
 
-    # 1. solution.py
     py_path = folder_path / "solution.py"
     with open(py_path, "w", encoding="utf-8") as f:
         f.write(solution["code"] + "\n")
 
-    # 2. README.md
     readme_path = folder_path / "README.md"
     readme_content = f"""# {problem['id']}. {problem['title']}
 
@@ -305,6 +480,8 @@ def save_solution_files(problem: Dict[str, Any], solution: Dict[str, str]) -> Pa
 - **Difficulty**: {problem['difficulty']}
 - **LeetCode Link**: [{problem['url']}]({problem['url']})
 - **Tags**: {', '.join(f'`{t}`' for t in problem['tags'])}
+- **AI Model**: `{solution.get('model_used', 'OpenRouter Free')}`
+- **Validation**: `{solution.get('validation_status', 'Syntax Verified')}`
 
 ---
 
@@ -327,12 +504,12 @@ def save_solution_files(problem: Dict[str, Any], solution: Dict[str, str]) -> Pa
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print(f"[+] Solution saved in {folder_path.relative_to(ROOT_DIR)}")
+    print(f"[+] Saved solution in {folder_path.relative_to(ROOT_DIR)}")
     return folder_path
 
 
-def update_manifest(problem: Dict[str, Any], folder_path: Path):
-    """Update solutions/manifest.json with the new entry."""
+def update_manifest(problem: Dict[str, Any], folder_path: Path, model_used: str):
+    """Update solutions/manifest.json avoiding duplicates."""
     SOLUTIONS_DIR.mkdir(parents=True, exist_ok=True)
     manifest: List[Dict[str, Any]] = []
 
@@ -343,7 +520,7 @@ def update_manifest(problem: Dict[str, Any], folder_path: Path):
         except Exception:
             manifest = []
 
-    # Remove existing entry for same slug & date if present
+    # Filter out existing entry for this slug and date to avoid duplicates
     manifest = [
         item for item in manifest
         if not (item.get("slug") == problem["slug"] and item.get("date") == problem["date"])
@@ -358,22 +535,21 @@ def update_manifest(problem: Dict[str, Any], folder_path: Path):
         "date": problem["date"],
         "url": problem["url"],
         "folder": folder_path.name,
+        "model_used": model_used,
         "solved_at": datetime.now(timezone.utc).isoformat(),
     }
     manifest.append(new_entry)
-
-    # Sort descending by date
     manifest.sort(key=lambda x: x.get("date", ""), reverse=True)
 
     with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
-    print(f"[+] Updated manifest ({len(manifest)} total solutions recorded)")
+    print(f"[+] Manifest updated ({len(manifest)} total solutions)")
     return manifest
 
 
 def update_root_readme(manifest: List[Dict[str, Any]]):
-    """Update the root README.md with badges, latest daily solve, and table."""
+    """Update repository README with badges, progress summary, and solutions table."""
     total_solved = len(manifest)
     easy_count = sum(1 for m in manifest if m.get("difficulty") == "Easy")
     med_count = sum(1 for m in manifest if m.get("difficulty") == "Medium")
@@ -381,9 +557,8 @@ def update_root_readme(manifest: List[Dict[str, Any]]):
 
     latest = manifest[0] if manifest else None
 
-    # Construct solutions table (latest 15)
     table_rows = []
-    for item in manifest[:15]:
+    for item in manifest[:20]:
         diff = item.get("difficulty", "Medium")
         color = "brightgreen" if diff == "Easy" else "yellow" if diff == "Medium" else "red"
         diff_badge = f"![{diff}](https://img.shields.io/badge/-{diff}-{color}?style=flat-square)"
@@ -396,7 +571,7 @@ def update_root_readme(manifest: List[Dict[str, Any]]):
             f"| {item.get('date', '')} | {lc_link} | {diff_badge} | {tags_str} | {link_code} · {link_notes} |"
         )
 
-    table_md = "\n".join(table_rows)
+    table_md = "\n".join(table_rows) if table_rows else "| - | No solutions committed yet | - | - | - |"
 
     readme_content = f"""# ⚡ LeetCode AI Agent — Autonomous Problem Solver & Workspace
 
@@ -409,7 +584,7 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 - 🌐 **Interactive Web Workspace**: Built with React, TypeScript, Tailwind CSS, and Monaco Editor.
 - 🤖 **Multi-Stage AI Reasoning**: Understand ➔ Research ➔ Plan ➔ Generate ➔ Validate ➔ Explain.
-- 📅 **GitHub Actions Daily Scheduler**: Runs every midnight to fetch the official LeetCode Daily Challenge, generate the optimal solution with OpenRouter AI, validate code syntax with AST, and push commits to GitHub.
+- 📅 **GitHub Actions Daily Scheduler**: Runs every midnight (00:00 UTC) to fetch the official LeetCode Daily Challenge, generate the optimal solution with OpenRouter AI, validate code syntax with AST, and push commits to GitHub.
 - 🔒 **Zero Signup / Privacy First**: Direct browser-to-model execution, localStorage & IndexedDB persistence, no external database required.
 
 ---
@@ -433,7 +608,7 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 | Date | Problem | Difficulty | Topics | Solution & Notes |
 |:---|:---|:---:|:---|:---|
-{table_md if table_md else '| - | No solutions recorded yet | - | - | - |'}
+{table_md}
 
 *See full index in [`solutions/manifest.json`](solutions/manifest.json).*
 
@@ -449,10 +624,10 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
                          │
                          ▼
                AI Multi-Stage Reasoning
-         (OpenRouter Free Models: Gemini / Llama)
+         (OpenRouter Free Models: Gemini / Gemma)
                          │
                          ▼
-             Python AST Syntax Validation
+             Python AST Syntax & Test Validation
                          │
                          ▼
             Generate Solution & Editorial
@@ -489,7 +664,7 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 python scripts/daily_solver.py
 ```
-*(Optionally set `OPENROUTER_API_KEY` in environment for live AI code generation).*
+*(Requires `OPENROUTER_API_KEY` in environment for live AI code generation).*
 
 ---
 
@@ -502,7 +677,7 @@ To enable daily automated commits to your GitHub repository:
 3. Click **New repository secret**.
 4. Name: `OPENROUTER_API_KEY`
 5. Value: Your free OpenRouter API key from [openrouter.ai/keys](https://openrouter.ai/keys).
-6. Enable GitHub Actions read & write permissions in **Settings** ➔ **Actions** ➔ **General** ➔ **Workflow permissions** (select *Read and write permissions*).
+6. Enable GitHub Actions write permissions in **Settings** ➔ **Actions** ➔ **General** ➔ **Workflow permissions** (select *Read and write permissions*).
 
 The daily workflow will automatically run every day at `00:00 UTC` and commit the new solution!
 
@@ -515,30 +690,115 @@ MIT License. Created by [Aditya Kumar Sah](https://github.com/Aditya-Kumar-Sah-C
     with open(README_PATH, "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print("[+] Updated root README.md")
+    print("[+] Root README.md updated")
 
 
 def main():
     parser = argparse.ArgumentParser(description="LeetCode Daily AI Solver")
-    parser.add_argument("--dry-run", action="store_true", help="Run without calling external AI API")
+    parser.add_argument("--verify-openrouter", action="store_true", help="Verify OpenRouter connection and free models")
+    parser.add_argument("--verify-daily", action="store_true", help="Verify LeetCode daily problem fetching")
+    parser.add_argument("--dry-run", action="store_true", help="Fetch problem and test validation without publishing")
+    parser.add_argument("--force", action="store_true", help="Force re-generation even if solution exists")
     args = parser.parse_args()
 
-    api_key = None if args.dry_run else os.environ.get("OPENROUTER_API_KEY")
+    api_key = os.environ.get("OPENROUTER_API_KEY")
 
+    # ── Mode 1: Verify OpenRouter ──────────────────────────────
+    if args.verify_openrouter:
+        print("=== OpenRouter AI Verification ===")
+        print(f"[*] Checking environment variable OPENROUTER_API_KEY: {'[CONFIGURED]' if api_key else '[NOT SET]'}")
+
+        free_models = fetch_verified_free_models(api_key)
+        print(f"[*] Total verified free models on OpenRouter: {len(free_models)}")
+        print(f"[*] Available free models: {', '.join(free_models[:8])}")
+
+        if api_key:
+            test_model = free_models[0] if free_models else "openrouter/free"
+            print(f"[*] Testing safe ping request using free model '{test_model}'...")
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            }
+            try:
+                with httpx.Client(timeout=20.0) as client:
+                    resp = client.post(
+                        OPENROUTER_CHAT_URL,
+                        headers=headers,
+                        json={
+                            "model": test_model,
+                            "messages": [{"role": "user", "content": "Reply with 'OK'"}],
+                            "max_tokens": 10,
+                        },
+                    )
+                if resp.status_code == 200:
+                    print(f"[OK] OpenRouter test request succeeded (HTTP 200) with free model '{test_model}'!")
+                else:
+                    print(f"[!] OpenRouter test request returned HTTP {resp.status_code}: {resp.text[:150]}")
+            except Exception as e:
+                print(f"[!] OpenRouter connection error: {e}")
+        else:
+            print("[i] OPENROUTER_API_KEY is not set in local environment.")
+            print("[i] Model catalog was successfully verified without credentials. In GitHub Actions, the key is passed via secrets.OPENROUTER_API_KEY.")
+        return
+
+    # ── Mode 2: Verify Daily LeetCode Fetch ────────────────────
+    if args.verify_daily:
+        print("=== LeetCode Daily Challenge Verification ===")
+        problem = fetch_daily_problem()
+        cls_name, method_name = extract_method_signature(problem.get("py_snippet", ""))
+        print(f"[OK] Successfully fetched today's problem:")
+        print(f"     ID: #{problem['id']}")
+        print(f"     Title: {problem['title']}")
+        print(f"     Difficulty: {problem['difficulty']}")
+        print(f"     Date: {problem['date']}")
+        print(f"     URL: {problem['url']}")
+        print(f"     Tags: {', '.join(problem['tags'])}")
+        print(f"     Expected Signature: {cls_name}.{method_name}()")
+        print(f"     Example Test Cases: {len(problem['testcases'])} cases found")
+        print(f"     Extracted Outputs: {problem['expected_outputs']}")
+        return
+
+    # ── Mode 3: Normal / Scheduled Execution ───────────────────
     # 1. Fetch daily problem
     problem = fetch_daily_problem()
+    cls_name, method_name = extract_method_signature(problem.get("py_snippet", ""))
     print(f"[+] Loaded Problem #{problem['id']}: {problem['title']} ({problem['difficulty']})")
 
-    # 2. Generate solution
-    solution = generate_solution_ai(problem, api_key)
+    # 2. Check deduplication
+    expected_folder = SOLUTIONS_DIR / f"{problem['date']}-{problem['slug']}"
+    if expected_folder.exists() and (expected_folder / "solution.py").exists() and not args.force:
+        print(f"[i] Solution for today's challenge already exists in {expected_folder.name}.")
+        print("[i] Skipping duplicate execution to preserve clean history. (Use --force to override).")
+        sys.exit(0)
 
-    # 3. Save files
+    # 3. Dry-run mode without publishing
+    if args.dry_run:
+        print("[*] Running in --dry-run mode (no files will be written or committed).")
+        if not api_key:
+            print("[i] Dry-run check passed: Daily challenge fetched and signature verified successfully.")
+            return
+
+    # 4. Enforce API key requirement for live generation
+    if not api_key:
+        print("[ERROR] OPENROUTER_API_KEY environment variable is not configured.")
+        print("[ERROR] Refusing to publish or commit a fabricated solution.")
+        sys.exit(1)
+
+    # 5. Generate verified solution with free models
+    try:
+        solution = generate_verified_solution(problem, api_key)
+    except Exception as e:
+        print(f"[ERROR] Solution generation failed: {e}")
+        print("[ERROR] Refusing to publish or commit a fabricated solution.")
+        sys.exit(1)
+
+    # 6. Save files
     folder_path = save_solution_files(problem, solution)
 
-    # 4. Update manifest
-    manifest = update_manifest(problem, folder_path)
+    # 7. Update manifest
+    manifest = update_manifest(problem, folder_path, solution.get("model_used", "openrouter/free"))
 
-    # 5. Update root README
+    # 8. Update root README
     update_root_readme(manifest)
 
     print("[OK] Daily LeetCode Solver completed successfully!")

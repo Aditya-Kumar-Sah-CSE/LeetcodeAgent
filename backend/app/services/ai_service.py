@@ -36,7 +36,7 @@ async def fetch_available_models(api_key: Optional[str] = None) -> list[AIModel]
         pricing = m.get("pricing", {})
         prompt_price = str(pricing.get("prompt", "0"))
         completion_price = str(pricing.get("completion", "0"))
-        is_free = prompt_price == "0" and completion_price == "0"
+        is_free = (prompt_price == "0" and completion_price == "0") or model_id.endswith(":free")
 
         # Extract provider from model id (e.g., "google/gemma-..." -> "google")
         provider = model_id.split("/")[0] if "/" in model_id else ""

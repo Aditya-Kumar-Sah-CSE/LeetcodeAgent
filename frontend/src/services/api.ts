@@ -11,6 +11,9 @@ import type {
   SolutionFile,
   LeetCodeProfile,
   SearchResult,
+  ProblemBrief,
+  TopicTag,
+  ProblemListResponse,
 } from "../types";
 import { getApiKey, getModelId, saveSolutionLocal, getAllSolutionsLocal } from "./storage";
 import { generateClientAlgorithmicSolution } from "./algorithmicAgent";
@@ -84,41 +87,44 @@ const DEFAULT_MODELS: AIModel[] = [
   },
 ];
 
-// Fallback problem data if network is completely unreachable
+// Fallback problem data if network is completely unreachable (Today's Official Daily)
 const FALLBACK_DAILY: DailyProblem = {
-  id: 1,
-  title: "Two Sum",
-  slug: "two-sum",
-  difficulty: "Easy",
+  id: 3619,
+  title: "Count Islands With Total Value Divisible by K",
+  slug: "count-islands-with-total-value-divisible-by-k",
+  difficulty: "Medium",
   description:
-    "<p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p><p>You may assume that each input would have <strong>exactly one solution</strong>, and you may not use the same element twice.</p>",
+    "<p>You are given an <code>m x n</code> matrix <code>grid</code> and a positive integer <code>k</code>. An <strong>island</strong> is a group of positive integers (representing land) that are <strong>4-directionally</strong> connected (horizontally or vertically).</p><p>The <strong>total value</strong> of an island is the sum of the values of all cells in the island.</p><p>Return the number of islands with a total value <strong>divisible by</strong> <code>k</code>.</p>",
   examples: [
     {
-      input: "nums = [2,7,11,15], target = 9",
-      output: "[0,1]",
-      explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
+      input: "grid = [[0,2,1],[0,0,3],[4,2,0]], k = 3",
+      output: "2",
+      explanation: "There are two islands: island 1 with sum 2 + 1 + 3 = 6 (divisible by 3), and island 2 with sum 4 + 2 = 6 (divisible by 3).",
     },
     {
-      input: "nums = [3,2,4], target = 6",
-      output: "[1,2]",
+      input: "grid = [[1,1],[1,1]], k = 5",
+      output: "0",
+      explanation: "There is one island with sum 4, which is not divisible by 5.",
     },
   ],
   constraints: [
-    "2 <= nums.length <= 10^4",
-    "-10^9 <= nums[i] <= 10^9",
-    "-10^9 <= target <= 10^9",
-    "Only one valid answer exists.",
+    "m == grid.length",
+    "n == grid[i].length",
+    "1 <= m, n <= 1000",
+    "1 <= m * n <= 2 * 10^5",
+    "0 <= grid[i][j] <= 10^6",
+    "1 <= k <= 10^9",
   ],
-  tags: ["Array", "Hash Table"],
-  url: "https://leetcode.com/problems/two-sum/",
+  tags: ["Array", "Depth-First Search", "Breadth-First Search", "Union-Find", "Matrix"],
+  url: "https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/",
   date: new Date().toISOString().split("T")[0],
   fetched_at: new Date().toISOString(),
   code_snippets: {
-    python: "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        pass",
-    cpp: "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        \n    }\n};",
-    java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        \n    }\n}",
-    javascript: "/**\n * @param {number[]} nums\n * @param {number} target\n * @return {number[]}\n */\nvar twoSum = function(nums, target) {\n    \n};",
-    typescript: "function twoSum(nums: number[], target: number): number[] {\n    \n};",
+    python: "class Solution:\n    def countIslands(self, grid: List[List[int]], k: int) -> int:\n        pass",
+    cpp: "class Solution {\npublic:\n    int countIslands(vector<vector<int>>& grid, int k) {\n        \n    }\n};",
+    java: "class Solution {\n    public int countIslands(int[][] grid, int k) {\n        \n    }\n}",
+    javascript: "/**\n * @param {number[][]} grid\n * @param {number} k\n * @return {number}\n */\nvar countIslands = function(grid, k) {\n    \n};",
+    typescript: "function countIslands(grid: number[][], k: number): number {\n    \n};",
   },
 };
 
@@ -160,6 +166,223 @@ export async function fetchCodeSnippets(
     return await apiFetch<Record<string, string>>(`/problem/${slug}/snippets`);
   } catch {
     return FALLBACK_DAILY.code_snippets || {};
+  }
+}
+
+// ─── Practice Problems & Topics ──────────────────────────────
+
+const CURATED_TOPICS: TopicTag[] = [
+  { name: "All Topics", slug: "all" },
+  { name: "Array", slug: "array" },
+  { name: "String", slug: "string" },
+  { name: "Hash Table", slug: "hash-table" },
+  { name: "Dynamic Programming", slug: "dynamic-programming" },
+  { name: "Depth-First Search", slug: "depth-first-search" },
+  { name: "Breadth-First Search", slug: "breadth-first-search" },
+  { name: "Binary Search", slug: "binary-search" },
+  { name: "Two Pointers", slug: "two-pointers" },
+  { name: "Tree", slug: "tree" },
+  { name: "Binary Tree", slug: "binary-tree" },
+  { name: "Matrix", slug: "matrix" },
+  { name: "Stack", slug: "stack" },
+  { name: "Heap (Priority Queue)", slug: "heap-priority-queue" },
+  { name: "Greedy", slug: "greedy" },
+  { name: "Graph", slug: "graph" },
+  { name: "Linked List", slug: "linked-list" },
+  { name: "Sliding Window", slug: "sliding-window" },
+  { name: "Backtracking", slug: "backtracking" },
+  { name: "Union Find", slug: "union-find" },
+  { name: "Bit Manipulation", slug: "bit-manipulation" },
+];
+
+const CURATED_PRACTICE_PROBLEMS: ProblemBrief[] = [
+  {
+    id: 3619,
+    title: "Count Islands With Total Value Divisible by K",
+    slug: "count-islands-with-total-value-divisible-by-k",
+    difficulty: "Medium",
+    tags: ["Array", "Depth-First Search", "Breadth-First Search", "Union-Find", "Matrix"],
+    url: "https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/",
+  },
+  {
+    id: 1,
+    title: "Two Sum",
+    slug: "two-sum",
+    difficulty: "Easy",
+    tags: ["Array", "Hash Table"],
+    url: "https://leetcode.com/problems/two-sum/",
+  },
+  {
+    id: 200,
+    title: "Number of Islands",
+    slug: "number-of-islands",
+    difficulty: "Medium",
+    tags: ["Array", "Depth-First Search", "Breadth-First Search", "Union-Find", "Matrix"],
+    url: "https://leetcode.com/problems/number-of-islands/",
+  },
+  {
+    id: 15,
+    title: "3Sum",
+    slug: "3sum",
+    difficulty: "Medium",
+    tags: ["Array", "Two Pointers", "Sorting"],
+    url: "https://leetcode.com/problems/3sum/",
+  },
+  {
+    id: 53,
+    title: "Maximum Subarray",
+    slug: "maximum-subarray",
+    difficulty: "Medium",
+    tags: ["Array", "Divide and Conquer", "Dynamic Programming"],
+    url: "https://leetcode.com/problems/maximum-subarray/",
+  },
+  {
+    id: 121,
+    title: "Best Time to Buy and Sell Stock",
+    slug: "best-time-to-buy-and-sell-stock",
+    difficulty: "Easy",
+    tags: ["Array", "Dynamic Programming"],
+    url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/",
+  },
+  {
+    id: 70,
+    title: "Climbing Stairs",
+    slug: "climbing-stairs",
+    difficulty: "Easy",
+    tags: ["Math", "Dynamic Programming", "Memoization"],
+    url: "https://leetcode.com/problems/climbing-stairs/",
+  },
+  {
+    id: 79,
+    title: "Word Search",
+    slug: "word-search",
+    difficulty: "Medium",
+    tags: ["Array", "String", "Backtracking", "Matrix"],
+    url: "https://leetcode.com/problems/word-search/",
+  },
+  {
+    id: 98,
+    title: "Validate Binary Search Tree",
+    slug: "validate-binary-search-tree",
+    difficulty: "Medium",
+    tags: ["Tree", "Depth-First Search", "Binary Search Tree", "Binary Tree"],
+    url: "https://leetcode.com/problems/validate-binary-search-tree/",
+  },
+  {
+    id: 3,
+    title: "Longest Substring Without Repeating Characters",
+    slug: "longest-substring-without-repeating-characters",
+    difficulty: "Medium",
+    tags: ["Hash Table", "String", "Sliding Window"],
+    url: "https://leetcode.com/problems/longest-substring-without-repeating-characters/",
+  },
+  {
+    id: 206,
+    title: "Reverse Linked List",
+    slug: "reverse-linked-list",
+    difficulty: "Easy",
+    tags: ["Linked List", "Recursion"],
+    url: "https://leetcode.com/problems/reverse-linked-list/",
+  },
+  {
+    id: 42,
+    title: "Trapping Rain Water",
+    slug: "trapping-rain-water",
+    difficulty: "Hard",
+    tags: ["Array", "Two Pointers", "Dynamic Programming", "Stack", "Monotonic Stack"],
+    url: "https://leetcode.com/problems/trapping-rain-water/",
+  },
+  {
+    id: 124,
+    title: "Binary Tree Maximum Path Sum",
+    slug: "binary-tree-maximum-path-sum",
+    difficulty: "Hard",
+    tags: ["Dynamic Programming", "Tree", "Depth-First Search", "Binary Tree"],
+    url: "https://leetcode.com/problems/binary-tree-maximum-path-sum/",
+  },
+  {
+    id: 239,
+    title: "Sliding Window Maximum",
+    slug: "sliding-window-maximum",
+    difficulty: "Hard",
+    tags: ["Array", "Queue", "Sliding Window", "Heap (Priority Queue)", "Monotonic Queue"],
+    url: "https://leetcode.com/problems/sliding-window-maximum/",
+  },
+  {
+    id: 20,
+    title: "Valid Parentheses",
+    slug: "valid-parentheses",
+    difficulty: "Easy",
+    tags: ["String", "Stack"],
+    url: "https://leetcode.com/problems/valid-parentheses/",
+  },
+  {
+    id: 21,
+    title: "Merge Two Sorted Lists",
+    slug: "merge-two-sorted-lists",
+    difficulty: "Easy",
+    tags: ["Linked List", "Recursion"],
+    url: "https://leetcode.com/problems/merge-two-sorted-lists/",
+  },
+  {
+    id: 33,
+    title: "Search in Rotated Sorted Array",
+    slug: "search-in-rotated-sorted-array",
+    difficulty: "Medium",
+    tags: ["Array", "Binary Search"],
+    url: "https://leetcode.com/problems/search-in-rotated-sorted-array/",
+  },
+];
+
+export async function fetchTopics(): Promise<TopicTag[]> {
+  try {
+    const data = await apiFetch<{ topics: TopicTag[] }>("/topics");
+    if (data.topics && data.topics.length > 0) {
+      return [{ name: "All Topics", slug: "all" }, ...data.topics];
+    }
+  } catch (err) {
+    console.warn("Could not fetch topics from backend, using curated list:", err);
+  }
+  return CURATED_TOPICS;
+}
+
+export async function fetchPracticeProblems(options?: {
+  difficulty?: string;
+  topic?: string;
+  limit?: number;
+  skip?: number;
+  search?: string;
+}): Promise<ProblemListResponse> {
+  const params = new URLSearchParams();
+  if (options?.difficulty && options.difficulty !== "ALL") params.set("difficulty", options.difficulty);
+  if (options?.topic && options.topic !== "all") params.set("topic", options.topic);
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.skip) params.set("skip", String(options.skip));
+  if (options?.search) params.set("search", options.search);
+
+  try {
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return await apiFetch<ProblemListResponse>(`/problems${query}`);
+  } catch (err) {
+    console.warn("Could not fetch practice problems from backend, filtering curated set:", err);
+    let filtered = [...CURATED_PRACTICE_PROBLEMS];
+    if (options?.difficulty && options.difficulty !== "ALL") {
+      filtered = filtered.filter((q) => q.difficulty.toUpperCase() === options.difficulty?.toUpperCase());
+    }
+    if (options?.topic && options.topic !== "all") {
+      const topicLower = options.topic.toLowerCase().replace(/-/g, " ");
+      filtered = filtered.filter((q) =>
+        q.tags.some((t) => t.toLowerCase().includes(topicLower) || topicLower.includes(t.toLowerCase()))
+      );
+    }
+    if (options?.search) {
+      const term = options.search.toLowerCase();
+      filtered = filtered.filter((q) => q.title.toLowerCase().includes(term) || String(q.id).includes(term));
+    }
+    return {
+      total: filtered.length,
+      questions: filtered.slice(options?.skip || 0, (options?.skip || 0) + (options?.limit || 20)),
+    };
   }
 }
 

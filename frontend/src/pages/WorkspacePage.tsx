@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import {
   Play,
@@ -66,6 +66,7 @@ import SubmissionModal from "../components/SubmissionModal";
 
 export default function WorkspacePage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const passedProblem = (location.state as { problem?: DailyProblem })?.problem;
 
   const [problem, setProblem] = useState<DailyProblem | null>(passedProblem || null);
@@ -429,6 +430,18 @@ export default function WorkspacePage() {
                 {problem.id ? `#${problem.id} ` : ""}
                 {problem.title}
               </h2>
+              <button
+                onClick={() => navigate("/daily")}
+                className="hidden sm:flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border text-muted hover:text-white transition-all cursor-pointer shrink-0"
+                style={{
+                  background: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border-subtle)",
+                }}
+                title="Explore Practice Problems by Topic & Difficulty"
+              >
+                <BookOpen size={12} className="text-accent" />
+                <span>Explore Topics</span>
+              </button>
             </>
           )}
         </div>

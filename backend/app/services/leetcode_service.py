@@ -5,11 +5,17 @@ LeetCode Daily Challenge fetcher using LeetCode's public GraphQL endpoint.
 import httpx
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Any
 import re
 import html
 
-from app.models.schemas import DailyProblem, ProblemExample
+from app.models.schemas import (
+    DailyProblem,
+    ProblemExample,
+    ProblemBrief,
+    TopicTag,
+    ProblemListResponse,
+)
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -24,12 +30,14 @@ query questionOfToday {
         link
         question {
             questionId
+            questionFrontendId
             title
             titleSlug
             difficulty
             content
             topicTags {
                 name
+                slug
             }
             codeSnippets {
                 lang
@@ -46,12 +54,14 @@ PROBLEM_DETAIL_QUERY = """
 query questionDetail($titleSlug: String!) {
     question(titleSlug: $titleSlug) {
         questionId
+        questionFrontendId
         title
         titleSlug
         difficulty
         content
         topicTags {
             name
+            slug
         }
         codeSnippets {
             lang
@@ -63,9 +73,49 @@ query questionDetail($titleSlug: String!) {
 }
 """
 
-# In-memory cache for the current daily problem
+# Query to get practice problems by difficulty and topic tag
+PROBLEMSET_QUERY = """
+query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {
+    problemsetQuestionList: questionList(
+        categorySlug: $categorySlug
+        limit: $limit
+        skip: $skip
+        filters: $filters
+    ) {
+        total: totalNum
+        questions: data {
+            questionId
+            questionFrontendId
+            title
+            titleSlug
+            difficulty
+            topicTags {
+                name
+                slug
+            }
+        }
+    }
+}
+"""
+
+# Query to get all official LeetCode topic tags
+TOPIC_TAGS_QUERY = """
+query getTopicTags {
+    questionTopicTags {
+        edges {
+            node {
+                name
+                slug
+            }
+        }
+    }
+}
+"""
+
+# In-memory cache for the current daily problem & topics
 _daily_cache: Optional[dict] = None
 _daily_cache_date: Optional[str] = None
+_topic_tags_cache: list[TopicTag] = []
 
 
 def _parse_examples(html_content: str) -> list[ProblemExample]:
@@ -173,7 +223,7 @@ async def fetch_daily_challenge() -> DailyProblem:
             snippets["python"] = code_str
 
     problem = DailyProblem(
-        id=int(question["questionId"]),
+        id=int(question.get("questionFrontendId") or question.get("questionId") or 0),
         title=question["title"],
         slug=question["titleSlug"],
         difficulty=question["difficulty"],
@@ -191,7 +241,7 @@ async def fetch_daily_challenge() -> DailyProblem:
     _daily_cache = problem.model_dump()
     _daily_cache_date = today
 
-    logger.info("Fetched daily challenge: %s (%s)", problem.title, problem.difficulty)
+    logger.info("Fetched daily challenge: #%d %s (%s)", problem.id, problem.title, problem.difficulty)
     return problem
 
 
@@ -229,7 +279,7 @@ async def fetch_problem_by_slug(slug: str) -> DailyProblem:
             snippets["python"] = code_str
 
     return DailyProblem(
-        id=int(question["questionId"]),
+        id=int(question.get("questionFrontendId") or question.get("questionId") or 0),
         title=question["title"],
         slug=question["titleSlug"],
         difficulty=question["difficulty"],
@@ -272,6 +322,136 @@ async def fetch_code_snippets(slug: str) -> dict[str, str]:
         snippets[lang_slug] = snippet["code"]
 
     return snippets
+
+
+async def fetch_topic_tags() -> list[TopicTag]:
+    """Fetch all official LeetCode DSA topics."""
+    global _topic_tags_cache
+    if _topic_tags_cache:
+        return _topic_tags_cache
+
+    try:
+        async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT) as client:
+            response = await client.post(
+                LEETCODE_GRAPHQL_URL,
+                json={"query": TOPIC_TAGS_QUERY},
+                headers={
+                    "Content-Type": "application/json",
+                    "Referer": "https://leetcode.com",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        edges = data.get("data", {}).get("questionTopicTags", {}).get("edges", [])
+        tags = []
+        for edge in edges:
+            node = edge.get("node", {})
+            name = node.get("name")
+            slug = node.get("slug")
+            if name and slug:
+                tags.append(TopicTag(name=name, slug=slug))
+
+        if tags:
+            _topic_tags_cache = tags
+            return tags
+    except Exception as e:
+        logger.warning("Could not fetch live topic tags from LeetCode (%s), using curated defaults", e)
+
+    # Curated fallbacks if network unreachable
+    fallback_topics = [
+        {"name": "Array", "slug": "array"},
+        {"name": "String", "slug": "string"},
+        {"name": "Hash Table", "slug": "hash-table"},
+        {"name": "Dynamic Programming", "slug": "dynamic-programming"},
+        {"name": "Math", "slug": "math"},
+        {"name": "Sorting", "slug": "sorting"},
+        {"name": "Greedy", "slug": "greedy"},
+        {"name": "Depth-First Search", "slug": "depth-first-search"},
+        {"name": "Binary Search", "slug": "binary-search"},
+        {"name": "Matrix", "slug": "matrix"},
+        {"name": "Tree", "slug": "tree"},
+        {"name": "Breadth-First Search", "slug": "breadth-first-search"},
+        {"name": "Bit Manipulation", "slug": "bit-manipulation"},
+        {"name": "Two Pointers", "slug": "two-pointers"},
+        {"name": "Prefix Sum", "slug": "prefix-sum"},
+        {"name": "Heap (Priority Queue)", "slug": "heap-priority-queue"},
+        {"name": "Binary Tree", "slug": "binary-tree"},
+        {"name": "Simulation", "slug": "simulation"},
+        {"name": "Stack", "slug": "stack"},
+        {"name": "Graph", "slug": "graph"},
+        {"name": "Sliding Window", "slug": "sliding-window"},
+        {"name": "Backtracking", "slug": "backtracking"},
+        {"name": "Union Find", "slug": "union-find"},
+        {"name": "Linked List", "slug": "linked-list"},
+        {"name": "Monotonic Stack", "slug": "monotonic-stack"},
+        {"name": "Recursion", "slug": "recursion"},
+        {"name": "Divide and Conquer", "slug": "divide-and-conquer"},
+        {"name": "Trie", "slug": "trie"},
+    ]
+    return [TopicTag(**t) for t in fallback_topics]
+
+
+async def fetch_practice_problems(
+    difficulty: Optional[str] = None,
+    topic: Optional[str] = None,
+    limit: int = 20,
+    skip: int = 0,
+    search: Optional[str] = None,
+) -> ProblemListResponse:
+    """Fetch practice problems from LeetCode filtered by difficulty, topic, search query."""
+    filters: dict[str, Any] = {}
+    if difficulty and difficulty.upper() in ("EASY", "MEDIUM", "HARD"):
+        filters["difficulty"] = difficulty.upper()
+    if topic and topic.lower() not in ("all", ""):
+        filters["tags"] = [topic.lower()]
+    if search and search.strip():
+        filters["searchKeywords"] = search.strip()
+
+    async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT) as client:
+        response = await client.post(
+            LEETCODE_GRAPHQL_URL,
+            json={
+                "query": PROBLEMSET_QUERY,
+                "variables": {
+                    "categorySlug": "",
+                    "limit": min(limit, 50),
+                    "skip": max(skip, 0),
+                    "filters": filters,
+                },
+            },
+            headers={
+                "Content-Type": "application/json",
+                "Referer": "https://leetcode.com",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            },
+        )
+        response.raise_for_status()
+        data = response.json()
+
+    result = data.get("data", {}).get("problemsetQuestionList", {})
+    total = result.get("total") or 0
+    raw_questions = result.get("questions") or []
+
+    questions = []
+    for q in raw_questions:
+        q_id = int(q.get("questionFrontendId") or q.get("questionId") or 0)
+        title = q.get("title", "")
+        slug = q.get("titleSlug", "")
+        diff = q.get("difficulty", "Medium")
+        tags = [t["name"] for t in q.get("topicTags", []) if "name" in t]
+        url = f"https://leetcode.com/problems/{slug}/"
+        questions.append(ProblemBrief(
+            id=q_id,
+            title=title,
+            slug=slug,
+            difficulty=diff,
+            tags=tags,
+            url=url,
+        ))
+
+    return ProblemListResponse(total=total, questions=questions)
 
 
 def clear_daily_cache():

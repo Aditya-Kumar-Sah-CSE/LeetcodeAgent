@@ -10,6 +10,8 @@ from app.services.leetcode_service import (
     fetch_problem_by_slug,
     fetch_code_snippets,
     clear_daily_cache,
+    fetch_topic_tags,
+    fetch_practice_problems,
 )
 from app.services.ai_service import fetch_available_models
 from app.services.search_service import search_web
@@ -83,6 +85,40 @@ async def get_problem_snippets(slug: str):
         return snippets
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Failed to fetch snippets: {str(e)}")
+
+
+# ─── Practice Problems & Topics ────────────────────────────────
+
+@router.get("/topics")
+async def get_topics():
+    """Fetch official LeetCode DSA topics."""
+    try:
+        topics = await fetch_topic_tags()
+        return {"topics": [t.model_dump() for t in topics]}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch DSA topics: {str(e)}")
+
+
+@router.get("/problems")
+async def get_practice_problems(
+    difficulty: Optional[str] = Query(None, description="Easy, Medium, Hard"),
+    topic: Optional[str] = Query(None, description="Topic slug e.g. array, depth-first-search"),
+    limit: int = Query(20, ge=1, le=50),
+    skip: int = Query(0, ge=0),
+    search: Optional[str] = Query(None, description="Keywords to search in title or slug"),
+):
+    """Fetch practice problems filtered by difficulty and DSA topic from LeetCode."""
+    try:
+        data = await fetch_practice_problems(
+            difficulty=difficulty,
+            topic=topic,
+            limit=limit,
+            skip=skip,
+            search=search,
+        )
+        return data.model_dump()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch practice problems: {str(e)}")
 
 
 # ─── AI Models ──────────────────────────────────────────────────

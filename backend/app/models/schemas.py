@@ -42,6 +42,18 @@ class ProblemBrief(BaseModel):
     url: str
 
 
+class TopicTag(BaseModel):
+    """LeetCode DSA topic tag."""
+    name: str
+    slug: str
+
+
+class ProblemListResponse(BaseModel):
+    """Response containing practice problem set and total count."""
+    total: int
+    questions: list[ProblemBrief]
+
+
 # ─── AI Models ─────────────────────────────────────────────────
 
 class AIModel(BaseModel):

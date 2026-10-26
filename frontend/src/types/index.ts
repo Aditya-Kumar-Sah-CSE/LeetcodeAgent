@@ -21,6 +21,25 @@ export interface DailyProblem {
   code_snippets?: Record<string, string>;
 }
 
+export interface ProblemBrief {
+  id: number;
+  title: string;
+  slug: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  tags: string[];
+  url: string;
+}
+
+export interface TopicTag {
+  name: string;
+  slug: string;
+}
+
+export interface ProblemListResponse {
+  total: number;
+  questions: ProblemBrief[];
+}
+
 export interface AIModel {
   id: string;
   name: string;

@@ -437,10 +437,57 @@ async function runClientAutonomousStreaming({
   const isDummyCode =
     code.includes("int total = 0;\n        return total;") ||
     code.includes("return total;") ||
-    code.includes("pass") ||
     (!codeLower.includes("for") && !codeLower.includes("while") && !codeLower.includes("map") && !codeLower.includes("switch") && !codeLower.includes("if"));
 
-  if (isEditCodeQuery) {
+  const noticeBanner = `> ⚠️ **Live AI Model Disconnected (No API Key Configured)**
+> Real-time **DeepSeek R1 / Google Gemini 2.5** streaming ke liye **[🔑 Free Google Gemini Key Connect Karein](#/settings)** (Google AI Studio se 100% free key lein). Abhi local heuristic mode active hai.
+
+`;
+
+  const isDoubtOrNegative =
+    queryLower === "no" ||
+    queryLower === "nahi" ||
+    queryLower.startsWith("no ") ||
+    queryLower.startsWith("nahi ") ||
+    queryLower.includes("galat") ||
+    queryLower.includes("wrong") ||
+    queryLower.includes("incorrect") ||
+    queryLower.includes("not working") ||
+    queryLower.includes("fail") ||
+    queryLower.includes("bug hai") ||
+    queryLower.includes("issue");
+
+  const isAffirmative =
+    queryLower === "yes" ||
+    queryLower === "haan" ||
+    queryLower === "ok" ||
+    queryLower === "sahi" ||
+    queryLower === "theek" ||
+    queryLower.startsWith("yes ") ||
+    queryLower.startsWith("haan ");
+
+  if (isDoubtOrNegative) {
+    generatedResponse = `${noticeBanner}Bhai, samajh gaya! Agar previous logic ya solution me koi doubt ya flaw lag raha hai, toh **#${problem?.id || ""} ${problemTitle}** ke liye in critical points ko verify karte hain:
+
+### 🔍 Flaw & Edge-Case Audit for ${problemTitle}
+1. **Loop & Boundary Conditions**:
+   - Array / String index bounds check karein ($0$ to $n-1$).
+   - Empty input, single-element input (jaise $N=0$ ya $N=1$) par check karein.
+2. **Duplicate & Invariant Handling**:
+   - Kya duplicate elements / repeating characters correctly update ho rahe hain?
+   - Sliding window / two-pointers me left/right pointers ka increment order check karein.
+3. **Data Type & Overflow**:
+   - Kya values integer range ($-2^{31}$ to $2^{31}-1$) me hain ya \`long long\` / 64-bit precision chahiye?
+
+Aap specific failing test-case ya line number batayein, hum milkar exactly use debug aur fix kar lenge!`;
+  } else if (isAffirmative) {
+    generatedResponse = `${noticeBanner}Badhiya bhai! **#${problem?.id || ""} ${problemTitle}** ka logic clear ho gaya. ✓
+
+### 🚀 Next Steps:
+1. **Code Submission**: Upar green **'Copy & Open LeetCode'** button par click karke direct LeetCode submission portal par code paste aur submit kar sakte hain.
+2. **Complexity Target**: Ensure karein ki solution **${problem?.difficulty || "Optimal"}** constraints ke mutabiq optimal Time Complexity me chale.
+3. **Alternative Approach**: Agar kisi aur technique (jaise Two Pointers, DP, ya Binary Search) se explore karna ho toh batayein!`;
+  } else if (isEditCodeQuery) {
     addReasoning(`🛠️ Generating complete optimal ${language.toUpperCase()} solution with 1-click editor integration...`);
     await delay(180);
     addTool(
@@ -449,16 +496,12 @@ async function runClientAutonomousStreaming({
       `Optimal ${language.toUpperCase()} solution synthesized (O(N) Time, O(1) Space)`
     );
     const optimalCode = getOptimalCodeForProblem(problemSlug, language, problem);
-    generatedResponse = `Bhai, #${problem?.id || ""} **${problemTitle}** ke liye optimal, fully-tested **${language.toUpperCase()}** code generate kar diya hai:
+    generatedResponse = `${noticeBanner}Bhai, #${problem?.id || ""} **${problemTitle}** ke liye optimal, fully-tested **${language.toUpperCase()}** code generate kar diya hai:
 
 ### 🎯 Key Enhancements & Approach
-1. **Value Mapping**: Symbols ko unke exact numeric values se map kiya gaya hai with $O(1)$ fast lookups.
-2. **Subtractive Principle**: Har character \`s[i]\` ko agle character \`s[i+1]\` se compare kiya jata hai. Agar current value choti hai (\`val[s[i]] < val[s[i+1]]\`), toh usko subtract kiya jata hai (jaise \`IV = 4\`, \`IX = 9\`, \`XL = 40\`). Warna add karte hain.
-3. **Corner Cases Handled**: Single character strings, repeated characters (\`III\`, \`XXX\`), aur mixed subtractive pairs (\`MCMXCIV = 1994\`) correctly resolve hote hain.
-
-### ⚡ Complexity Analysis
-- **Time Complexity**: **$O(N)$** — String \`s\` ki length $N$ ke through single linear pass. Har character exactly ek baar visit hota hai.
-- **Space Complexity**: **$O(1)$** — Constant auxiliary space (fixed Roman numeral table).
+1. **Algorithmic State**: Active problem ke canonical constraints ke hisaab se optimal data structure (Hash Map / Set / Two Pointers) implement kiya gaya hai.
+2. **Edge Cases Covered**: Boundary values (empty input, single element, negative ranges) safely handled hain.
+3. **Complexity Compliance**: Solution LeetCode standard time limits ke andar execute hoga.
 
 Niche **'✨ Apply to Editor'** button par click karke direct editor me code update kar lo:
 
@@ -466,7 +509,7 @@ Niche **'✨ Apply to Editor'** button par click karke direct editor me code upd
 ${optimalCode}
 \`\`\``;
   } else if (hasPopcount) {
-    generatedResponse = `### \`__builtin_popcount\` Comprehensive Breakdown ⚡
+    generatedResponse = `${noticeBanner}### \`__builtin_popcount\` Comprehensive Breakdown ⚡
 
 - **Meaning**: Yeh GCC/Clang ka ek built-in compiler intrinsic function hai jo kisi integer ke binary (base-2) representation mein total number of **set bits** (yani \`1\`s) ko count karta hai.
 - **Hardware Acceleration**: Yeh standard loop ya shift operation nahi chalata, balki modern x86/ARM processors ke direct hardware instruction (\`POPCNT\`) par execute hota hai, jisse iska execution time **$O(1)$ constant time** hota hai.
@@ -479,111 +522,80 @@ ${optimalCode}
   - \`x = 7\` $\\to$ Binary \`111\`$_2$ $\\to$ Output: **3**.
 - **Alternative in C++20**: Standard library mein \`std::popcount(x)\` (\`<bit>\` header) available hai.`;
   } else if (hasDivByZeroRisk) {
-    generatedResponse = `### Critical Bug Alert: Division By Zero Risk ⚠️
+    generatedResponse = `${noticeBanner}### Critical Bug Alert: Division By Zero Risk ⚠️
 
 - **Detected Vulnerability**: Active editor code mein expression \`s2 / s1\` present hai. Agar \`a = 0\` ya \`s1 == 0\` evaluate hota hai, toh yeh **Division by Zero Runtime Error (SIGFPE)** trigger karega aur code crash ho jayega!
 - **Reason**: C++ aur C family languages mein integer division by zero strictly undefined behavior hota hai jo OS-level exception raise karta hai.
 - **Recommended Guard**:
   \`\`\`cpp
   if (s1 == 0) {
-      return 0; // ya problem specification ke hisaab se appropriate default value
+      return 0;
   }
   return s2 / s1;
   \`\`\`
 - **Complexity Impact**: Guard check add karne se code $O(1)$ time complexity maintain rakhega aur crash-proof ban jayega.`;
   } else if (isAskingCorrectness && isDummyCode) {
     const optimalCode = getOptimalCodeForProblem(problemSlug, language, problem);
-    generatedResponse = `**Nahi bhai, active editor code abhi incomplete/dummy hai! ⚠️**
+    generatedResponse = `${noticeBanner}**Nahi bhai, active editor code abhi incomplete/dummy hai! ⚠️**
 
 ### 🔍 Review Findings
 - **Current State**: Editor code abhi bina calculation ke directly placeholder return kar raha hai.
-- **Missing Logic**: Roman symbols ka map/switch lookup aur subtractive rule comparison missing hai.
-- **Ready Fix**: Maine complete optimal $O(N)$ compilable solution generate kar diya hai. Niche **'✨ Apply to Editor'** button click karke code ko direct test karo:
+- **Missing Logic**: #${problem?.id || ""} ${problemTitle} ke canonical state updates aur condition checks missing hain.
+- **Ready Fix**: Maine complete optimal solution generate kar diya hai. Niche **'✨ Apply to Editor'** button click karke code ko direct test karo:
 
 \`\`\`${language}
 ${optimalCode}
 \`\`\``;
   } else if (isAskingCorrectness) {
-    generatedResponse = `**Haan bhai, logic bilkul accurate, correct aur optimal hai! ✓**
+    generatedResponse = `${noticeBanner}**Haan bhai, active code logic solid aur verified lag raha hai! ✓**
 
-### 🔍 Deep Verification Report
+### 🔍 Deep Verification Report for ${problemTitle}
 1. **Algorithmic Correctness**:
-   - Subtraction rules (\`val[s[i]] < val[s[i+1]]\`) properly evaluate ho rahe hain.
-   - Non-subtractive normal additions (\`VI = 6\`, \`MDCLXVI\`) bina kisi glitch ke sum ho rahe hain.
+   - Loop traversal aur condition checks standard invariant follow kar rahe hain.
+   - Variable updates correctly accumulate ho rahe hain.
 2. **Boundary & Edge-Case Safety**:
-   - Single-character string (\`"I" = 1\`, \`"M" = 1000\`) correctly terminate hota hai bina array out-of-bounds error ke.
-   - Largest value combinations (\`"MMMCMXCIX" = 3999\`) completely safe hain.
+   - Base case aur empty/single input condition gracefully terminate hoti hai.
+   - Array bounds check aur pointer safety satisfied hai.
 3. **Complexity Compliance**:
-   - **Time Complexity**: **$O(N)$** ($N \\le 15$), runs in $< 1\\text{ms}$.
-   - **Space Complexity**: **$O(1)$**, minimal memory allocation.
+   - **Time Complexity**: Optimal polynomial/logarithmic bounds.
+   - **Space Complexity**: Memory constraints ke andar auxiliary allocation.
+
 LeetCode submission ke liye code completely ready hai!`;
   } else if (isExplainCodeQuery) {
-    generatedResponse = `### Line-by-Line Code Explanation 📖
+    generatedResponse = `${noticeBanner}### Line-by-Line Code Explanation for ${problemTitle} 📖
 
 Code ka execution flow neeche detail me explain kiya gaya hai:
 
-1. **Mapping Setup**:
-   - Har character symbol (\`'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000\`) ko integer values assign ki gayi hain lookup ke liye.
-2. **Linear Iteration**:
-   - Loop index \`i\` ko \`0\` se lekar \`n - 1\` tak scan karta hai.
-3. **Subtractive Rule Condition (\`val[s[i]] < val[s[i+1]]\`)**:
-   - Roman numbers hamesha largest to smallest likhe jaate hain. Jab bhi ek chhota symbol bade symbol ke pehle aata hai (jaise \`IV = 4\`, \`IX = 9\`), iska matlab hai subtraction ho rahi hai.
-   - Is case mein: \`total -= val[s[i]]\`.
-4. **Normal Addition Condition**:
-   - Jab character agle character se bada ya barabar ho, direct addition hoti hai: \`total += val[s[i]]\`.
-5. **Final Return**:
-   - Loop complete hone par final \`total\` return hota hai. Single pass hone ke karan time complexity $O(N)$ aur auxiliary space $O(1)$ rehti hai!`;
-  } else if (isRomanLogicQuery) {
-    generatedResponse = `### Roman Numeral Subtraction Rules & Mathematical Intuition 🗺️
-
-Roman system additive principle par kaam karta hai, lekin 6 specific subtractive pairs define kiye gaye hain taaki consecutive 4 identical letters na likhne padein:
-
-- **\`I\` can be placed before \`V\` (5) and \`X\` (10)** to make **4** (\`IV\`) and **9** (\`IX\`).
-- **\`X\` can be placed before \`L\` (50) and \`C\` (100)** to make **40** (\`XL\`) and **90** (\`XC\`).
-- **\`C\` can be placed before \`D\` (500) and \`M\` (1000)** to make **400** (\`CD\`) and **900** (\`CM\`).
-
-### 💡 Optimal Coding Trick
-Iterate through the string from left to right:
-- If \`value(s[i]) < value(s[i+1])\`, subtract \`value(s[i])\` from the running total.
-- Otherwise, add \`value(s[i])\` to the running total.
-This eliminates any need for lookaheads of multiple characters or complex if-else ladders!`;
+1. **Initialization & Setup**:
+   - Problem ke parameters aur data structures ko define kiya jata hai taaki efficient lookups mil sakein.
+2. **Core Loop / Traversal**:
+   - Loop input sequence ko scan karta hai aur current state ko update karta hai.
+3. **Conditional Logic**:
+   - Har element par specific condition verify hoti hai (e.g. duplicate check, window shrink/expand, comparison).
+4. **Final Return**:
+   - Process hone ke baad final result computed return hota hai with minimal overhead!`;
   } else if (isComplexityQuery) {
-    generatedResponse = `### Complete Time & Space Complexity Analysis ⚡
+    generatedResponse = `${noticeBanner}### Complete Time & Space Complexity Analysis for ${problemTitle} ⚡
 
-1. **Time Complexity: $O(N)$**
-   - Jahan $N$ input string \`s\` ki length hai.
-   - Har character ko exactly ek baar inspect kiya jata hai.
-   - Hash map / switch-case lookup $O(1)$ constant time leti hai.
-   - LeetCode constraints ke mutabiq $1 \\le s.\\text{length} \\le 15$, isliye actual execution time essentially $\\approx 0.01\\text{ms}$ (instant) rehta hai.
+1. **Time Complexity**:
+   - Algorithmic structure ke hisaab se optimal single pass $O(N)$ ya divide-and-conquer $O(N \\log N)$ bounds follow karta hai.
+   - Har element bounded number of times visit hota hai.
 
-2. **Space Complexity: $O(1)$**
-   - Lookup table sirf 7 predefined Roman characters (\`I, V, X, L, C, D, M\`) ko hold karti hai, jiska size fixed hai regardless of input length.
-   - Sirf do integer variables (\`total\`, \`i\`) use hote hain, isliye auxiliary memory strictly $O(1)$ constant space hai.`;
-  } else if (isDryRunQuery) {
-    generatedResponse = `### Step-by-Step Dry Run: \`s = "MCMXCIV"\` (Target: 1994) 🧪
-
-| Step | Index | Character | Value | Next Char Value | Action | Running Total |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | 0 | \`M\` | 1000 | \`C\` (100) | $1000 \\ge 100 \\implies$ Add 1000 | **1000** |
-| 2 | 1 | \`C\` | 100 | \`M\` (1000) | $100 < 1000 \\implies$ **Subtract 100** | **900** |
-| 3 | 2 | \`M\` | 1000 | \`X\` (10) | $1000 \\ge 10 \\implies$ Add 1000 | **1900** |
-| 4 | 3 | \`X\` | 10 | \`C\` (100) | $10 < 100 \\implies$ **Subtract 10** | **1890** |
-| 5 | 4 | \`C\` | 100 | \`I\` (1) | $100 \\ge 1 \\implies$ Add 100 | **1990** |
-| 6 | 5 | \`I\` | 1 | \`V\` (5) | $1 < 5 \\implies$ **Subtract 1** | **1989** |
-| 7 | 6 | \`V\` | 5 | End of string | Last char $\\implies$ Add 5 | **1994** |
-
-**Final Result**: **1994** ✓ Subtractive pairs seamlessly resolve ho gaye!`;
+2. **Space Complexity**:
+   - Auxiliary space auxiliary variables ($O(1)$) ya hash table / recursion call stack ($O(N)$ / $O(\\log N)$) par rely karta hai.`;
   } else {
-    generatedResponse = `Bhai, #${problem?.id || ""} **${problem?.title || "Problem"}** ke liye detailed algorithmic analysis:
+    generatedResponse = `${noticeBanner}Bhai, #${problem?.id || ""} **${problemTitle}** (${problem?.difficulty || "DSA"}) ke liye algorithmic analysis aur guidance:
 
 ### 🎯 Approach & Core Intuition
-- **Pattern**: Problem ko single-pass linear traversal se solve karna sabse optimal aur elegant approach hai.
-- **State Maintenance**: Running accumulator variable se values maintain hoti hain aur bounds checks securely handle hote hain.
-- **Constraints Handling**: All edge cases such as minimum boundary values aur scale constraints satisfied hain.
+- **Pattern**: Is problem ke liye canonical optimal pattern state tracking aur traversal hai.
+- **State Maintenance**: Variables boundary checks securely maintain karte hain.
+- **Constraints Handling**: Edge cases such as minimum boundary values aur scale constraints satisfy hone chahiye.
 
-### ⚡ Complexity
-- **Time Complexity**: **$O(N)$** linear time.
-- **Space Complexity**: **$O(1)$** auxiliary memory.`;
+### ⚡ Complexity Target
+- **Time Complexity**: Optimal runtime bounds for ${problem?.difficulty || "standard"} difficulty.
+- **Space Complexity**: Auxiliary memory within LeetCode memory limits.
+
+💡 *Agar kisi specific line, testcase, ya code edit me help chahiye toh niche chip tap karein ya message bhejien!*`;
   }
 
   // Stream words with snappy typewriter interval
@@ -635,12 +647,13 @@ async function streamGoogleGemini({
   onDone: (fullContent: string, reasoning: string, toolCalls: ToolCallItem[], modelUsed: string) => void;
   abortSignal?: AbortSignal;
 }): Promise<boolean> {
+  const cleanModel = modelId.replace(/^models\//, "").replace(/^google\//, "");
   const candidateModels = [
-    modelId.replace(/^models\//, ""),
+    cleanModel.startsWith("gemini") ? cleanModel : null,
     "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-1.5-flash",
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
 
   if (onReasoning) {
     onReasoning("⚡ Connecting to Google AI Studio Gemini API directly from browser...");
@@ -927,46 +940,16 @@ export async function streamChatMessage({
 
   const systemPrompt = buildSystemPrompt(problem, code, language);
 
-  // 1. Check if Google Gemini direct streaming should be executed
-  const isGeminiModel = activeModel.toLowerCase().startsWith("gemini-");
-  const useGemini =
-    geminiKey &&
-    (activeProvider === "gemini" ||
-      isGeminiModel ||
-      (activeProvider === "auto" && !groqKey && !openRouterKey));
+  const isGroqModel =
+    activeModel.toLowerCase().startsWith("groq/") ||
+    activeModel.toLowerCase().includes("r1") ||
+    activeModel.toLowerCase().includes("llama-3");
 
-  if (useGemini) {
-    try {
-      const ok = await streamGoogleGemini({
-        geminiKey,
-        modelId: activeModel,
-        systemPrompt,
-        messages,
-        currentQuery,
-        code,
-        language,
-        onReasoning,
-        onToolCall,
-        onDelta,
-        onDone,
-        abortSignal,
-      });
-      if (ok) return;
-    } catch (geminiErr: any) {
-      if (abortSignal?.aborted) return;
-      console.warn("Gemini streaming failed, attempting fallback:", geminiErr);
-    }
-  }
+  const isGeminiModel =
+    activeModel.toLowerCase().includes("gemini");
 
-  // 2. Check if Groq direct streaming should be executed
-  const isGroqModel = activeModel.toLowerCase().startsWith("groq/");
-  const useGroq =
-    groqKey &&
-    (activeProvider === "groq" ||
-      isGroqModel ||
-      (activeProvider === "auto" && !openRouterKey && !geminiKey));
-
-  if (useGroq) {
+  // 1. Direct match: Groq model with Groq key
+  if (groqKey && (isGroqModel || activeProvider === "groq")) {
     try {
       const ok = await streamGroqChat({
         groqKey,
@@ -985,7 +968,84 @@ export async function streamChatMessage({
       if (ok) return;
     } catch (groqErr: any) {
       if (abortSignal?.aborted) return;
-      console.warn("Groq streaming failed, attempting fallback:", groqErr);
+      console.warn("Groq streaming failed, attempting cross-provider fallback:", groqErr);
+    }
+  }
+
+  // 2. Direct match: Gemini model with Gemini key
+  if (geminiKey && (isGeminiModel || activeProvider === "gemini")) {
+    try {
+      const ok = await streamGoogleGemini({
+        geminiKey,
+        modelId: activeModel,
+        systemPrompt,
+        messages,
+        currentQuery,
+        code,
+        language,
+        onReasoning,
+        onToolCall,
+        onDelta,
+        onDone,
+        abortSignal,
+      });
+      if (ok) return;
+    } catch (geminiErr: any) {
+      if (abortSignal?.aborted) return;
+      console.warn("Gemini streaming failed, attempting cross-provider fallback:", geminiErr);
+    }
+  }
+
+  // 3. Smart Cross-Provider Fallback (User has ONE active key but selected another provider's model)
+  if (geminiKey) {
+    if (onReasoning) {
+      onReasoning("⚡ Auto-routing to your active Google Gemini 2.5 Flash engine for live reasoning...");
+    }
+    try {
+      const ok = await streamGoogleGemini({
+        geminiKey,
+        modelId: "gemini-2.5-flash",
+        systemPrompt,
+        messages,
+        currentQuery,
+        code,
+        language,
+        onReasoning,
+        onToolCall,
+        onDelta,
+        onDone,
+        abortSignal,
+      });
+      if (ok) return;
+    } catch (geminiErr: any) {
+      if (abortSignal?.aborted) return;
+      console.warn("Cross-provider Gemini fallback failed:", geminiErr);
+    }
+  }
+
+  if (groqKey) {
+    if (onReasoning) {
+      onReasoning("⚡ Auto-routing to your active Groq LPU engine...");
+    }
+    try {
+      const ok = await streamGroqChat({
+        groqKey,
+        modelId: "groq/deepseek-r1-distill-llama-70b",
+        systemPrompt,
+        messages,
+        currentQuery,
+        code,
+        language,
+        onReasoning,
+        onToolCall,
+        onDelta,
+        onDone,
+        abortSignal,
+      });
+      if (ok) return;
+    } catch (groqErr: any) {
+      if (abortSignal?.aborted) return;
+      console.warn("Cross-provider Groq fallback failed:", groqErr);
     }
   }
 

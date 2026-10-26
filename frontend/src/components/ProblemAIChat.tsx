@@ -19,6 +19,9 @@ import {
   Lightbulb,
   ArrowRight,
   ExternalLink,
+  Key,
+  X,
+  Zap,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -36,6 +39,12 @@ import {
   clearChatSessionLocal,
   getModelId,
   setModelId,
+  getGeminiApiKey,
+  setGeminiApiKey,
+  getGroqApiKey,
+  setGroqApiKey,
+  getOpenRouterApiKey,
+  setActiveProvider,
 } from "../services/storage";
 import { fetchModels } from "../services/api";
 
@@ -63,6 +72,61 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   const [copiedCodeIdx, setCopiedCodeIdx] = useState<string | null>(null);
   const [appliedCodeKey, setAppliedCodeKey] = useState<string | null>(null);
   const [expandedReasoning, setExpandedReasoning] = useState<Record<string, boolean>>({});
+
+  // Quick API Key Modal & Status States
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [keyModalProvider, setKeyModalProvider] = useState<"gemini" | "groq">("gemini");
+  const [keyModalInput, setKeyModalInput] = useState(getGeminiApiKey());
+  const [keyModalStatus, setKeyModalStatus] = useState<string | null>(null);
+  const [keyModalLoading, setKeyModalLoading] = useState(false);
+
+  const [hasGeminiKey, setHasGeminiKey] = useState(() => Boolean(getGeminiApiKey()));
+  const [hasGroqKey, setHasGroqKey] = useState(() => Boolean(getGroqApiKey()));
+  const [hasOpenRouterKey, setHasOpenRouterKey] = useState(() => Boolean(getOpenRouterApiKey()));
+  const hasAnyKey = hasGeminiKey || hasGroqKey || hasOpenRouterKey;
+
+  const handleSaveModalKey = async () => {
+    const k = keyModalInput.trim();
+    if (!k) {
+      setKeyModalStatus("error: Please paste a valid API key");
+      return;
+    }
+    setKeyModalLoading(true);
+    setKeyModalStatus(null);
+    try {
+      if (keyModalProvider === "gemini") {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(k)}`);
+        if (res.ok) {
+          setGeminiApiKey(k);
+          setActiveProvider("gemini");
+          setHasGeminiKey(true);
+          setKeyModalStatus("success: 🟢 Google Gemini API Connected!");
+          setTimeout(() => setShowKeyModal(false), 1200);
+        } else {
+          const err = await res.json().catch(() => ({}));
+          setKeyModalStatus(`error: ${err.error?.message || "Invalid Google Gemini Key"}`);
+        }
+      } else {
+        const res = await fetch("https://api.groq.com/openai/v1/models", {
+          headers: { Authorization: `Bearer ${k}` },
+        });
+        if (res.ok) {
+          setGroqApiKey(k);
+          setActiveProvider("groq");
+          setHasGroqKey(true);
+          setKeyModalStatus("success: 🟢 Groq LPU Connected!");
+          setTimeout(() => setShowKeyModal(false), 1200);
+        } else {
+          const err = await res.json().catch(() => ({}));
+          setKeyModalStatus(`error: ${err.error?.message || "Invalid Groq Key"}`);
+        }
+      }
+    } catch (e: any) {
+      setKeyModalStatus(`error: ${e.message || "Network error"}`);
+    } finally {
+      setKeyModalLoading(false);
+    }
+  };
 
   const handleApplyCode = (codeStr: string, key?: string) => {
     if (onApplyCode) {
@@ -425,6 +489,32 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
+          {/* Quick Key Status / Connect Button */}
+          {hasAnyKey ? (
+            <button
+              onClick={() => {
+                setKeyModalInput(getGeminiApiKey() || getGroqApiKey() || "");
+                setShowKeyModal(true);
+              }}
+              className="px-2 py-1 text-[11px] font-semibold rounded-md flex items-center gap-1 cursor-pointer bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20"
+              title="API Key active (Click to view or edit)"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="hidden sm:inline">
+                {hasGeminiKey ? "Gemini Live" : hasGroqKey ? "Groq Live" : "AI Live"}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowKeyModal(true)}
+              className="px-2.5 py-1 text-[11px] font-bold rounded-md flex items-center gap-1 cursor-pointer bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30 shadow-sm animate-pulse"
+              title="Click to connect free Google Gemini or Groq API key"
+            >
+              <Key size={12} />
+              <span>Connect Key</span>
+            </button>
+          )}
+
           {/* Model Switcher */}
           <select
             value={selectedModel}
@@ -540,6 +630,142 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           Auto Context
         </span>
       </div>
+
+      {/* Missing Key Warning Banner */}
+      {!hasAnyKey && (
+        <div className="mx-3 mt-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+            <span className="text-amber-200 text-[11px]">
+              <strong>Live AI Offline</strong>: Connect your free Google Gemini API key for true DeepSeek R1 & Gemini 2.5 streaming responses.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowKeyModal(true)}
+            className="px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-[10px] cursor-pointer shrink-0 transition-transform hover:scale-105"
+          >
+            Connect Key (1-Click)
+          </button>
+        </div>
+      )}
+
+      {/* Quick API Key Modal */}
+      {showKeyModal && (
+        <div
+          className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3"
+          onClick={() => setShowKeyModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border p-4 shadow-2xl space-y-3"
+            style={{
+              background: "var(--color-bg-secondary)",
+              borderColor: "var(--color-border)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-2.5" style={{ borderColor: "var(--color-border-subtle)" }}>
+              <div className="flex items-center gap-2">
+                <Key size={16} className="text-amber-400" />
+                <h3 className="text-sm font-bold text-white">Connect AI Reasoning Key</h3>
+              </div>
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="p-1 rounded text-muted hover:text-white cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <p className="text-[11px] text-secondary leading-relaxed">
+              Google Gemini 2.5 aur DeepSeek R1 (Groq) models live chalane ke liye free API key enter karein. Key aapke device me strictly locally store hoti hai.
+            </p>
+
+            {/* Provider Switch Tabs */}
+            <div className="flex rounded-lg border p-0.5 gap-1" style={{ borderColor: "var(--color-border-subtle)", background: "var(--color-bg-primary)" }}>
+              <button
+                onClick={() => {
+                  setKeyModalProvider("gemini");
+                  setKeyModalInput(getGeminiApiKey());
+                  setKeyModalStatus(null);
+                }}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                  keyModalProvider === "gemini" ? "bg-accent text-white" : "text-muted hover:text-white"
+                }`}
+              >
+                Google Gemini (Free • Recommended)
+              </button>
+              <button
+                onClick={() => {
+                  setKeyModalProvider("groq");
+                  setKeyModalInput(getGroqApiKey());
+                  setKeyModalStatus(null);
+                }}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                  keyModalProvider === "groq" ? "bg-accent text-white" : "text-muted hover:text-white"
+                }`}
+              >
+                Groq LPU (DeepSeek R1)
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-muted flex items-center justify-between">
+                <span>{keyModalProvider === "gemini" ? "Google Gemini API Key (AIzaSy...)" : "Groq API Key (gsk_...)"}</span>
+                <a
+                  href={
+                    keyModalProvider === "gemini"
+                      ? "https://aistudio.google.com/app/api-keys"
+                      : "https://console.groq.com/keys"
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
+                >
+                  Get Free Key <ExternalLink size={10} />
+                </a>
+              </label>
+              <input
+                type="password"
+                value={keyModalInput}
+                onChange={(e) => setKeyModalInput(e.target.value)}
+                placeholder={keyModalProvider === "gemini" ? "AIzaSy..." : "gsk_..."}
+                className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono"
+                style={{
+                  background: "var(--color-bg-primary)",
+                  borderColor: "var(--color-border)",
+                  color: "var(--color-text-primary)",
+                }}
+              />
+            </div>
+
+            {keyModalStatus && (
+              <p
+                className={`text-[11px] font-semibold ${
+                  keyModalStatus.startsWith("success") ? "text-emerald-400" : "text-rose-400"
+                }`}
+              >
+                {keyModalStatus.replace(/^(success|error):\s*/, "")}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowKeyModal(false)}
+                className="px-3 py-1.5 text-xs text-muted hover:text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveModalKey}
+                disabled={keyModalLoading || !keyModalInput.trim()}
+                className="px-4 py-1.5 text-xs font-bold rounded-xl bg-accent text-white cursor-pointer hover:opacity-90 disabled:opacity-50"
+              >
+                {keyModalLoading ? "Verifying..." : "Verify & Activate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── Message Stream Area (ChatGPT-Style Smooth Scroll) ─── */}
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto p-3.5 space-y-3.5 chat-scroll-container">

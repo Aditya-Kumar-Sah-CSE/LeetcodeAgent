@@ -56,6 +56,42 @@ class ProblemListResponse(BaseModel):
     questions: list[ProblemBrief]
 
 
+# ─── Contest Models ───────────────────────────────────────────
+
+class ContestBrief(BaseModel):
+    """Brief contest information."""
+    title: str
+    slug: str
+    start_time: int
+    duration: int
+    origin_start_time: int
+    is_virtual: bool
+    status: str  # "UPCOMING" | "LIVE" | "PAST"
+    url: str
+
+
+class ContestQuestion(BaseModel):
+    """A contest question."""
+    id: str
+    title: str
+    slug: str
+    credit: int
+    difficulty: str  # "Easy" | "Medium" | "Hard"
+    url: str
+    is_solved: Optional[bool] = None
+
+
+class ContestDetail(BaseModel):
+    """Detailed contest info with questions."""
+    title: str
+    slug: str
+    start_time: int
+    duration: int
+    status: str
+    url: str
+    questions: list[ContestQuestion] = []
+
+
 # ─── AI Models ─────────────────────────────────────────────────
 
 class AIModel(BaseModel):

@@ -12,6 +12,8 @@ from app.services.leetcode_service import (
     clear_daily_cache,
     fetch_topic_tags,
     fetch_practice_problems,
+    fetch_contests,
+    fetch_contest_questions,
 )
 from app.services.ai_service import fetch_available_models
 from app.services.search_service import search_web
@@ -205,3 +207,28 @@ async def get_profile(username: str):
     if not profile:
         raise HTTPException(status_code=404, detail=f"User '{username}' not found on LeetCode")
     return profile
+
+
+# ─── Live & Virtual Contests ──────────────────────────────────
+
+@router.get("/contests")
+async def get_contests(limit: int = Query(40, ge=1, le=100)):
+    """Fetch live, upcoming, and past virtual contests."""
+    try:
+        contests = await fetch_contests(limit=limit)
+        return contests
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch contests: {str(e)}")
+
+
+@router.get("/contests/{contest_slug}/questions")
+async def get_contest_questions(
+    contest_slug: str,
+    username: Optional[str] = Query(None),
+):
+    """Fetch the questions of a specific contest."""
+    try:
+        questions = await fetch_contest_questions(contest_slug, username=username)
+        return questions
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch contest questions: {str(e)}")

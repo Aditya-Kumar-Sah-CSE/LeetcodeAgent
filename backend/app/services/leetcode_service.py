@@ -15,6 +15,9 @@ from app.models.schemas import (
     ProblemBrief,
     TopicTag,
     ProblemListResponse,
+    ContestBrief,
+    ContestQuestion,
+    ContestDetail,
 )
 from app.core.config import settings
 
@@ -467,6 +470,149 @@ async def fetch_practice_problems(
         ))
 
     return ProblemListResponse(total=total, questions=questions)
+
+
+# ─── Live & Virtual Contests ──────────────────────────────────
+
+ALL_CONTESTS_QUERY = """
+query {
+    allContests {
+        title
+        titleSlug
+        startTime
+        duration
+        originStartTime
+        isVirtual
+    }
+}
+"""
+
+CONTEST_QUESTIONS_QUERY = """
+query contestQuestions($titleSlug: String!) {
+    contestQuestionList(contestSlug: $titleSlug) {
+        questionId
+        title
+        titleSlug
+        credit
+    }
+}
+"""
+
+_contests_cache = None
+_contests_cache_time = 0
+
+
+async def fetch_contests(limit: int = 40) -> list[ContestBrief]:
+    """Fetch live, upcoming, and past virtual contests from LeetCode."""
+    import time
+    global _contests_cache, _contests_cache_time
+    now = int(time.time())
+
+    if _contests_cache and (now - _contests_cache_time < 300):
+        return _contests_cache[:limit]
+
+    raw_contests = []
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                LEETCODE_GRAPHQL_URL,
+                json={"query": ALL_CONTESTS_QUERY},
+                headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            raw_contests = data.get("data", {}).get("allContests", [])
+    except Exception as e:
+        logger.warning(f"Failed to fetch live contests from LeetCode: {e}")
+
+    if not raw_contests:
+        # Fallback curated contests
+        raw_contests = [
+            {"title": "Weekly Contest 527", "titleSlug": "weekly-contest-527", "startTime": now + 86400 * 3, "duration": 5400, "originStartTime": now + 86400 * 3, "isVirtual": False},
+            {"title": "Biweekly Contest 195", "titleSlug": "biweekly-contest-195", "startTime": now + 86400 * 2, "duration": 5400, "originStartTime": now + 86400 * 2, "isVirtual": False},
+            {"title": "Weekly Contest 525", "titleSlug": "weekly-contest-525", "startTime": now - 86400 * 2, "duration": 5400, "originStartTime": now - 86400 * 2, "isVirtual": False},
+            {"title": "Biweekly Contest 194", "titleSlug": "biweekly-contest-194", "startTime": now - 86400 * 4, "duration": 5400, "originStartTime": now - 86400 * 4, "isVirtual": False},
+            {"title": "Weekly Contest 524", "titleSlug": "weekly-contest-524", "startTime": now - 86400 * 9, "duration": 5400, "originStartTime": now - 86400 * 9, "isVirtual": False},
+            {"title": "Weekly Contest 420", "titleSlug": "weekly-contest-420", "startTime": 1729391400, "duration": 5400, "originStartTime": 1729391400, "isVirtual": False},
+        ]
+
+    contests: list[ContestBrief] = []
+    for c in raw_contests:
+        st = int(c.get("startTime") or 0)
+        dur = int(c.get("duration") or 5400)
+        slug = c.get("titleSlug", "")
+        if st > now:
+            status = "UPCOMING"
+        elif st <= now <= st + dur:
+            status = "LIVE"
+        else:
+            status = "PAST"
+
+        contests.append(ContestBrief(
+            title=c.get("title", ""),
+            slug=slug,
+            start_time=st,
+            duration=dur,
+            origin_start_time=int(c.get("originStartTime") or st),
+            is_virtual=bool(c.get("isVirtual", False)),
+            status=status,
+            url=f"https://leetcode.com/contest/{slug}/",
+        ))
+
+    # Keep LIVE first, then UPCOMING, then PAST
+    contests.sort(key=lambda x: (0 if x.status == "LIVE" else (1 if x.status == "UPCOMING" else 2), -x.start_time))
+    _contests_cache = contests
+    _contests_cache_time = now
+    return contests[:limit]
+
+
+async def fetch_contest_questions(contest_slug: str, username: Optional[str] = None) -> list[ContestQuestion]:
+    """Fetch the 4 problems belonging to a contest."""
+    user_solved_slugs: set[str] = set()
+    if username:
+        try:
+            from app.services.profile_service import fetch_public_profile
+            profile = await fetch_public_profile(username)
+            user_solved_slugs = set(profile.solved_slugs or [])
+        except Exception:
+            pass
+
+    raw_qs = []
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                LEETCODE_GRAPHQL_URL,
+                json={"query": CONTEST_QUESTIONS_QUERY, "variables": {"titleSlug": contest_slug}},
+                headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            raw_qs = data.get("data", {}).get("contestQuestionList", [])
+    except Exception as e:
+        logger.warning(f"Failed to fetch contest questions for {contest_slug}: {e}")
+
+    questions: list[ContestQuestion] = []
+    for q in raw_qs:
+        slug = q.get("titleSlug", "")
+        credit = int(q.get("credit") or 3)
+        if credit <= 3:
+            diff = "Easy"
+        elif credit in (4, 5):
+            diff = "Medium"
+        else:
+            diff = "Hard"
+
+        questions.append(ContestQuestion(
+            id=str(q.get("questionId") or ""),
+            title=q.get("title", ""),
+            slug=slug,
+            credit=credit,
+            difficulty=diff,
+            url=f"https://leetcode.com/problems/{slug}/",
+            is_solved=(slug in user_solved_slugs) if user_solved_slugs else False,
+        ))
+
+    return questions
 
 
 def clear_daily_cache():

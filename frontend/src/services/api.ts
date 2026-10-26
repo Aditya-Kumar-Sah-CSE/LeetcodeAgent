@@ -14,6 +14,9 @@ import type {
   ProblemBrief,
   TopicTag,
   ProblemListResponse,
+  ContestBrief,
+  ContestQuestion,
+  ContestDetail,
 } from "../types";
 import {
   getApiKey,
@@ -826,5 +829,205 @@ export async function fetchProfile(
       verified: true,
       solved_slugs: fallbackSlugs,
     };
+  }
+}
+
+// ─── Live & Virtual Contests ──────────────────────────────────
+
+const FALLBACK_CONTESTS: ContestBrief[] = [
+  {
+    title: "Weekly Contest 527",
+    slug: "weekly-contest-527",
+    start_time: Math.floor(Date.now() / 1000) + 86400 * 3,
+    duration: 5400,
+    origin_start_time: Math.floor(Date.now() / 1000) + 86400 * 3,
+    is_virtual: false,
+    status: "UPCOMING",
+    url: "https://leetcode.com/contest/weekly-contest-527/",
+  },
+  {
+    title: "Biweekly Contest 195",
+    slug: "biweekly-contest-195",
+    start_time: Math.floor(Date.now() / 1000) + 86400 * 2,
+    duration: 5400,
+    origin_start_time: Math.floor(Date.now() / 1000) + 86400 * 2,
+    is_virtual: false,
+    status: "UPCOMING",
+    url: "https://leetcode.com/contest/biweekly-contest-195/",
+  },
+  {
+    title: "Weekly Contest 525",
+    slug: "weekly-contest-525",
+    start_time: Math.floor(Date.now() / 1000) - 86400 * 2,
+    duration: 5400,
+    origin_start_time: Math.floor(Date.now() / 1000) - 86400 * 2,
+    is_virtual: false,
+    status: "PAST",
+    url: "https://leetcode.com/contest/weekly-contest-525/",
+  },
+  {
+    title: "Biweekly Contest 194",
+    slug: "biweekly-contest-194",
+    start_time: Math.floor(Date.now() / 1000) - 86400 * 4,
+    duration: 5400,
+    origin_start_time: Math.floor(Date.now() / 1000) - 86400 * 4,
+    is_virtual: false,
+    status: "PAST",
+    url: "https://leetcode.com/contest/biweekly-contest-194/",
+  },
+  {
+    title: "Weekly Contest 524",
+    slug: "weekly-contest-524",
+    start_time: Math.floor(Date.now() / 1000) - 86400 * 9,
+    duration: 5400,
+    origin_start_time: Math.floor(Date.now() / 1000) - 86400 * 9,
+    is_virtual: false,
+    status: "PAST",
+    url: "https://leetcode.com/contest/weekly-contest-524/",
+  },
+  {
+    title: "Weekly Contest 420",
+    slug: "weekly-contest-420",
+    start_time: 1729391400,
+    duration: 5400,
+    origin_start_time: 1729391400,
+    is_virtual: false,
+    status: "PAST",
+    url: "https://leetcode.com/contest/weekly-contest-420/",
+  },
+];
+
+const FALLBACK_CONTEST_QUESTIONS: Record<string, ContestQuestion[]> = {
+  "weekly-contest-525": [
+    {
+      id: "4449",
+      title: "Binary Digit Score",
+      slug: "binary-digit-score",
+      credit: 3,
+      difficulty: "Easy",
+      url: "https://leetcode.com/problems/binary-digit-score/",
+    },
+    {
+      id: "4311",
+      title: "Maximize Sum After At Most K Digit Rearrangements",
+      slug: "maximize-sum-after-at-most-k-digit-rearrangements",
+      credit: 4,
+      difficulty: "Medium",
+      url: "https://leetcode.com/problems/maximize-sum-after-at-most-k-digit-rearrangements/",
+    },
+    {
+      id: "4441",
+      title: "Count Frequency Staircase Subarrays I",
+      slug: "count-frequency-staircase-subarrays-i",
+      credit: 5,
+      difficulty: "Medium",
+      url: "https://leetcode.com/problems/count-frequency-staircase-subarrays-i/",
+    },
+    {
+      id: "4443",
+      title: "Count Frequency Staircase Subarrays II",
+      slug: "count-frequency-staircase-subarrays-ii",
+      credit: 6,
+      difficulty: "Hard",
+      url: "https://leetcode.com/problems/count-frequency-staircase-subarrays-ii/",
+    },
+  ],
+  "biweekly-contest-194": [
+    {
+      id: "4436",
+      title: "Difference Between Peaks and Valleys",
+      slug: "difference-between-peaks-and-valleys",
+      credit: 3,
+      difficulty: "Easy",
+      url: "https://leetcode.com/problems/difference-between-peaks-and-valleys/",
+    },
+    {
+      id: "4391",
+      title: "Count Subarrays With Loose Bounds",
+      slug: "count-subarrays-with-loose-bounds",
+      credit: 4,
+      difficulty: "Medium",
+      url: "https://leetcode.com/problems/count-subarrays-with-loose-bounds/",
+    },
+    {
+      id: "4402",
+      title: "Count Magical Substring Pairs I",
+      slug: "count-magical-substring-pairs-i",
+      credit: 5,
+      difficulty: "Medium",
+      url: "https://leetcode.com/problems/count-magical-substring-pairs-i/",
+    },
+    {
+      id: "4403",
+      title: "Count Magical Substring Pairs II",
+      slug: "count-magical-substring-pairs-ii",
+      credit: 6,
+      difficulty: "Hard",
+      url: "https://leetcode.com/problems/count-magical-substring-pairs-ii/",
+    },
+  ],
+  "weekly-contest-420": [
+    {
+      id: "3566",
+      title: "Find the Sequence of Strings Appeared on the Screen",
+      slug: "find-the-sequence-of-strings-appeared-on-the-screen",
+      credit: 4,
+      difficulty: "Medium",
+      url: "https://leetcode.com/problems/find-the-sequence-of-strings-appeared-on-the-screen/",
+    },
+    {
+      id: "3502",
+      title: "Count Substrings With K-Frequency Characters I",
+      slug: "count-substrings-with-k-frequency-characters-i",
+      credit: 5,
+      difficulty: "Medium",
+      url: "https://leetcode.com/problems/count-substrings-with-k-frequency-characters-i/",
+    },
+    {
+      id: "3607",
+      title: "Minimum Division Operations to Make Array Non Decreasing",
+      slug: "minimum-division-operations-to-make-array-non-decreasing",
+      credit: 5,
+      difficulty: "Medium",
+      url: "https://leetcode.com/problems/minimum-division-operations-to-make-array-non-decreasing/",
+    },
+    {
+      id: "3603",
+      title: "Check if DFS Strings Are Palindromes",
+      slug: "check-if-dfs-strings-are-palindromes",
+      credit: 7,
+      difficulty: "Hard",
+      url: "https://leetcode.com/problems/check-if-dfs-strings-are-palindromes/",
+    },
+  ],
+};
+
+export async function fetchContests(limit = 40): Promise<ContestBrief[]> {
+  try {
+    const list = await apiFetch<ContestBrief[]>(`/contests?limit=${limit}`);
+    return list;
+  } catch {
+    return FALLBACK_CONTESTS;
+  }
+}
+
+export async function fetchContestQuestions(
+  contestSlug: string
+): Promise<ContestQuestion[]> {
+  const username = getUsername() || "Aditya_Kumar_Sah-28";
+  try {
+    const qs = await apiFetch<ContestQuestion[]>(
+      `/contests/${contestSlug}/questions?username=${encodeURIComponent(username)}`
+    );
+    return qs.map((q) => ({
+      ...q,
+      is_solved: isProblemSolved(q.slug) || !!q.is_solved,
+    }));
+  } catch {
+    const fallback = FALLBACK_CONTEST_QUESTIONS[contestSlug] || [];
+    return fallback.map((q) => ({
+      ...q,
+      is_solved: isProblemSolved(q.slug),
+    }));
   }
 }

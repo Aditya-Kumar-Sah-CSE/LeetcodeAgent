@@ -19,6 +19,14 @@ import {
   ArrowRight,
   Loader2,
   CheckCircle,
+  Trophy,
+  Clock,
+  Play,
+  Square,
+  Award,
+  Flame,
+  Timer,
+  Pause,
 } from "lucide-react";
 import DifficultyBadge, {
   LoadingCard,
@@ -32,6 +40,8 @@ import {
   fetchTopics,
   fetchPracticeProblems,
   fetchProblem,
+  fetchContests,
+  fetchContestQuestions,
 } from "../services/api";
 import {
   addActivity,
@@ -39,17 +49,31 @@ import {
   toggleProblemSolved,
   isProblemSolved,
 } from "../services/storage";
-import type { DailyProblem, ProblemBrief, TopicTag } from "../types";
+import type { DailyProblem, ProblemBrief, TopicTag, ContestBrief, ContestQuestion } from "../types";
 
 export default function DailyPage() {
   const navigate = useNavigate();
 
-  // Tab: daily challenge vs practice problems
-  const [activeTab, setActiveTab] = useState<"daily" | "practice">("daily");
+  // Tab: daily challenge vs practice problems vs live/virtual contest
+  const [activeTab, setActiveTab] = useState<"daily" | "practice" | "contest">("daily");
 
   // Solved status set for instant UI updates & connected account tracking
   const [solvedSlugsSet, setSolvedSlugsSet] = useState<Set<string>>(() => getSolvedSlugs());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Contest Arena state
+  const [contests, setContests] = useState<ContestBrief[]>([]);
+  const [loadingContests, setLoadingContests] = useState<boolean>(false);
+  const [contestError, setContestError] = useState<string>("");
+  const [selectedContestSlug, setSelectedContestSlug] = useState<string>("weekly-contest-525");
+  const [contestQuestions, setContestQuestions] = useState<ContestQuestion[]>([]);
+  const [loadingContestQuestions, setLoadingContestQuestions] = useState<boolean>(false);
+  const [contestSubTab, setContestSubTab] = useState<"virtual" | "upcoming" | "all">("virtual");
+
+  // Virtual Contest Simulator state
+  const [isVirtualActive, setIsVirtualActive] = useState<boolean>(false);
+  const [virtualSecondsLeft, setVirtualSecondsLeft] = useState<number>(5400); // 90 min default
+  const [virtualPaused, setVirtualPaused] = useState<boolean>(false);
 
   // Daily Challenge state
   const [daily, setDaily] = useState<DailyProblem | null>(null);
@@ -151,6 +175,119 @@ export default function DailyPage() {
     }
   }, [activeTab, selectedDifficulty, selectedTopic]);
 
+  // Load Contests & Questions
+  const loadContests = async () => {
+    setLoadingContests(true);
+    setContestError("");
+    try {
+      const list = await fetchContests();
+      setContests(list);
+      const firstPast = list.find((c) => c.status === "PAST");
+      const defaultSlug = firstPast ? firstPast.slug : (list[0]?.slug || "weekly-contest-525");
+      setSelectedContestSlug(defaultSlug);
+      loadContestQuestions(defaultSlug);
+    } catch (e: any) {
+      setContestError(e.message || "Failed to load contests");
+    } finally {
+      setLoadingContests(false);
+    }
+  };
+
+  const loadContestQuestions = async (slug: string) => {
+    setLoadingContestQuestions(true);
+    try {
+      const qs = await fetchContestQuestions(slug);
+      setContestQuestions(qs);
+    } catch (e: any) {
+      setContestError(e.message || "Failed to load contest questions");
+    } finally {
+      setLoadingContestQuestions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "contest" && contests.length === 0) {
+      loadContests();
+    }
+  }, [activeTab]);
+
+  // Virtual contest countdown timer
+  useEffect(() => {
+    let timer: any = null;
+    if (isVirtualActive && !virtualPaused && virtualSecondsLeft > 0) {
+      timer = setInterval(() => {
+        setVirtualSecondsLeft((prev) => {
+          if (prev <= 1) {
+            setIsVirtualActive(false);
+            setToastMessage("⏱️ Virtual Contest Time is up! Great effort!");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isVirtualActive, virtualPaused, virtualSecondsLeft]);
+
+  const handleSelectContest = (slug: string) => {
+    setSelectedContestSlug(slug);
+    loadContestQuestions(slug);
+    if (isVirtualActive) {
+      setVirtualSecondsLeft(5400);
+    }
+  };
+
+  const handleStartVirtualContest = () => {
+    setIsVirtualActive(true);
+    setVirtualPaused(false);
+    setVirtualSecondsLeft(5400); // 90 mins
+    setToastMessage(`⚡ Virtual Contest Started for ${selectedContest?.title || selectedContestSlug}! 90m on the clock.`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleFinishVirtualContest = () => {
+    setIsVirtualActive(false);
+    setToastMessage(`🏆 Virtual Contest Completed! You scored ${userContestPoints} / ${totalContestPoints} pts.`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const formatTimer = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const formatContestTime = (ts: number) => {
+    try {
+      const d = new Date(ts * 1000);
+      return d.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Scheduled";
+    }
+  };
+
+  // Open contest question in workspace
+  const handleOpenContestQuestion = async (q: ContestQuestion) => {
+    setNavigatingSlug(q.slug);
+    try {
+      const fullProblem = await fetchProblem(q.slug);
+      navigate("/workspace", { state: { problem: fullProblem } });
+    } catch (err: any) {
+      alert(`Could not load full problem: ${err.message}`);
+    } finally {
+      setNavigatingSlug(null);
+    }
+  };
+
   // Handle Search on Enter or Click
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,6 +324,16 @@ export default function DailyPage() {
     return true;
   });
 
+  const selectedContest = contests.find((c) => c.slug === selectedContestSlug);
+  const totalContestPoints = contestQuestions.reduce((acc, q) => acc + (q.credit || 0), 0) || 18;
+  const userContestPoints = contestQuestions
+    .filter((q) => solvedSlugsSet.has(q.slug))
+    .reduce((acc, q) => acc + (q.credit || 0), 0);
+  const userSolvedContestCount = contestQuestions.filter((q) => solvedSlugsSet.has(q.slug)).length;
+
+  const upcomingContests = contests.filter((c) => c.status === "UPCOMING" || c.status === "LIVE");
+  const pastContests = contests.filter((c) => c.status === "PAST");
+
   return (
     <div className="space-y-5 max-w-5xl mx-auto w-full max-w-full overflow-x-hidden pb-safe relative">
       {/* Toast Alert */}
@@ -221,7 +368,7 @@ export default function DailyPage() {
 
         {/* View Switcher Tabs */}
         <div
-          className="flex items-center p-1 rounded-xl border"
+          className="flex items-center p-1 rounded-xl border flex-wrap gap-1"
           style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border-subtle)" }}
         >
           <button
@@ -246,6 +393,18 @@ export default function DailyPage() {
           >
             <BookOpen size={14} />
             <span>Practice Topics</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("contest")}
+            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-target flex items-center gap-1.5"
+            style={{
+              background: activeTab === "contest" ? "var(--color-accent)" : "transparent",
+              color: activeTab === "contest" ? "#fff" : "var(--color-text-muted)",
+            }}
+          >
+            <Trophy size={14} />
+            <span>Live & Virtual Contests</span>
           </button>
         </div>
       </div>
@@ -713,6 +872,464 @@ export default function DailyPage() {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── TAB 3: LIVE & VIRTUAL CONTESTS ─── */}
+      {activeTab === "contest" && (
+        <div className="space-y-5">
+          {/* Contest Arena Top Banner Card */}
+          <div className="card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span
+                  className="p-2.5 rounded-xl text-accent shrink-0 border"
+                  style={{
+                    background: "rgba(99, 102, 241, 0.15)",
+                    borderColor: "rgba(99, 102, 241, 0.3)",
+                  }}
+                >
+                  <Trophy size={20} />
+                </span>
+                <div>
+                  <h2 className="text-base sm:text-xl font-bold text-white flex items-center gap-2">
+                    LeetCode Contest Arena & Simulator
+                  </h2>
+                  <p className="text-xs text-muted">
+                    Official LeetCode Weekly & Biweekly Contests. Solve live or enter 90-minute Virtual Contest simulation mode with auto-scoring.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => loadContests()}
+                  disabled={loadingContests}
+                  className="px-3.5 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-2 cursor-pointer transition-all border touch-target disabled:opacity-50"
+                  style={{
+                    background: "var(--color-bg-elevated)",
+                    color: "var(--color-text-primary)",
+                    borderColor: "var(--color-border)",
+                  }}
+                >
+                  <RefreshCw size={13} className={loadingContests ? "animate-spin" : ""} />
+                  {loadingContests ? "Syncing..." : "Sync Contests"}
+                </button>
+
+                <a
+                  href="https://leetcode.com/contest/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 border text-accent touch-target hover:scale-105 transition-all"
+                  style={{
+                    background: "var(--color-bg-elevated)",
+                    borderColor: "var(--color-border-subtle)",
+                  }}
+                >
+                  <ExternalLink size={13} />
+                  Official Hub
+                </a>
+              </div>
+            </div>
+
+            {/* Sub-Tabs: Virtual Simulator | Live & Upcoming | Contest Bank */}
+            <div className="flex flex-wrap items-center gap-2 pt-3 border-t" style={{ borderColor: "var(--color-border-subtle)" }}>
+              <button
+                onClick={() => setContestSubTab("virtual")}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center gap-1.5 touch-target"
+                style={{
+                  background: contestSubTab === "virtual" ? "var(--color-accent)" : "var(--color-bg-elevated)",
+                  color: contestSubTab === "virtual" ? "#fff" : "var(--color-text-secondary)",
+                  borderColor: contestSubTab === "virtual" ? "var(--color-accent)" : "var(--color-border-subtle)",
+                }}
+              >
+                <Timer size={14} />
+                <span>Virtual Contest Simulator</span>
+              </button>
+
+              <button
+                onClick={() => setContestSubTab("upcoming")}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center gap-1.5 touch-target"
+                style={{
+                  background: contestSubTab === "upcoming" ? "var(--color-accent)" : "var(--color-bg-elevated)",
+                  color: contestSubTab === "upcoming" ? "#fff" : "var(--color-text-secondary)",
+                  borderColor: contestSubTab === "upcoming" ? "var(--color-accent)" : "var(--color-border-subtle)",
+                }}
+              >
+                <Clock size={14} />
+                <span>Live & Upcoming ({upcomingContests.length})</span>
+              </button>
+
+              <button
+                onClick={() => setContestSubTab("all")}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center gap-1.5 touch-target"
+                style={{
+                  background: contestSubTab === "all" ? "var(--color-accent)" : "var(--color-bg-elevated)",
+                  color: contestSubTab === "all" ? "#fff" : "var(--color-text-secondary)",
+                  borderColor: contestSubTab === "all" ? "var(--color-accent)" : "var(--color-border-subtle)",
+                }}
+              >
+                <Award size={14} />
+                <span>Past Contest Bank ({pastContests.length})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Sub-Tab 1: Virtual Contest Simulator */}
+          {contestSubTab === "virtual" && (
+            <div className="space-y-4">
+              {/* Simulator Control & Scoreboard Card */}
+              <div
+                className="card p-4 sm:p-5 space-y-4 border"
+                style={{
+                  borderColor: isVirtualActive ? "rgba(16, 185, 129, 0.4)" : "rgba(99, 102, 241, 0.25)",
+                  background: isVirtualActive
+                    ? "linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--color-bg-card) 100%)"
+                    : undefined,
+                }}
+              >
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  {/* Contest Selector */}
+                  <div className="space-y-1 w-full md:w-auto">
+                    <label className="text-xs font-semibold text-muted flex items-center gap-1.5">
+                      <Trophy size={13} className="text-accent" /> Select Contest to Simulate:
+                    </label>
+                    <select
+                      value={selectedContestSlug}
+                      onChange={(e) => handleSelectContest(e.target.value)}
+                      disabled={isVirtualActive}
+                      className="w-full md:w-80 px-3 py-2 text-xs font-bold rounded-xl border outline-none text-white cursor-pointer"
+                      style={{
+                        background: "var(--color-bg-primary)",
+                        borderColor: "var(--color-border)",
+                      }}
+                    >
+                      {contests
+                        .filter((c) => c.status === "PAST")
+                        .map((c) => (
+                          <option key={c.slug} value={c.slug}>
+                            {c.title} (4 Problems · 90m)
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* Simulator Controls & Timer */}
+                  <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                    {/* Live Clock Display */}
+                    <div
+                      className="px-4 py-2 rounded-xl border flex items-center gap-2 font-mono"
+                      style={{
+                        background: "var(--color-bg-primary)",
+                        borderColor: isVirtualActive ? "var(--color-success)" : "var(--color-border-subtle)",
+                        color: isVirtualActive ? "#34d399" : "var(--color-text-secondary)",
+                      }}
+                    >
+                      <Timer size={16} className={isVirtualActive && !virtualPaused ? "animate-spin" : ""} />
+                      <span className="text-base sm:text-lg font-bold tracking-wider">
+                        {formatTimer(virtualSecondsLeft)}
+                      </span>
+                    </div>
+
+                    {/* Action buttons */}
+                    {!isVirtualActive ? (
+                      <button
+                        onClick={handleStartVirtualContest}
+                        className="px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-2 text-white cursor-pointer active:scale-95 transition-all shadow-lg touch-target"
+                        style={{
+                          background: "var(--color-accent)",
+                          boxShadow: "0 0 16px var(--color-accent-glow)",
+                        }}
+                      >
+                        <Play size={14} />
+                        Start Virtual Contest (90m)
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setVirtualPaused((p) => !p)}
+                          className="px-3 py-2 text-xs font-semibold rounded-xl border flex items-center gap-1.5 cursor-pointer touch-target"
+                          style={{
+                            background: "var(--color-bg-elevated)",
+                            borderColor: "var(--color-border)",
+                            color: "var(--color-text-primary)",
+                          }}
+                        >
+                          {virtualPaused ? <Play size={13} /> : <Pause size={13} />}
+                          <span>{virtualPaused ? "Resume" : "Pause"}</span>
+                        </button>
+
+                        <button
+                          onClick={handleFinishVirtualContest}
+                          className="px-3.5 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 text-white cursor-pointer active:scale-95 transition-all touch-target"
+                          style={{ background: "var(--color-danger)" }}
+                        >
+                          <Square size={13} />
+                          <span>Finish Contest</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Live Virtual Scoreboard Row */}
+                <div
+                  className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border text-xs"
+                  style={{
+                    background: "var(--color-bg-primary)",
+                    borderColor: "var(--color-border-subtle)",
+                  }}
+                >
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <span className="font-semibold text-white flex items-center gap-1.5">
+                      <Award size={15} className="text-accent" />
+                      Virtual Score:{" "}
+                      <strong className="text-emerald-400 text-sm">{userContestPoints}</strong> / {totalContestPoints} pts
+                    </span>
+                    <span className="text-muted">|</span>
+                    <span className="text-secondary">
+                      Problems Solved: <strong className="text-white">{userSolvedContestCount}</strong> / {contestQuestions.length}
+                    </span>
+                    <span className="text-muted">|</span>
+                    <span className="text-secondary">
+                      Contest Duration: <strong className="text-white">90 mins</strong>
+                    </span>
+                  </div>
+
+                  <span className="text-[11px] text-muted flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${isVirtualActive ? "bg-emerald-400 animate-pulse" : "bg-purple-400"}`} />
+                    {isVirtualActive ? "Simulating Live Contest Environment" : "Ready to Start Virtual Simulation"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Contest Questions (Q1 - Q4) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <Trophy size={16} className="text-accent" />
+                    Contest Problems: {selectedContest?.title || selectedContestSlug}
+                  </h3>
+                  <span className="text-xs text-muted">
+                    {contestQuestions.length} Questions (Q1 to Q4)
+                  </span>
+                </div>
+
+                {loadingContestQuestions ? (
+                  <LoadingCard lines={4} />
+                ) : contestQuestions.length === 0 ? (
+                  <div className="card text-center py-8 text-muted text-xs">
+                    No questions found for this contest. Select another contest above.
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {contestQuestions.map((q, idx) => {
+                      const isSolved = solvedSlugsSet.has(q.slug);
+                      return (
+                        <div
+                          key={q.slug}
+                          className="card p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-accent/40 transition-all group"
+                          style={{
+                            borderColor: isSolved ? "rgba(16, 185, 129, 0.3)" : undefined,
+                          }}
+                        >
+                          <div className="space-y-1.5 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-mono font-bold text-accent px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
+                                Q{idx + 1}
+                              </span>
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-elevated text-secondary border border-border-subtle">
+                                {q.credit} Points
+                              </span>
+                              <h4
+                                className="text-sm font-bold text-white truncate group-hover:text-accent transition-colors cursor-pointer"
+                                onClick={() => handleOpenContestQuestion(q)}
+                                title={q.title}
+                              >
+                                {q.title}
+                              </h4>
+                              <ProblemStatusBadge isSolved={isSolved} size="sm" />
+                              <DifficultyBadge difficulty={q.difficulty} />
+                            </div>
+
+                            <p className="text-xs text-muted">
+                              LeetCode Contest Problem #{q.id} · Worth {q.credit} contest rating points
+                            </p>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <ProblemStatusToggle
+                              isSolved={isSolved}
+                              onToggle={() => handleToggleSolved(q.slug, q.title)}
+                              compact={true}
+                            />
+
+                            <a
+                              href={q.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 rounded-lg border text-muted hover:text-white transition-colors cursor-pointer touch-target"
+                              style={{ background: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}
+                              title="Open on LeetCode"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+
+                            <button
+                              onClick={() => handleOpenContestQuestion(q)}
+                              disabled={navigatingSlug === q.slug}
+                              className="px-3.5 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-md touch-target disabled:opacity-50"
+                              style={{ background: "var(--color-accent)" }}
+                            >
+                              {navigatingSlug === q.slug ? (
+                                <>
+                                  <Loader2 size={13} className="animate-spin" />
+                                  <span>Loading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles size={13} />
+                                  <span>Solve in Workspace</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sub-Tab 2: Live & Upcoming Contests */}
+          {contestSubTab === "upcoming" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                  <Clock size={16} className="text-accent" />
+                  Upcoming & Live LeetCode Contests
+                </h3>
+                <span className="text-xs text-muted">
+                  Weekly (every Sunday) & Biweekly (every alternate Saturday)
+                </span>
+              </div>
+
+              {upcomingContests.length === 0 ? (
+                <div className="card text-center py-10 space-y-2">
+                  <Clock size={28} className="mx-auto text-muted" />
+                  <p className="text-sm text-white font-semibold">No upcoming contests scheduled currently.</p>
+                  <p className="text-xs text-muted">Check back soon or explore past contests in the Virtual Contest Simulator.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {upcomingContests.map((c) => (
+                    <div
+                      key={c.slug}
+                      className="card p-4 space-y-3 border hover:border-accent/50 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1">
+                          <span
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                              c.status === "LIVE"
+                                ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                : "bg-accent/15 text-accent border border-accent/30"
+                            }`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${c.status === "LIVE" ? "bg-red-400 animate-pulse" : "bg-accent"}`} />
+                            {c.status === "LIVE" ? "LIVE NOW" : "UPCOMING"}
+                          </span>
+                          <h4 className="text-base font-bold text-white">{c.title}</h4>
+                        </div>
+
+                        <span className="text-xs text-muted font-mono">
+                          90 Minutes
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-secondary space-y-1 pt-1 border-t border-border-subtle">
+                        <div>
+                          <span className="text-muted">Start Time: </span>
+                          <span className="text-white font-medium">{formatContestTime(c.start_time)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted">Format: </span>
+                          <span>4 Algorithm Problems (Easy to Hard)</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 flex items-center justify-between gap-2">
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2 px-3 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-md text-white"
+                          style={{ background: "var(--color-accent)" }}
+                        >
+                          <ExternalLink size={13} />
+                          {c.status === "LIVE" ? "Enter Live Contest on LeetCode" : "Register / View on LeetCode"}
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sub-Tab 3: Past Contest Bank */}
+          {contestSubTab === "all" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                  <Award size={16} className="text-accent" />
+                  Past Contests Archive
+                </h3>
+                <span className="text-xs text-muted">
+                  Select any contest to load its 4 problems into the simulator or AI workspace
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {pastContests.slice(0, 30).map((c) => {
+                  const isSelected = selectedContestSlug === c.slug;
+                  return (
+                    <div
+                      key={c.slug}
+                      className="card p-3.5 space-y-2.5 transition-all cursor-pointer border hover:border-accent"
+                      style={{
+                        borderColor: isSelected ? "var(--color-accent)" : undefined,
+                        background: isSelected ? "var(--color-accent-glow)" : undefined,
+                      }}
+                      onClick={() => {
+                        handleSelectContest(c.slug);
+                        setContestSubTab("virtual");
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white truncate">{c.title}</h4>
+                        <span className="text-[11px] font-mono text-muted">90m</span>
+                      </div>
+
+                      <p className="text-xs text-muted">
+                        Date: {formatContestTime(c.start_time)}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
+                        <span className="text-[11px] text-accent font-semibold">
+                          {isSelected ? "Currently Selected ✓" : "Click to Simulate"}
+                        </span>
+                        <ChevronRight size={14} className="text-muted" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

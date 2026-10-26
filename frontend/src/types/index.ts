@@ -42,6 +42,37 @@ export interface ProblemListResponse {
   questions: ProblemBrief[];
 }
 
+export interface ContestBrief {
+  title: string;
+  slug: string;
+  start_time: number;
+  duration: number;
+  origin_start_time: number;
+  is_virtual: boolean;
+  status: "UPCOMING" | "LIVE" | "PAST";
+  url: string;
+}
+
+export interface ContestQuestion {
+  id: string;
+  title: string;
+  slug: string;
+  credit: number;
+  difficulty: "Easy" | "Medium" | "Hard";
+  url: string;
+  is_solved?: boolean;
+}
+
+export interface ContestDetail {
+  title: string;
+  slug: string;
+  start_time: number;
+  duration: number;
+  status: "UPCOMING" | "LIVE" | "PAST";
+  url: string;
+  questions: ContestQuestion[];
+}
+
 export interface AIModel {
   id: string;
   name: string;

@@ -38,7 +38,8 @@ import { generateClientAlgorithmicSolution } from "./algorithmicAgent";
 import contestsArchiveData from "../assets/contests_archive.json";
 import contestsQuestionsArchiveData from "../assets/contests_questions_archive.json";
 
-const API_BASE = "/api";
+const API_BASE =
+  ((import.meta as any).env?.VITE_API_BASE_URL as string)?.replace(/\/$/, "") || "/api";
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;

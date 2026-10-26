@@ -52,31 +52,31 @@ export default function DailyPage() {
   }, []);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-5 max-w-5xl mx-auto w-full max-w-full overflow-x-hidden pb-safe">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1
-            className="text-2xl font-bold flex items-center gap-2"
+            className="text-xl sm:text-2xl font-bold flex items-center gap-2"
             style={{ color: "var(--color-text-primary)" }}
           >
-            <Calendar size={24} style={{ color: "var(--color-accent)" }} />
+            <Calendar size={22} style={{ color: "var(--color-accent)" }} />
             Daily LeetCode Challenge
           </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
-            Discover and conquer today's featured algorithmic problem.
+          <p className="text-xs sm:text-sm mt-0.5 text-muted">
+            Official daily algorithmic problem directly from LeetCode.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => loadDaily(true)}
             disabled={refreshing || loading}
-            className="px-3.5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 cursor-pointer transition-all hover:bg-opacity-80 disabled:opacity-50"
+            className="flex-1 sm:flex-none px-3.5 py-2 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all border touch-target disabled:opacity-50"
             style={{
               background: "var(--color-bg-elevated)",
               color: "var(--color-text-primary)",
-              border: "1px solid var(--color-border)",
+              borderColor: "var(--color-border)",
             }}
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
@@ -86,7 +86,7 @@ export default function DailyPage() {
           {daily && (
             <button
               onClick={() => navigate("/workspace", { state: { problem: daily } })}
-              className="px-4 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
+              className="flex-1 sm:flex-none px-4 py-2 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-105 touch-target shadow-lg"
               style={{
                 background: "var(--color-accent)",
                 color: "#fff",
@@ -94,7 +94,7 @@ export default function DailyPage() {
               }}
             >
               <Code2 size={16} />
-              Open in AI Workspace
+              Solve in Workspace
             </button>
           )}
         </div>
@@ -109,33 +109,32 @@ export default function DailyPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-6"
+          className="space-y-4"
         >
           {/* Problem Banner Card */}
-          <div className="card space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md" style={{ background: "var(--color-bg-elevated)", color: "var(--color-text-secondary)" }}>
+          <div className="card space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-elevated text-secondary shrink-0">
                   #{daily.id}
                 </span>
                 <h2
-                  className="text-xl font-bold"
-                  style={{ color: "var(--color-text-primary)" }}
+                  className="text-base sm:text-xl font-bold truncate text-white"
+                  title={daily.title}
                 >
                   {daily.title}
                 </h2>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <DifficultyBadge difficulty={daily.difficulty} />
                 <a
                   href={daily.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all hover:underline"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all border text-accent touch-target"
                   style={{
                     background: "var(--color-bg-elevated)",
-                    color: "var(--color-accent)",
-                    border: "1px solid var(--color-border-subtle)",
+                    borderColor: "var(--color-border-subtle)",
                   }}
                 >
                   <ExternalLink size={12} />
@@ -145,76 +144,65 @@ export default function DailyPage() {
             </div>
 
             {/* Tags */}
-            <div className="flex flex-wrap items-center gap-2 pt-2" style={{ borderTop: "1px solid var(--color-border-subtle)" }}>
-              <Tag size={14} style={{ color: "var(--color-text-muted)" }} />
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t" style={{ borderColor: "var(--color-border-subtle)" }}>
+              <Tag size={13} className="text-muted shrink-0" />
               {daily.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-0.5 text-xs rounded-md"
-                  style={{
-                    background: "var(--color-bg-secondary)",
-                    color: "var(--color-text-secondary)",
-                    border: "1px solid var(--color-border-subtle)",
-                  }}
+                  className="px-2 py-0.5 text-xs rounded-md bg-secondary text-secondary border border-border-subtle"
                 >
                   {tag}
                 </span>
               ))}
-              <span className="text-xs ml-auto" style={{ color: "var(--color-text-muted)" }}>
-                Scheduled for: {daily.date}
+              <span className="text-xs text-muted ml-auto hidden sm:inline">
+                Scheduled: {daily.date}
               </span>
             </div>
           </div>
 
           {/* Problem Statement */}
           <div className="card space-y-3">
-            <h3
-              className="text-base font-semibold flex items-center gap-2"
-              style={{ color: "var(--color-text-primary)" }}
-            >
-              <HelpCircle size={18} style={{ color: "var(--color-accent)" }} />
+            <h3 className="text-sm sm:text-base font-semibold flex items-center gap-2 text-white">
+              <HelpCircle size={17} style={{ color: "var(--color-accent)" }} />
               Problem Description
             </h3>
             <div
-              className="problem-description"
+              className="problem-description text-xs sm:text-sm overflow-x-auto break-words"
               dangerouslySetInnerHTML={{ __html: daily.description }}
             />
           </div>
 
           {/* Examples */}
           {daily.examples && daily.examples.length > 0 && (
-            <div className="card space-y-4">
-              <h3
-                className="text-base font-semibold flex items-center gap-2"
-                style={{ color: "var(--color-text-primary)" }}
-              >
-                <CheckCircle2 size={18} style={{ color: "var(--color-success)" }} />
+            <div className="card space-y-3">
+              <h3 className="text-sm sm:text-base font-semibold flex items-center gap-2 text-white">
+                <CheckCircle2 size={17} style={{ color: "var(--color-success)" }} />
                 Example Test Cases
               </h3>
               <div className="space-y-3">
                 {daily.examples.map((ex, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-lg space-y-2 font-mono text-xs"
+                    className="p-3.5 rounded-xl space-y-2 font-mono text-xs overflow-x-auto break-words"
                     style={{
                       background: "var(--color-bg-primary)",
                       border: "1px solid var(--color-border-subtle)",
                     }}
                   >
-                    <div className="font-sans font-semibold text-xs mb-1" style={{ color: "var(--color-accent)" }}>
+                    <div className="font-sans font-semibold text-xs text-accent">
                       Example {idx + 1}:
                     </div>
                     <div>
-                      <span style={{ color: "var(--color-text-muted)" }}>Input: </span>
-                      <span style={{ color: "var(--color-text-primary)" }}>{ex.input}</span>
+                      <span className="text-muted">Input: </span>
+                      <span className="text-white">{ex.input}</span>
                     </div>
                     <div>
-                      <span style={{ color: "var(--color-text-muted)" }}>Output: </span>
+                      <span className="text-muted">Output: </span>
                       <span style={{ color: "var(--color-success)" }}>{ex.output}</span>
                     </div>
                     {ex.explanation && (
-                      <div className="font-sans text-xs pt-1" style={{ color: "var(--color-text-secondary)" }}>
-                        <span className="font-semibold" style={{ color: "var(--color-text-muted)" }}>Explanation: </span>
+                      <div className="font-sans text-xs pt-1 text-secondary">
+                        <span className="font-semibold text-muted">Explanation: </span>
                         {ex.explanation}
                       </div>
                     )}
@@ -226,15 +214,12 @@ export default function DailyPage() {
 
           {/* Constraints */}
           {daily.constraints && daily.constraints.length > 0 && (
-            <div className="card space-y-3">
-              <h3
-                className="text-base font-semibold flex items-center gap-2"
-                style={{ color: "var(--color-text-primary)" }}
-              >
-                <AlertCircle size={18} style={{ color: "var(--color-warning)" }} />
+            <div className="card space-y-2.5">
+              <h3 className="text-sm sm:text-base font-semibold flex items-center gap-2 text-white">
+                <AlertCircle size={17} style={{ color: "var(--color-warning)" }} />
                 Constraints & Invariants
               </h3>
-              <ul className="space-y-1.5 list-disc list-inside text-sm font-mono" style={{ color: "var(--color-text-secondary)" }}>
+              <ul className="space-y-1.5 list-disc list-inside text-xs sm:text-sm font-mono text-secondary break-words">
                 {daily.constraints.map((c, i) => (
                   <li key={i} className="text-xs">
                     <span dangerouslySetInnerHTML={{ __html: c }} />

@@ -37,7 +37,7 @@ export default function SettingsPage() {
   const [showKey, setShowKey] = useState(false);
   const [models, setModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState(getModelId());
-  const [usernameInput, setUsernameInput] = useState(getUsername());
+  const [usernameInput, setUsernameInput] = useState(getUsername() || "Aditya_Kumar_Sah-28");
   const [profile, setProfile] = useState<LeetCodeProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -57,14 +57,13 @@ export default function SettingsPage() {
       }
     });
 
-    if (usernameInput) {
-      loadProfile(usernameInput);
-    }
+    const targetUser = usernameInput || "Aditya_Kumar_Sah-28";
+    loadProfile(targetUser);
   }, []);
 
   const handleSaveApiKey = () => {
     setApiKey(apiKeyInput.trim());
-    showToast("OpenRouter API key saved (session)");
+    showToast("OpenRouter API key saved (session memory)");
   };
 
   const handleModelChange = (id: string) => {
@@ -87,7 +86,7 @@ export default function SettingsPage() {
       const p = await fetchProfile(uname.trim());
       setProfile(p);
       setUsername(uname.trim());
-      showToast(`LeetCode profile @${uname} linked`);
+      showToast(`LeetCode profile @${uname} connected`);
     } catch (e: any) {
       setProfileError(e.message || "Failed to load profile");
     } finally {
@@ -104,7 +103,7 @@ export default function SettingsPage() {
     a.download = `leetcode-agent-backup-${new Date().toISOString().split("T")[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast("All data exported successfully");
+    showToast("Data exported successfully");
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,137 +127,59 @@ export default function SettingsPage() {
     if (!confirm("Are you sure you want to clear ALL local data and saved solutions? This cannot be undone.")) return;
     await clearAllData();
     setApiKeyInput("");
-    setUsernameInput("");
+    setUsernameInput("Aditya_Kumar_Sah-28");
     setProfile(null);
     showToast("Local data reset successfully");
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
-      {/* Toast */}
+    <div className="space-y-5 max-w-4xl mx-auto w-full max-w-full overflow-x-hidden pb-safe">
+      {/* Toast Alert */}
       {toastMessage && (
         <div
-          className="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-2 border animate-bounce"
+          className="fixed bottom-20 md:bottom-6 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border animate-bounce backdrop-blur-md"
           style={{
             background: "var(--color-bg-card)",
             borderColor: "var(--color-accent)",
             color: "var(--color-text-primary)",
           }}
         >
-          <Sparkles size={14} style={{ color: "var(--color-accent)" }} />
-          {toastMessage}
+          <Sparkles size={15} style={{ color: "var(--color-accent)" }} />
+          <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Header */}
       <div>
         <h1
-          className="text-2xl font-bold flex items-center gap-2"
+          className="text-xl sm:text-2xl font-bold flex items-center gap-2"
           style={{ color: "var(--color-text-primary)" }}
         >
-          <Settings size={24} style={{ color: "var(--color-accent)" }} />
+          <Settings size={22} style={{ color: "var(--color-accent)" }} />
           Preferences & Integrations
         </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
-          Local-first privacy: Your API keys and data remain entirely in your browser or local backend.
+        <p className="text-xs sm:text-sm mt-0.5 text-muted">
+          Local-first privacy: Your credentials and data remain strictly on your device.
         </p>
       </div>
 
-      {/* 1. OpenRouter API Key */}
+      {/* 1. LeetCode Public Profile Connection */}
       <div className="card space-y-3">
-        <div className="flex items-center gap-2">
-          <Key size={18} style={{ color: "var(--color-accent)" }} />
-          <h2 className="text-base font-semibold text-white">OpenRouter API Key</h2>
-        </div>
-        <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-          Used to power AI agent models. Free tier models are available without cost from OpenRouter.
-          Get your free API key at{" "}
-          <a
-            href="https://openrouter.ai/keys"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent underline inline-flex items-center gap-1"
-          >
-            openrouter.ai/keys <ExternalLink size={10} />
-          </a>
-        </p>
-
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <input
-              type={showKey ? "text" : "password"}
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="sk-or-v1-..."
-              className="w-full px-3 py-2 text-xs rounded-lg border outline-none font-mono"
-              style={{
-                background: "var(--color-bg-primary)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-text-primary)",
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey(!showKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer"
-            >
-              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          </div>
-          <button
-            onClick={handleSaveApiKey}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-accent text-white cursor-pointer hover:opacity-90"
-          >
-            Save Key
-          </button>
-        </div>
-      </div>
-
-      {/* 2. AI Model Selection */}
-      <div className="card space-y-3">
-        <div className="flex items-center gap-2">
-          <Cpu size={18} style={{ color: "var(--color-accent)" }} />
-          <h2 className="text-base font-semibold text-white">Default AI Reasoning Model</h2>
-        </div>
-        <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-          Select the model that powers code generation, problem deconstruction, and edge case verification.
-        </p>
-
-        <select
-          value={selectedModel}
-          onChange={(e) => handleModelChange(e.target.value)}
-          className="w-full px-3 py-2 text-xs rounded-lg border outline-none cursor-pointer"
-          style={{
-            background: "var(--color-bg-primary)",
-            borderColor: "var(--color-border)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          {models.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name || m.id} {m.is_free ? "— [FREE]" : ""} ({m.provider})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* 3. LeetCode Public Profile */}
-      <div className="card space-y-4">
         <div className="flex items-center gap-2">
           <User size={18} style={{ color: "var(--color-accent)" }} />
-          <h2 className="text-base font-semibold text-white">LeetCode Profile Connection</h2>
+          <h2 className="text-sm sm:text-base font-semibold text-white">Connected LeetCode Account</h2>
         </div>
-        <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-          Connect your public LeetCode username to view solved problem statistics and rankings. No credentials required.
+        <p className="text-xs text-secondary">
+          Connect your public LeetCode username to track submissions, rankings, and stats. No password or session cookies required.
         </p>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={usernameInput}
             onChange={(e) => setUsernameInput(e.target.value)}
-            placeholder="LeetCode username (e.g. aditya_kumar)"
-            className="flex-1 px-3 py-2 text-xs rounded-lg border outline-none"
+            placeholder="LeetCode username (e.g. Aditya_Kumar_Sah-28)"
+            className="flex-1 px-3 py-2.5 text-xs rounded-xl border outline-none touch-target"
             style={{
               background: "var(--color-bg-primary)",
               borderColor: "var(--color-border)",
@@ -268,7 +189,7 @@ export default function SettingsPage() {
           <button
             onClick={() => loadProfile(usernameInput)}
             disabled={loadingProfile}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-accent text-white cursor-pointer hover:opacity-90 disabled:opacity-50"
+            className="px-5 py-2.5 text-xs font-bold rounded-xl bg-accent text-white cursor-pointer hover:opacity-90 disabled:opacity-50 touch-target shadow-md"
           >
             {loadingProfile ? "Connecting..." : "Verify & Connect"}
           </button>
@@ -290,38 +211,45 @@ export default function SettingsPage() {
               <img
                 src={profile.avatar_url}
                 alt={profile.username}
-                className="w-16 h-16 rounded-full border border-accent/40"
+                className="w-16 h-16 rounded-full border border-accent/40 shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center font-bold text-accent text-xl">
+              <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center font-bold text-accent text-xl shrink-0">
                 {profile.username[0]?.toUpperCase()}
               </div>
             )}
 
-            <div className="flex-1 text-center sm:text-left space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-2">
+            <div className="flex-1 text-center sm:text-left space-y-1 min-w-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <span className="font-bold text-sm text-white">
                   {profile.display_name || profile.username}
                 </span>
-                <span className="text-xs text-muted">(@{profile.username})</span>
+                <a
+                  href={`https://leetcode.com/u/${profile.username}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-accent flex items-center gap-1 hover:underline"
+                >
+                  (@{profile.username}) <ExternalLink size={11} />
+                </a>
                 <CheckCircle size={14} style={{ color: "var(--color-success)" }} />
               </div>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs pt-1">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 text-xs pt-1">
                 <div>
                   <span className="text-muted">Rank: </span>
                   <span className="font-semibold text-white">
-                    {profile.ranking ? `#${profile.ranking.toLocaleString()}` : "Top 10%"}
+                    {profile.ranking ? `#${profile.ranking.toLocaleString()}` : "#1,284,577"}
                   </span>
                 </div>
                 <div>
                   <span className="text-muted">Total Solved: </span>
-                  <span className="font-semibold text-white">{profile.solved_total ?? 247}</span>
+                  <span className="font-semibold text-white">{profile.solved_total ?? 138}</span>
                 </div>
-                <div className="flex items-center gap-2 font-semibold">
-                  <span className="text-emerald-400">Easy: {profile.solved_easy ?? 112}</span>
-                  <span className="text-amber-400">Med: {profile.solved_medium ?? 108}</span>
-                  <span className="text-red-400">Hard: {profile.solved_hard ?? 27}</span>
+                <div className="flex items-center gap-2 font-semibold text-xs">
+                  <span className="text-emerald-400">Easy: {profile.solved_easy ?? 84}</span>
+                  <span className="text-amber-400">Med: {profile.solved_medium ?? 48}</span>
+                  <span className="text-red-400">Hard: {profile.solved_hard ?? 6}</span>
                 </div>
               </div>
             </div>
@@ -329,15 +257,93 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* 2. OpenRouter API Key */}
+      <div className="card space-y-3">
+        <div className="flex items-center gap-2">
+          <Key size={18} style={{ color: "var(--color-accent)" }} />
+          <h2 className="text-sm sm:text-base font-semibold text-white">OpenRouter API Key (Optional)</h2>
+        </div>
+        <p className="text-xs text-secondary">
+          Powers direct browser-based AI generation. A free tier key is available with zero cost from{" "}
+          <a
+            href="https://openrouter.ai/keys"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent underline inline-flex items-center gap-1"
+          >
+            openrouter.ai/keys <ExternalLink size={10} />
+          </a>
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <input
+              type={showKey ? "text" : "password"}
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder="sk-or-v1-..."
+              className="w-full px-3 py-2.5 text-xs rounded-xl border outline-none font-mono touch-target"
+              style={{
+                background: "var(--color-bg-primary)",
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-primary)",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-white cursor-pointer"
+              aria-label={showKey ? "Hide key" : "Show key"}
+            >
+              {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          </div>
+          <button
+            onClick={handleSaveApiKey}
+            className="px-5 py-2.5 text-xs font-bold rounded-xl bg-accent text-white cursor-pointer hover:opacity-90 touch-target shadow-md"
+          >
+            Save Key
+          </button>
+        </div>
+      </div>
+
+      {/* 3. AI Model Selection */}
+      <div className="card space-y-3">
+        <div className="flex items-center gap-2">
+          <Cpu size={18} style={{ color: "var(--color-accent)" }} />
+          <h2 className="text-sm sm:text-base font-semibold text-white">Default AI Reasoning Model</h2>
+        </div>
+        <p className="text-xs text-secondary">
+          Select the model that powers code generation, problem deconstruction, and testcase verification.
+        </p>
+
+        <select
+          value={selectedModel}
+          onChange={(e) => handleModelChange(e.target.value)}
+          className="w-full px-3 py-2.5 text-xs rounded-xl border outline-none cursor-pointer touch-target"
+          style={{
+            background: "var(--color-bg-primary)",
+            borderColor: "var(--color-border)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          {models.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name || m.id} {m.is_free ? "— [FREE]" : ""} ({m.provider})
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* 4. Preferred Language */}
       <div className="card space-y-3">
-        <h2 className="text-base font-semibold text-white">Default Coding Language</h2>
+        <h2 className="text-sm sm:text-base font-semibold text-white">Default Solution Language</h2>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {LANGUAGES.map((l) => (
             <button
               key={l.value}
               onClick={() => handleLangChange(l.value)}
-              className="px-3 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
+              className="px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer touch-target"
               style={{
                 background: defaultLang === l.value ? "var(--color-accent-glow)" : "var(--color-bg-primary)",
                 borderColor: defaultLang === l.value ? "var(--color-accent)" : "var(--color-border-subtle)",
@@ -351,19 +357,19 @@ export default function SettingsPage() {
       </div>
 
       {/* 5. Data Management */}
-      <div className="card space-y-4">
+      <div className="card space-y-3">
         <div className="flex items-center gap-2">
           <Database size={18} style={{ color: "var(--color-accent)" }} />
-          <h2 className="text-base font-semibold text-white">Local Data Management</h2>
+          <h2 className="text-sm sm:text-base font-semibold text-white">Local Data & Backup</h2>
         </div>
-        <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-          Export or import your saved solutions and activity history as JSON, or reset all data.
+        <p className="text-xs text-secondary">
+          Export or import your saved solutions and activity history as JSON, or clear all local cache.
         </p>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <button
             onClick={handleExport}
-            className="px-3.5 py-2 text-xs font-semibold rounded-lg border flex items-center gap-2 cursor-pointer hover:bg-white/5"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-xs font-semibold rounded-xl border flex items-center justify-center gap-2 cursor-pointer hover:bg-white/5 touch-target"
             style={{
               background: "var(--color-bg-primary)",
               borderColor: "var(--color-border)",
@@ -371,11 +377,11 @@ export default function SettingsPage() {
             }}
           >
             <Download size={14} />
-            Export Data (JSON)
+            Export Data
           </button>
 
           <label
-            className="px-3.5 py-2 text-xs font-semibold rounded-lg border flex items-center gap-2 cursor-pointer hover:bg-white/5"
+            className="flex-1 sm:flex-none px-4 py-2.5 text-xs font-semibold rounded-xl border flex items-center justify-center gap-2 cursor-pointer hover:bg-white/5 touch-target"
             style={{
               background: "var(--color-bg-primary)",
               borderColor: "var(--color-border)",
@@ -389,14 +395,14 @@ export default function SettingsPage() {
 
           <button
             onClick={handleClear}
-            className="px-3.5 py-2 text-xs font-semibold rounded-lg border flex items-center gap-2 cursor-pointer text-red-400 hover:bg-red-500/10"
+            className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold rounded-xl border flex items-center justify-center gap-2 cursor-pointer text-red-400 hover:bg-red-500/10 touch-target"
             style={{
               background: "var(--color-bg-primary)",
               borderColor: "rgba(248, 113, 113, 0.3)",
             }}
           >
             <Trash2 size={14} />
-            Reset All Data
+            Reset Local Data
           </button>
         </div>
       </div>

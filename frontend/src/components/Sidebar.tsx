@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Calendar,
@@ -22,13 +22,21 @@ const NAV_ITEMS = [
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+interface SidebarProps {
+  collapsed?: boolean;
+  setCollapsed?: (val: boolean) => void;
+}
+
+export default function Sidebar({ collapsed: propCollapsed, setCollapsed: propSetCollapsed }: SidebarProps) {
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
   const location = useLocation();
+
+  const collapsed = propCollapsed !== undefined ? propCollapsed : internalCollapsed;
+  const setCollapsed = propSetCollapsed || setInternalCollapsed;
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-full z-50 flex flex-col transition-all duration-300 ease-in-out ${
+      className={`hidden md:flex fixed top-0 left-0 h-full z-50 flex-col transition-all duration-300 ease-in-out ${
         collapsed ? "w-[68px]" : "w-[240px]"
       }`}
       style={{

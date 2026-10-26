@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
+import MobileNav from "./components/MobileNav";
 import DashboardPage from "./pages/DashboardPage";
 import DailyPage from "./pages/DailyPage";
 import WorkspacePage from "./pages/WorkspacePage";
@@ -9,13 +10,25 @@ import ActivityPage from "./pages/ActivityPage";
 import SettingsPage from "./pages/SettingsPage";
 
 export default function App() {
-  return (
-    <div className="flex min-h-screen" style={{ background: "var(--color-bg-primary)" }}>
-      {/* Sidebar navigation */}
-      <Sidebar />
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-      {/* Main Content Area (offset by sidebar width) */}
-      <main className="flex-1 ml-[68px] sm:ml-[240px] p-4 sm:p-6 transition-all duration-300 overflow-x-hidden min-h-screen">
+  return (
+    <div
+      className="min-h-screen flex flex-col md:flex-row w-full max-w-full overflow-x-hidden"
+      style={{ background: "var(--color-bg-primary)" }}
+    >
+      {/* Mobile Top App Bar, Drawer, and Bottom Nav Bar */}
+      <MobileNav />
+
+      {/* Desktop Sidebar */}
+      <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+
+      {/* Main Content Area */}
+      <main
+        className={`flex-1 transition-all duration-300 w-full min-w-0 max-w-full overflow-x-hidden pt-16 md:pt-6 px-3 sm:px-6 pb-24 md:pb-8 min-h-screen ${
+          sidebarCollapsed ? "md:ml-[68px]" : "md:ml-[240px]"
+        }`}
+      >
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/daily" element={<DailyPage />} />

@@ -4,6 +4,7 @@
  */
 
 import { get, set, del, keys } from "idb-keyval";
+import type { StoredSolution, ActivityEntry } from "../types";
 
 // ─── LocalStorage (preferences) ───────────────────────────
 
@@ -16,6 +17,8 @@ const LS_KEYS = {
   dailyCache: "lca-daily-cache",
   dailyCacheDate: "lca-daily-cache-date",
   apiKeyHash: "lca-api-key-configured",
+  editorFontSize: "lca-editor-font-size",
+  editorWordWrap: "lca-editor-word-wrap",
 } as const;
 
 export function getTheme(): string {
@@ -43,7 +46,7 @@ export function setModelId(id: string) {
 }
 
 export function getUsername(): string {
-  return localStorage.getItem(LS_KEYS.username) || "";
+  return localStorage.getItem(LS_KEYS.username) || "Aditya_Kumar_Sah-28";
 }
 
 export function setUsername(username: string) {
@@ -56,6 +59,39 @@ export function getDailyCacheDate(): string {
 
 export function setDailyCacheDate(date: string) {
   localStorage.setItem(LS_KEYS.dailyCacheDate, date);
+}
+
+export function getEditorFontSize(): number {
+  const size = parseInt(localStorage.getItem(LS_KEYS.editorFontSize) || "13", 10);
+  return isNaN(size) ? 13 : Math.min(24, Math.max(10, size));
+}
+
+export function setEditorFontSize(size: number) {
+  localStorage.setItem(LS_KEYS.editorFontSize, size.toString());
+}
+
+export function getEditorWordWrap(): boolean {
+  return localStorage.getItem(LS_KEYS.editorWordWrap) === "true";
+}
+
+export function setEditorWordWrap(wrap: boolean) {
+  localStorage.setItem(LS_KEYS.editorWordWrap, wrap ? "true" : "false");
+}
+
+// ─── Draft persistence ────────────────────────────────────
+
+export function getDraftCode(slug: string, lang: string): string | null {
+  return localStorage.getItem(`lca-draft:${slug}:${lang}`);
+}
+
+export function saveDraftCode(slug: string, lang: string, code: string) {
+  if (slug && lang) {
+    localStorage.setItem(`lca-draft:${slug}:${lang}`, code);
+  }
+}
+
+export function clearDraftCode(slug: string, lang: string) {
+  localStorage.removeItem(`lca-draft:${slug}:${lang}`);
 }
 
 // ─── Session-only API key (not persisted to localStorage) ──
@@ -77,26 +113,6 @@ export function isApiKeyConfigured(): boolean {
 }
 
 // ─── IndexedDB (solutions, history) ────────────────────────
-
-export interface StoredSolution {
-  id: string; // slug-language
-  problem_slug: string;
-  problem_title: string;
-  language: string;
-  code: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ActivityEntry {
-  id: string;
-  type: "solve" | "research" | "view" | "save";
-  problem_slug: string;
-  problem_title: string;
-  language?: string;
-  timestamp: string;
-  details?: string;
-}
 
 const IDB_PREFIX = {
   solution: "sol:",
@@ -210,6 +226,14 @@ export async function clearAllData(): Promise<void> {
   // Clear localStorage
   for (const val of Object.values(LS_KEYS)) {
     localStorage.removeItem(val);
+  }
+
+  // Clear drafts
+  const allLsKeys = Object.keys(localStorage);
+  for (const k of allLsKeys) {
+    if (k.startsWith("lca-draft:")) {
+      localStorage.removeItem(k);
+    }
   }
 
   // Clear IndexedDB

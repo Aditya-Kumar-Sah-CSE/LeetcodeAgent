@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Activity,
-  Trash2,
   Calendar,
-  CheckCircle,
   FileCode,
   Search,
   Eye,
@@ -52,29 +50,29 @@ export default function ActivityPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-5 max-w-4xl mx-auto w-full max-w-full overflow-x-hidden pb-safe">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1
-            className="text-2xl font-bold flex items-center gap-2"
+            className="text-xl sm:text-2xl font-bold flex items-center gap-2"
             style={{ color: "var(--color-text-primary)" }}
           >
-            <Activity size={24} style={{ color: "var(--color-accent)" }} />
+            <Activity size={22} style={{ color: "var(--color-accent)" }} />
             Activity Log
           </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
+          <p className="text-xs sm:text-sm mt-0.5 text-muted">
             Chronological audit log of all your AI generations, problem views, and saves.
           </p>
         </div>
 
         {/* Filter chips */}
-        <div className="flex items-center gap-1.5 p-1 rounded-lg border text-xs" style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border-subtle)" }}>
+        <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl border text-xs" style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border-subtle)" }}>
           {["all", "solve", "save", "view", "research"].map((t) => (
             <button
               key={t}
               onClick={() => setFilter(t)}
-              className="px-2.5 py-1 rounded capitalize font-medium transition-all cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg capitalize font-medium transition-all cursor-pointer touch-target"
               style={{
                 background: filter === t ? "var(--color-accent)" : "transparent",
                 color: filter === t ? "#fff" : "var(--color-text-secondary)",
@@ -101,11 +99,11 @@ export default function ActivityPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {filtered.map((act) => (
             <div
               key={act.id}
-              className="card flex items-center gap-3.5 py-3 px-4 hover:border-gray-600 transition-colors"
+              className="card flex items-center gap-3 py-3 px-3.5 hover:border-gray-600 transition-colors"
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
@@ -117,31 +115,26 @@ export default function ActivityPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-xs font-bold truncate"
-                    style={{ color: "var(--color-text-primary)" }}
+                    className="text-xs font-bold truncate text-white"
                   >
                     {act.problem_title}
                   </span>
                   <span
-                    className="text-[10px] uppercase font-semibold px-2 py-0.2 rounded"
-                    style={{
-                      background: "var(--color-bg-secondary)",
-                      color: "var(--color-accent)",
-                    }}
+                    className="text-[10px] uppercase font-semibold px-2 py-0.2 rounded bg-secondary text-accent"
                   >
                     {act.type}
                   </span>
                 </div>
                 {act.details && (
-                  <p className="text-xs truncate mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                  <p className="text-xs truncate mt-0.5 text-muted">
                     {act.details}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs shrink-0" style={{ color: "var(--color-text-muted)" }}>
-                <Calendar size={12} />
-                <span>{new Date(act.timestamp).toLocaleString()}</span>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted shrink-0">
+                <Calendar size={11} />
+                <span>{new Date(act.timestamp).toLocaleDateString()}</span>
               </div>
             </div>
           ))}

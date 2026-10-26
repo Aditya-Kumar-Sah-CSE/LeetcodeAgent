@@ -68,6 +68,18 @@
   }
 }
 
+/* ─── Mobile Utilities & Safe Areas ────────────────────── */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5rem);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 /* ─── Utility Classes ──────────────────────────────────── */
 @utility card {
   background: var(--color-bg-card);

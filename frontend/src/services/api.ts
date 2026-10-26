@@ -26,6 +26,10 @@ import {
   getUsername,
   isProblemSolved,
   syncSolvedSlugs,
+  getSolvedSlugs,
+  getLastSyncTime,
+  setLastSyncTime,
+  isSyncDue24Hr,
 } from "./storage";
 import { generateClientAlgorithmicSolution } from "./algorithmicAgent";
 
@@ -828,6 +832,44 @@ export async function fetchProfile(
       reputation: isAditya ? 0 : 42,
       verified: true,
       solved_slugs: fallbackSlugs,
+    };
+  }
+}
+
+export async function syncLeetCodeSolvedProblems(force = false): Promise<{
+  synced: boolean;
+  count: number;
+  lastSyncedAt: number;
+}> {
+  const username = getUsername() || "Aditya_Kumar_Sah-28";
+
+  if (!force && !isSyncDue24Hr()) {
+    return {
+      synced: false,
+      count: getSolvedSlugs().size,
+      lastSyncedAt: getLastSyncTime() || Date.now(),
+    };
+  }
+
+  try {
+    const prof = await fetchProfile(username);
+    if (prof.solved_slugs && prof.solved_slugs.length > 0) {
+      syncSolvedSlugs(prof.solved_slugs);
+    }
+    const now = Date.now();
+    setLastSyncTime(now);
+    return {
+      synced: true,
+      count: getSolvedSlugs().size,
+      lastSyncedAt: now,
+    };
+  } catch {
+    const now = Date.now();
+    setLastSyncTime(now);
+    return {
+      synced: false,
+      count: getSolvedSlugs().size,
+      lastSyncedAt: now,
     };
   }
 }

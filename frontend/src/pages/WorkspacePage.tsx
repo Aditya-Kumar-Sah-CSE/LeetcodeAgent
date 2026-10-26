@@ -64,7 +64,7 @@ import {
   detectPlatform,
   getCanonicalLeetCodeUrl,
 } from "../services/leetcodeNavigation";
-import DifficultyBadge, { ProblemStatusBadge, ProblemStatusToggle } from "../components/UIComponents";
+import DifficultyBadge, { ProblemStatusBadge } from "../components/UIComponents";
 import SubmissionModal from "../components/SubmissionModal";
 
 export default function WorkspacePage() {
@@ -446,7 +446,6 @@ export default function WorkspacePage() {
             <>
               <DifficultyBadge difficulty={problem.difficulty} />
               <ProblemStatusBadge isSolved={isSolved} size="sm" showAccountHint={isSolved} />
-              <ProblemStatusToggle isSolved={isSolved} onToggle={handleToggleSolved} compact={true} />
               <h2
                 className="text-sm sm:text-base font-bold truncate text-white"
                 title={problem.title}

@@ -32,7 +32,6 @@ import DifficultyBadge, {
   LoadingCard,
   ErrorBox,
   ProblemStatusBadge,
-  ProblemStatusToggle,
 } from "../components/UIComponents";
 import {
   fetchDailyChallenge,
@@ -42,12 +41,14 @@ import {
   fetchProblem,
   fetchContests,
   fetchContestQuestions,
+  syncLeetCodeSolvedProblems,
 } from "../services/api";
 import {
   addActivity,
   getSolvedSlugs,
-  toggleProblemSolved,
   isProblemSolved,
+  getLastSyncTime,
+  formatLastSyncTime,
 } from "../services/storage";
 import type { DailyProblem, ProblemBrief, TopicTag, ContestBrief, ContestQuestion } from "../types";
 
@@ -60,6 +61,8 @@ export default function DailyPage() {
   // Solved status set for instant UI updates & connected account tracking
   const [solvedSlugsSet, setSolvedSlugsSet] = useState<Set<string>>(() => getSolvedSlugs());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState<boolean>(false);
+  const [lastSyncTime, setLastSyncTimeState] = useState<number | null>(() => getLastSyncTime());
 
   // Contest Arena state
   const [contests, setContests] = useState<ContestBrief[]>([]);
@@ -96,15 +99,21 @@ export default function DailyPage() {
 
   const PAGE_SIZE = 20;
 
-  const handleToggleSolved = (slug: string, title?: string) => {
-    const isNowSolved = toggleProblemSolved(slug);
-    setSolvedSlugsSet(new Set(getSolvedSlugs()));
-    setToastMessage(
-      isNowSolved
-        ? `Marked "${title || slug}" as Solved ✓`
-        : `Marked "${title || slug}" as New ★`
-    );
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await syncLeetCodeSolvedProblems(true);
+      setSolvedSlugsSet(new Set(getSolvedSlugs()));
+      setLastSyncTimeState(res.lastSyncedAt);
+      setToastMessage(
+        `✓ Synced with @Aditya_Kumar_Sah-28! (${res.count} solved problems active)`
+      );
+    } catch (e: any) {
+      setToastMessage(`Failed to sync: ${e.message || "Network error"}`);
+    } finally {
+      setSyncing(false);
+      setTimeout(() => setToastMessage(null), 3500);
+    }
   };
 
   // Load Daily Challenge
@@ -167,6 +176,13 @@ export default function DailyPage() {
   useEffect(() => {
     loadDaily();
     loadTopics();
+    // Automatic 24-hour sync from connected LeetCode profile
+    syncLeetCodeSolvedProblems(false).then((res) => {
+      if (res.synced) {
+        setSolvedSlugsSet(new Set(getSolvedSlugs()));
+        setLastSyncTimeState(res.lastSyncedAt);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -420,6 +436,24 @@ export default function DailyPage() {
 
             <div className="flex items-center gap-2">
               <button
+                onClick={handleManualSync}
+                disabled={syncing}
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer transition-all border touch-target disabled:opacity-50"
+                style={{
+                  background: "rgba(16, 185, 129, 0.12)",
+                  borderColor: "rgba(16, 185, 129, 0.35)",
+                  color: "#34d399",
+                }}
+                title="Sync accepted submissions from connected LeetCode profile (@Aditya_Kumar_Sah-28)"
+              >
+                <RefreshCw size={13} className={syncing ? "animate-spin" : ""} />
+                <span>{syncing ? "Syncing..." : "Sync Solved"}</span>
+                <span className="text-[10px] opacity-80 hidden sm:inline">
+                  ({formatLastSyncTime(lastSyncTime)})
+                </span>
+              </button>
+
+              <button
                 onClick={() => loadDaily(true)}
                 disabled={refreshingDaily || loadingDaily}
                 className="px-3.5 py-1.5 text-xs font-semibold rounded-xl flex items-center gap-2 cursor-pointer transition-all border touch-target disabled:opacity-50"
@@ -480,10 +514,6 @@ export default function DailyPage() {
                       isSolved={solvedSlugsSet.has(daily.slug)}
                       size="md"
                       showAccountHint={true}
-                    />
-                    <ProblemStatusToggle
-                      isSolved={solvedSlugsSet.has(daily.slug)}
-                      onToggle={() => handleToggleSolved(daily.slug, daily.title)}
                     />
                     <DifficultyBadge difficulty={daily.difficulty} />
                     <a
@@ -724,9 +754,28 @@ export default function DailyPage() {
                 );
               })}
 
-              <span className="text-xs text-muted ml-auto">
-                {loadingPractice ? "Fetching from LeetCode..." : `${totalPractice} problems available`}
-              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={handleManualSync}
+                  disabled={syncing}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer disabled:opacity-50 touch-target"
+                  style={{
+                    background: "rgba(16, 185, 129, 0.12)",
+                    borderColor: "rgba(16, 185, 129, 0.35)",
+                    color: "#34d399",
+                  }}
+                  title="Sync accepted submissions from connected LeetCode profile (@Aditya_Kumar_Sah-28)"
+                >
+                  <RefreshCw size={12} className={syncing ? "animate-spin" : ""} />
+                  <span>{syncing ? "Syncing..." : "Sync Solved"}</span>
+                  <span className="text-[10px] opacity-80 hidden md:inline">
+                    ({formatLastSyncTime(lastSyncTime)})
+                  </span>
+                </button>
+                <span className="text-xs text-muted hidden sm:inline">
+                  {loadingPractice ? "Fetching from LeetCode..." : `${totalPractice} problems available`}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -796,12 +845,6 @@ export default function DailyPage() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 shrink-0">
-                      <ProblemStatusToggle
-                        isSolved={isSolved}
-                        onToggle={() => handleToggleSolved(p.slug, p.title)}
-                        compact={true}
-                      />
-
                       <a
                         href={p.url}
                         target="_blank"
@@ -1161,12 +1204,6 @@ export default function DailyPage() {
 
                           {/* Action Buttons */}
                           <div className="flex items-center gap-2 shrink-0">
-                            <ProblemStatusToggle
-                              isSolved={isSolved}
-                              onToggle={() => handleToggleSolved(q.slug, q.title)}
-                              compact={true}
-                            />
-
                             <a
                               href={q.url}
                               target="_blank"

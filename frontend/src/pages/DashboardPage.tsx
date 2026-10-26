@@ -10,6 +10,8 @@ import {
   Sparkles,
   ExternalLink,
   Trophy,
+  RefreshCw,
+  Clock,
 } from "lucide-react";
 import DifficultyBadge, {
   StatusDot,
@@ -18,7 +20,12 @@ import DifficultyBadge, {
   ProblemStatusBadge,
 } from "../components/UIComponents";
 import { InstallPwaBanner } from "../components/InstallPwaPrompt";
-import { fetchDailyChallenge, checkHealth, fetchProfile } from "../services/api";
+import {
+  fetchDailyChallenge,
+  checkHealth,
+  fetchProfile,
+  syncLeetCodeSolvedProblems,
+} from "../services/api";
 import {
   getUsername,
   getModelId,
@@ -26,6 +33,8 @@ import {
   getAllSolutionsLocal,
   getActivities,
   isProblemSolved,
+  getLastSyncTime,
+  formatLastSyncTime,
 } from "../services/storage";
 import type { DailyProblem, StoredSolution, ActivityEntry, LeetCodeProfile } from "../types";
 
@@ -44,6 +53,9 @@ export default function DashboardPage() {
   const [solutions, setSolutions] = useState<StoredSolution[]>([]);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [profile, setProfile] = useState<LeetCodeProfile | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTimeState] = useState<number | null>(() => getLastSyncTime());
+  const [syncToast, setSyncToast] = useState<string | null>(null);
 
   const username = getUsername() || "Aditya_Kumar_Sah-28";
   const modelId = getModelId();
@@ -67,10 +79,50 @@ export default function DashboardPage() {
 
     // Fetch LeetCode profile
     fetchProfile(username).then(setProfile).catch(() => {});
+
+    // Automatic 24-Hour Sync
+    syncLeetCodeSolvedProblems(false).then((res) => {
+      if (res.synced) {
+        setLastSyncTimeState(res.lastSyncedAt);
+        fetchProfile(username).then(setProfile).catch(() => {});
+      }
+    });
   }, [username]);
 
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await syncLeetCodeSolvedProblems(true);
+      setLastSyncTimeState(res.lastSyncedAt);
+      const prof = await fetchProfile(username);
+      setProfile(prof);
+      setSyncToast(`✓ Synced with @${username}! ${res.count} solved problems updated.`);
+      setTimeout(() => setSyncToast(null), 3500);
+    } catch (err: any) {
+      setSyncToast(`Sync failed: ${err.message}`);
+      setTimeout(() => setSyncToast(null), 3500);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
-    <div className="space-y-5 max-w-full overflow-x-hidden pb-safe">
+    <div className="space-y-5 max-w-full overflow-x-hidden pb-safe relative">
+      {/* Sync Toast Alert */}
+      {syncToast && (
+        <div
+          className="fixed bottom-20 md:bottom-6 right-4 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border animate-bounce backdrop-blur-md"
+          style={{
+            background: "var(--color-bg-card)",
+            borderColor: "var(--color-accent)",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          <Sparkles size={16} style={{ color: "var(--color-accent)" }} />
+          <span>{syncToast}</span>
+        </div>
+      )}
+
       {/* PWA Install Banner */}
       <InstallPwaBanner />
 
@@ -258,6 +310,28 @@ export default function DashboardPage() {
                   <span className="text-emerald-400">E:{profile?.solved_easy ?? 84}</span>
                   <span className="text-amber-400">M:{profile?.solved_medium ?? 48}</span>
                   <span className="text-red-400">H:{profile?.solved_hard ?? 6}</span>
+                </div>
+                <div className="pt-2 mt-2 border-t border-border-subtle flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-muted flex items-center gap-1">
+                    <Clock size={10} />
+                    <span>{formatLastSyncTime(lastSyncTime)} (Auto: 24h)</span>
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleManualSync();
+                    }}
+                    disabled={syncing}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all border text-white cursor-pointer active:scale-95 disabled:opacity-50 touch-target"
+                    style={{
+                      background: "var(--color-accent)",
+                      borderColor: "var(--color-accent)",
+                    }}
+                    title="Manually sync solved problems from LeetCode account"
+                  >
+                    <RefreshCw size={10} className={syncing ? "animate-spin" : ""} />
+                    <span>{syncing ? "Syncing..." : "Sync Solved"}</span>
+                  </button>
                 </div>
               </div>
             </div>

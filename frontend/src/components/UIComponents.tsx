@@ -177,39 +177,3 @@ export function ProblemStatusBadge({
     </span>
   );
 }
-
-interface ProblemStatusToggleProps {
-  isSolved: boolean;
-  onToggle: () => void;
-  className?: string;
-  compact?: boolean;
-}
-
-export function ProblemStatusToggle({
-  isSolved,
-  onToggle,
-  className = "",
-  compact = false,
-}: ProblemStatusToggleProps) {
-  return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggle();
-      }}
-      className={`inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all border touch-target ${
-        compact ? "px-2 py-1 text-[11px]" : "px-2.5 py-1.5 text-xs"
-      } ${className}`}
-      style={{
-        background: isSolved ? "rgba(16, 185, 129, 0.12)" : "rgba(168, 85, 247, 0.12)",
-        borderColor: isSolved ? "rgba(16, 185, 129, 0.3)" : "rgba(168, 85, 247, 0.3)",
-        color: isSolved ? "#34d399" : "#c084fc",
-      }}
-      title={isSolved ? "Click to mark as New" : "Click to mark as Solved"}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${isSolved ? "bg-emerald-400" : "bg-purple-400"}`} />
-      <span>{isSolved ? (compact ? "Mark New" : "Mark as New") : (compact ? "Mark Solved" : "Mark as Solved")}</span>
-    </button>
-  );
-}

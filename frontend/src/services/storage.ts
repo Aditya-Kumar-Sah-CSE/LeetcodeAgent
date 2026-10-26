@@ -321,3 +321,41 @@ export function syncSolvedSlugs(newSlugs: string[]) {
   }
   localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(Array.from(current)));
 }
+
+// ─── 24-Hour & Manual Sync Tracking ─────────────────────────
+
+const LS_LAST_SYNC_KEY = "lca-last-synced-at";
+
+export function getLastSyncTime(): number | null {
+  const raw = localStorage.getItem(LS_LAST_SYNC_KEY);
+  if (!raw) return null;
+  const num = parseInt(raw, 10);
+  return isNaN(num) ? null : num;
+}
+
+export function setLastSyncTime(timestamp: number = Date.now()) {
+  localStorage.setItem(LS_LAST_SYNC_KEY, timestamp.toString());
+}
+
+export function isSyncDue24Hr(): boolean {
+  const last = getLastSyncTime();
+  if (!last) return true;
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  return Date.now() - last >= ONE_DAY_MS;
+}
+
+export function formatLastSyncTime(timestamp: number | null): string {
+  if (!timestamp) return "Never synced";
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 45) return "Just now";
+  if (diffSec < 3600) {
+    const mins = Math.max(1, Math.floor(diffSec / 60));
+    return `${mins}m ago`;
+  }
+  if (diffSec < 86400) {
+    const hrs = Math.floor(diffSec / 3600);
+    return `${hrs}h ago`;
+  }
+  const days = Math.floor(diffSec / 86400);
+  return `${days}d ago`;
+}

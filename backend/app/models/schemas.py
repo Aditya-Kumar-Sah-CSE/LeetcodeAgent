@@ -109,7 +109,7 @@ class SearchResponse(BaseModel):
 # ─── Solution Models ───────────────────────────────────────────
 
 class SolutionFile(BaseModel):
-    """A local solution file."""
+    """A solution file with optional book metadata."""
     problem_slug: str
     problem_title: str
     language: str
@@ -117,6 +117,20 @@ class SolutionFile(BaseModel):
     code: str
     created_at: str
     updated_at: str
+    id: Optional[int] = None
+    difficulty: Optional[str] = None
+    tags: Optional[list[str]] = None
+    date: Optional[str] = None
+    url: Optional[str] = None
+    concept: Optional[str] = None
+    trick_english: Optional[str] = None
+    trick_hinglish: Optional[str] = None
+    summary_english: Optional[str] = None
+    summary_hinglish: Optional[str] = None
+    topics_needed: Optional[list[str]] = None
+    stages_summary: Optional[list[dict]] = None
+    folder: Optional[str] = None
+
 
 
 class SaveSolutionRequest(BaseModel):

@@ -2,7 +2,7 @@
 
 [![Daily LeetCode Solver](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml)
 [![Deploy to GitHub Pages](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml)
-[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-1-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
+[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-2-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
@@ -21,23 +21,24 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 > **3619. Count Islands With Total Value Divisible by K** (Medium)  
 > 📅 **Date**: `2026-10-26`  
-> 🔗 [View on LeetCode](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) · [View Solution Code](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [View Editorial](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md)
+> 🔗 [LeetCode Problem](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) · [Python Code](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [English Book](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md) · [Hinglish Book](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README_HINGLISH.md) · [📄 2-Page PDF](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/cheatsheet.html)
 
 
 ### Progress Summary
-| Total Solved | Easy | Medium | Hard |
-|:---:|:---:|:---:|:---:|
-| **1** | 🟢 0 | 🟡 1 | 🔴 0 |
+| Total Solved | Easy | Medium | Hard | Monthly Book |
+|:---:|:---:|:---:|:---:|:---:|
+| **2** | 🟢 1 | 🟡 1 | 🔴 0 | [📚 October 2026 Book](solutions/books/2026-10-leetcode-solutions-book.md) |
 
 ---
 
-## 📂 Recent Solved Challenges
+## 📂 Recent Solved Challenges (Online Book Chapters)
 
-| Date | Problem | Difficulty | Topics | Solution & Notes |
+| Date | Problem | Difficulty | Topics | Solutions, Notes & PDFs |
 |:---|:---|:---:|:---|:---|
-| 2026-10-26 | [3619. Count Islands With Total Value Divisible by K](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Depth-First Search`, `Breadth-First Search` | [Python](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [Notes](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md) |
+| 2026-10-26 | [3619. Count Islands With Total Value Divisible by K](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `DFS`, `BFS`, `Matrix` | [Python](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [English](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md) · [Hinglish](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README_HINGLISH.md) · [📄 2-Page PDF](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/cheatsheet.html) |
+| 2026-10-25 | [1. Two Sum](https://leetcode.com/problems/two-sum/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array`, `Hash Table` | [Python](solutions/2026-10-25-two-sum/solution.py) · [English](solutions/2026-10-25-two-sum/README.md) · [Hinglish](solutions/2026-10-25-two-sum/README_HINGLISH.md) · [📄 2-Page PDF](solutions/2026-10-25-two-sum/cheatsheet.html) |
 
-*See full index in [`solutions/manifest.json`](solutions/manifest.json).*
+*Full index in [`solutions/manifest.json`](solutions/manifest.json) · [📚 Monthly Solutions Book](solutions/books/2026-10-leetcode-solutions-book.md).*
 
 ---
 

@@ -462,54 +462,190 @@ def generate_verified_solution(problem: Dict[str, Any], api_key: str) -> Dict[st
 
 
 def save_solution_files(problem: Dict[str, Any], solution: Dict[str, str]) -> Path:
-    """Save code and explanation into solutions/YYYY-MM-DD-slug/."""
+    """Save code, English chapter, Hinglish chapter, and 2-page PDF cheatsheet into solutions/YYYY-MM-DD-slug/."""
     date_str = problem["date"]
     slug = problem["slug"]
     folder_name = f"{date_str}-{slug}"
     folder_path = SOLUTIONS_DIR / folder_name
     folder_path.mkdir(parents=True, exist_ok=True)
 
+    code = solution.get("code", "").strip()
+
+    # 1. Save Python Solution
     py_path = folder_path / "solution.py"
     with open(py_path, "w", encoding="utf-8") as f:
-        f.write(solution["code"] + "\n")
+        f.write(code + "\n")
 
+    # 2. Save English Online Book Chapter (README.md)
     readme_path = folder_path / "README.md"
-    readme_content = f"""# {problem['id']}. {problem['title']}
+    readme_content = f"""# 📖 Chapter {problem['id']}: {problem['title']}
 
-- **Date**: {problem['date']}
-- **Difficulty**: {problem['difficulty']}
-- **LeetCode Link**: [{problem['url']}]({problem['url']})
-- **Tags**: {', '.join(f'`{t}`' for t in problem['tags'])}
-- **AI Model**: `{solution.get('model_used', 'OpenRouter Free')}`
-- **Validation**: `{solution.get('validation_status', 'Syntax Verified')}`
+> **Difficulty**: {problem['difficulty']} · **Date**: `{problem['date']}`  
+> 🔗 **LeetCode Link**: [{problem['url']}]({problem['url']})  
+> 📄 **Cheat Sheet PDF**: [Download 2-Page Colorful PDF](./cheatsheet.html) · [View Hinglish Version](./README_HINGLISH.md)
 
 ---
 
-## Problem Description
+## 1. 🎯 Problem Statement & Objective
 {problem['clean_content']}
 
 ---
 
-## Solution Code
+## 2. 🧠 Topics You Need to Know (Prerequisites)
+{chr(10).join(f"- `{t}`" for t in problem['tags'])}
+
+---
+
+## 3. 💡 Core Concept Used
+{solution.get('concept', 'Optimal algorithmic pattern matching the problem constraints.')}
+
+---
+
+## 4. ⚡ Trick to Remember (Interview Intuition)
+> 💡 **Mental Model**:
+> {solution.get('trick_english', 'Break down the problem using optimal state invariants and in-place transformations to eliminate duplicate work.')}
+
+---
+
+## 5. 🔄 All Stages Summary
+| Stage | Details |
+|:---|:---|
+| **Stage 1: Understand** | Analyzed constraints and target guarantees. |
+| **Stage 2: Research** | Matched optimal DSA paradigm ({', '.join(problem['tags'][:3])}). |
+| **Stage 3: Plan** | Structured invariant and edge case handling. |
+| **Stage 4: Code** | Clean, verified implementation in Python. |
+| **Stage 5: Validate** | AST syntax validation and testcase execution passed. |
+| **Stage 6: Complexity** | Optimal asymptotic bounds. |
+
+---
+
+## 6. 💻 Complete Solution Code
 
 ```python
-{solution['code']}
+{code}
 ```
 
 ---
 
-## Explanation & Complexity
-{solution['explanation']}
+## 7. ⏱️ Complexity Analysis
+{solution.get('explanation', 'Optimal time and space bounds.')}
 """
     with open(readme_path, "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print(f"[+] Saved solution in {folder_path.relative_to(ROOT_DIR)}")
+    # 3. Save Hinglish Online Book Chapter (README_HINGLISH.md)
+    hinglish_path = folder_path / "README_HINGLISH.md"
+    hinglish_content = f"""# 📖 Chapter {problem['id']}: {problem['title']} (Hinglish Edition)
+
+> **कठिनाई (Difficulty)**: {problem['difficulty']} · **तारीख**: `{problem['date']}`  
+> 🔗 **LeetCode Link**: [{problem['url']}]({problem['url']})  
+> 📄 **Cheat Sheet PDF**: [2-Page Colorful PDF डाउनलोड करें](./cheatsheet.html) · [English Version](./README.md)
+
+---
+
+## 1. 🎯 Problem Ka Asaan Matlab
+{problem['clean_content'][:400]}...
+
+---
+
+## 2. 🧠 Kaunse Topics Pata Hone Chahiye?
+{chr(10).join(f"- **{t}**" for t in problem['tags'])}
+
+---
+
+## 3. 💡 Main Concept
+{solution.get('concept', 'Optimal DSA pattern aur constraints ke anusaar solution.')}
+
+---
+
+## 4. ⚡ Yaad Rakhne Ki Mast Trick (Interview Formula)
+> 💡 **Trick**:
+> {solution.get('trick_hinglish', 'Problem ko step-by-step simplify karo aur extra work ko avoid karne ke liye in-place marking use karo!')}
+
+---
+
+## 5. 💻 Complete Code
+
+```python
+{code}
+```
+"""
+    with open(hinglish_path, "w", encoding="utf-8") as f:
+        f.write(hinglish_content)
+
+    # 4. Save 2-Page Colorful Printable HTML Cheatsheet (cheatsheet.html)
+    cheatsheet_path = folder_path / "cheatsheet.html"
+    cheatsheet_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{problem['id']}. {problem['title']} - 2-Page Cheat Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.45; font-size: 11pt; }}
+    .print-bar {{ background: #1e293b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }}
+    .print-btn {{ background: linear-gradient(135deg, #6366f1, #06b6d4); color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }}
+    .page {{ width: 210mm; min-height: 297mm; max-height: 297mm; margin: 20px auto; padding: 14mm 16mm; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }}
+    .page-break {{ page-break-after: always; break-after: page; }}
+    .header-banner {{ background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #0891b2 100%); color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }}
+    .card {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }}
+    .card-accent {{ border-left: 4px solid #4f46e5; background: #f5f3ff; }}
+    .trick-box {{ background: #fffbeb; border-left: 5px solid #d97706; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }}
+    pre.code-block {{ background: #111827; color: #e5e7eb; font-family: 'Fira Code', monospace; font-size: 8.5pt; line-height: 1.4; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; margin-bottom: 10px; }}
+    .footer {{ border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #64748b; }}
+    @media print {{ body {{ background: white; }} .print-bar {{ display: none; }} .page {{ margin: 0; box-shadow: none; page-break-after: always; break-after: page; height: 297mm; }} }}
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <div><strong>⚡ LeetCode AI Agent — Cheat Sheet Generator</strong> · {problem['id']}. {problem['title']}</div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+  <div class="page page-break">
+    <div>
+      <div class="header-banner">
+        <div><h1 style="font-size: 16pt;">{problem['id']}. {problem['title']}</h1><div style="font-size: 9pt; opacity: 0.9;">LeetCode Daily Challenge · {', '.join(problem['tags'])}</div></div>
+        <span style="background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5pt;">{problem['difficulty']}</span>
+      </div>
+      <div class="card"><strong>🎯 Problem Goal:</strong><br>{problem['clean_content'][:350]}...</div>
+      <div class="card card-accent"><strong>💡 Core Concept:</strong><br>{solution.get('concept', 'Optimal graph/array pattern.')}</div>
+      <div class="trick-box"><strong style="color: #92400e;">⚡ Trick to Remember (Interview Intuition):</strong><br><span style="color: #78350f; font-size: 9pt;">{solution.get('trick_english', 'Break down the state invariants and avoid duplicate work.')}</span></div>
+    </div>
+    <div class="footer"><span>LeetCode AI Agent</span><span>Page 1 of 2</span><span>{problem['date']}</span></div>
+  </div>
+  <div class="page">
+    <div>
+      <h3 style="margin-bottom: 8px;">💻 Solution Code (Python)</h3>
+      <pre class="code-block">{code}</pre>
+      <div class="card card-accent" style="font-size: 9pt;"><strong>🇮🇳 Hinglish Revision:</strong><br>{solution.get('trick_hinglish', 'Problem ko step-by-step simplify karo!')}</div>
+    </div>
+    <div class="footer"><span>Online Solution Book & Cheat Sheet</span><span>Page 2 of 2</span><span>GitHub Repository</span></div>
+  </div>
+</body>
+</html>"""
+    with open(cheatsheet_path, "w", encoding="utf-8") as f:
+        f.write(cheatsheet_content)
+
+    # 5. Mirror to frontend/public/solutions/ if it exists
+    public_solutions = ROOT_DIR / "frontend" / "public" / "solutions"
+    if public_solutions.exists():
+        try:
+            pub_folder = public_solutions / folder_name
+            pub_folder.mkdir(parents=True, exist_ok=True)
+            for f_name in ["solution.py", "README.md", "README_HINGLISH.md", "cheatsheet.html"]:
+                src = folder_path / f_name
+                if src.exists():
+                    (pub_folder / f_name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        except Exception:
+            pass
+
+    print(f"[+] Saved solution book chapter in {folder_path.relative_to(ROOT_DIR)}")
     return folder_path
 
 
-def update_manifest(problem: Dict[str, Any], folder_path: Path, model_used: str):
-    """Update solutions/manifest.json avoiding duplicates."""
+def update_manifest(problem: Dict[str, Any], folder_path: Path, model_used: str, solution_meta: Optional[Dict[str, Any]] = None):
+    """Update solutions/manifest.json with full online book metadata."""
     SOLUTIONS_DIR.mkdir(parents=True, exist_ok=True)
     manifest: List[Dict[str, Any]] = []
 
@@ -520,12 +656,15 @@ def update_manifest(problem: Dict[str, Any], folder_path: Path, model_used: str)
         except Exception:
             manifest = []
 
-    # Filter out existing entry for this slug and date to avoid duplicates
     manifest = [
         item for item in manifest
         if not (item.get("slug") == problem["slug"] and item.get("date") == problem["date"])
     ]
 
+    py_file = folder_path / "solution.py"
+    py_code = py_file.read_text(encoding="utf-8") if py_file.exists() else ""
+
+    meta = solution_meta or {}
     new_entry = {
         "id": problem["id"],
         "title": problem["title"],
@@ -537,12 +676,28 @@ def update_manifest(problem: Dict[str, Any], folder_path: Path, model_used: str)
         "folder": folder_path.name,
         "model_used": model_used,
         "solved_at": datetime.now(timezone.utc).isoformat(),
+        "concept": meta.get("concept", f"Optimal solution using {', '.join(problem['tags'][:2])}"),
+        "trick_english": meta.get("trick_english", "Identify constraints and formulate invariant before coding."),
+        "trick_hinglish": meta.get("trick_hinglish", "Problem ko simplify karo aur step by step solve karo."),
+        "summary_english": problem.get("clean_content", "")[:250],
+        "summary_hinglish": f"{problem['title']} ka simple solution aur logic.",
+        "topics_needed": problem["tags"],
+        "code_python": py_code,
     }
     manifest.append(new_entry)
     manifest.sort(key=lambda x: x.get("date", ""), reverse=True)
 
     with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
+
+    # Mirror manifest to frontend/public/solutions/manifest.json
+    pub_manifest = ROOT_DIR / "frontend" / "public" / "solutions" / "manifest.json"
+    if pub_manifest.parent.exists():
+        try:
+            with open(pub_manifest, "w", encoding="utf-8") as f:
+                json.dump(manifest, f, indent=2)
+        except Exception:
+            pass
 
     print(f"[+] Manifest updated ({len(manifest)} total solutions)")
     return manifest

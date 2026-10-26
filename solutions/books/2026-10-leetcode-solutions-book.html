@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetCode Solutions Master Book — October 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #1e293b;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      border: 1px solid #334155;
+    }
+    .book-cover {
+      text-align: center;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #0891b2 100%);
+      border-radius: 12px;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 25px -5px rgba(67, 56, 202, 0.4);
+    }
+    h1 { font-size: 28pt; font-weight: 800; margin-bottom: 8px; color: white; }
+    .subtitle { font-size: 13pt; color: #cbd5e1; }
+    .btn {
+      background: #06b6d4;
+      color: #0f172a;
+      font-weight: 700;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      font-size: 11pt;
+    }
+    .chapter-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 9pt;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-medium { background: #fef3c7; color: #b45309; }
+    .badge-easy { background: #d1fae5; color: #065f46; }
+    pre {
+      background: #111827;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Fira Code', monospace;
+      color: #e2e8f0;
+      overflow-x: auto;
+      border: 1px solid #374151;
+    }
+    .hinglish-box {
+      background: rgba(99, 102, 241, 0.1);
+      border-left: 4px solid #6366f1;
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 16px 0;
+    }
+    @media print {
+      body { background: white; color: black; }
+      .container { border: none; box-shadow: none; padding: 0; background: white; }
+      .btn { display: none; }
+      .chapter-card { page-break-after: always; background: white; border-color: #e2e8f0; color: black; }
+      pre { background: #f8fafc; color: black; border-color: #cbd5e1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="book-cover">
+      <h1>📚 LeetCode Solutions Master Book</h1>
+      <div class="subtitle">Monthly Edition — October 2026</div>
+      <div style="margin-top: 12px; font-size: 10pt; opacity: 0.85;">Aditya Kumar Sah · LeetCode AI Agent</div>
+      <button class="btn" onclick="window.print()">🖨️ Print / Save Book as PDF</button>
+    </div>
+
+    <!-- Chapter 1 -->
+    <div class="chapter-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="margin: 0; color: #67e8f9;">Chapter 1: 3619. Count Islands Divisible by K</h2>
+        <span class="badge badge-medium">Medium</span>
+      </div>
+      <p><strong>Concept Used:</strong> Implicit Graph, 4-Directional Connected Components, In-Place Visited Invalidation.</p>
+      <div class="hinglish-box">
+        <strong>🇮🇳 Hinglish Trick to Remember:</strong>
+        <p style="margin: 4px 0 0 0;">
+          Cell ko visit karte hi <code>0</code> kar do taaki dubara count na ho! DFS se pura island traverse karke unka sum nikaalo, aur aakhri me check karo <code>island_sum % k == 0</code>.
+        </p>
+      </div>
+      <pre>class Solution:
+    def countIslands(self, grid: List[List[int]], k: int) -> int:
+        if not grid or not grid[0]: return 0
+        m, n, ans = len(grid), len(grid[0]), 0
+        for r in range(m):
+            for c in range(n):
+                if grid[r][c] > 0:
+                    s, st = grid[r][c], [(r, c)]
+                    grid[r][c] = 0
+                    while st:
+                        cr, cc = st.pop()
+                        for dr, dc in ((-1,0),(1,0),(0,-1),(0,1)):
+                            nr, nc = cr+dr, cc+dc
+                            if 0 <= nr < m and 0 <= nc < n and grid[nr][nc] > 0:
+                                s += grid[nr][nc]; grid[nr][nc] = 0; st.append((nr, nc))
+                    if s % k == 0: ans += 1
+        return ans</pre>
+      <div style="font-size: 9pt; color: #94a3b8; margin-top: 8px;">
+        Time Complexity: O(M × N) · Space Complexity: O(M × N)
+      </div>
+    </div>
+
+    <!-- Chapter 2 -->
+    <div class="chapter-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="margin: 0; color: #67e8f9;">Chapter 2: 1. Two Sum</h2>
+        <span class="badge badge-easy">Easy</span>
+      </div>
+      <p><strong>Concept Used:</strong> Hash Table Complement Search ($O(1)$ amortized lookup).</p>
+      <div class="hinglish-box">
+        <strong>🇮🇳 Hinglish Trick to Remember:</strong>
+        <p style="margin: 4px 0 0 0;">
+          Aage dhoondhne ke bajaye peeche dekho! <code>target - num</code> agar pehle dekha hai dictionary me, toh dono index return karo.
+        </p>
+      </div>
+      <pre>class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        seen = {}
+        for i, num in enumerate(nums):
+            diff = target - num
+            if diff in seen:
+                return [seen[diff], i]
+            seen[num] = i
+        return []</pre>
+      <div style="font-size: 9pt; color: #94a3b8; margin-top: 8px;">
+        Time Complexity: O(N) · Space Complexity: O(N)
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

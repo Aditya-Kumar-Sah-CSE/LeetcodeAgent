@@ -569,22 +569,104 @@ export async function searchWeb(
 // ─── Solutions ──────────────────────────────────────────────
 
 export async function fetchSolutions(): Promise<SolutionFile[]> {
+  const result: SolutionFile[] = [];
+  const seenKeys = new Set<string>();
+
+  // 1. Try FastAPI backend /api/solutions
   try {
     const data = await apiFetch<{ solutions: SolutionFile[] }>("/solutions");
-    return data.solutions;
+    if (data?.solutions && Array.isArray(data.solutions)) {
+      for (const s of data.solutions) {
+        result.push(s);
+        seenKeys.add(`${s.problem_slug}-${s.language}`);
+      }
+    }
   } catch {
-    // Fallback to local storage
-    const local = await getAllSolutionsLocal();
-    return local.map((s) => ({
-      problem_slug: s.problem_slug,
-      problem_title: s.problem_title,
-      language: s.language,
-      filename: `${s.problem_slug}.${s.language}`,
-      code: s.code,
-      created_at: s.created_at,
-      updated_at: s.updated_at,
-    }));
+    // backend offline or in static deploy mode
   }
+
+  // 2. Load published solutions from GitHub manifest.json (Online Book)
+  try {
+    const manifestPaths = ["./solutions/manifest.json", "/solutions/manifest.json"];
+    let manifestData = null;
+    for (const p of manifestPaths) {
+      try {
+        const resp = await fetch(p);
+        if (resp.ok) {
+          manifestData = await resp.json();
+          break;
+        }
+      } catch {}
+    }
+
+    if (manifestData && Array.isArray(manifestData)) {
+      for (const item of manifestData) {
+        const key = `${item.slug}-python`;
+        if (!seenKeys.has(key)) {
+          result.push({
+            problem_slug: item.slug,
+            problem_title: item.title,
+            language: "python",
+            filename: `${item.slug}.py`,
+            code: item.code_python || "",
+            created_at: item.solved_at || new Date().toISOString(),
+            updated_at: item.solved_at || new Date().toISOString(),
+            id: item.id,
+            difficulty: item.difficulty,
+            tags: item.tags,
+            date: item.date,
+            url: item.url,
+            concept: item.concept,
+            trick_english: item.trick_english,
+            trick_hinglish: item.trick_hinglish,
+            summary_english: item.summary_english,
+            summary_hinglish: item.summary_hinglish,
+            topics_needed: item.topics_needed,
+            stages_summary: item.stages_summary,
+            folder: item.folder,
+          });
+          seenKeys.add(key);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Could not load solutions/manifest.json:", e);
+  }
+
+  // 3. Merge locally saved drafts from localStorage / IndexedDB
+  try {
+    const local = await getAllSolutionsLocal();
+    for (const s of local) {
+      const key = `${s.problem_slug}-${s.language}`;
+      if (!seenKeys.has(key)) {
+        result.push({
+          problem_slug: s.problem_slug,
+          problem_title: s.problem_title,
+          language: s.language,
+          filename: `${s.problem_slug}.${s.language}`,
+          code: s.code,
+          created_at: s.created_at,
+          updated_at: s.updated_at,
+          id: s.problem_id,
+          difficulty: s.difficulty,
+          tags: s.tags,
+          date: s.date,
+          url: s.url,
+          concept: s.concept,
+          trick_english: s.trick_english,
+          trick_hinglish: s.trick_hinglish,
+          summary_english: s.summary_english,
+          summary_hinglish: s.summary_hinglish,
+          topics_needed: s.topics_needed,
+          stages_summary: s.stages_summary,
+          folder: s.folder,
+        });
+        seenKeys.add(key);
+      }
+    }
+  } catch {}
+
+  return result;
 }
 
 export async function saveSolution(request: {

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3619. Count Islands With Total Value Divisible by K - 2-Page Cheat Sheet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --accent: #06b6d4;
+      --bg: #0f172a;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --code-bg: #1e1e2e;
+      --code-text: #cdd6f4;
+      --tag-bg: #eef2ff;
+      --tag-text: #4338ca;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
+      color: var(--text-main);
+      line-height: 1.45;
+      font-size: 11pt;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .print-bar {
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    .print-btn {
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+    .print-btn:hover { opacity: 0.9; }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      margin: 20px auto;
+      padding: 14mm 16mm;
+      background: white;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .page-break {
+      page-break-after: always;
+      break-after: page;
+    }
+
+    /* Modern Banner */
+    .header-banner {
+      background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #0891b2 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(67, 56, 202, 0.25);
+    }
+    .problem-title {
+      font-size: 16pt;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .badge-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .badge {
+      font-size: 8pt;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .badge-medium { background: #fef3c7; color: #b45309; }
+    .badge-date { background: rgba(255,255,255,0.2); color: white; }
+
+    .meta-tag {
+      font-size: 8.5pt;
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    /* Grid cards */
+    .section-title {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #1e1b4b;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 2px solid #e0e7ff;
+      padding-bottom: 3px;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .card-accent {
+      border-left: 4px solid #4f46e5;
+      background: #f5f3ff;
+    }
+
+    .trick-box {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1px solid #fde68a;
+      border-left: 5px solid #d97706;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+    }
+    .trick-title {
+      font-size: 10.5pt;
+      font-weight: 800;
+      color: #92400e;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .complexity-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      font-weight: 700;
+      font-size: 9pt;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Code styling */
+    pre.code-block {
+      background: #111827;
+      color: #e5e7eb;
+      font-family: 'Fira Code', monospace;
+      font-size: 8.5pt;
+      line-height: 1.4;
+      padding: 10px 12px;
+      border-radius: 8px;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid #374151;
+      margin-bottom: 10px;
+    }
+    .kw { color: #f472b6; font-weight: 600; }
+    .fn { color: #60a5fa; font-weight: 600; }
+    .num { color: #fbbf24; }
+    .str { color: #34d399; }
+    .cm { color: #9ca3af; font-style: italic; }
+
+    /* Stages Table */
+    table.stages-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+      margin-bottom: 10px;
+    }
+    table.stages-table th {
+      background: #312e81;
+      color: white;
+      text-align: left;
+      padding: 5px 8px;
+      font-weight: 700;
+    }
+    table.stages-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+    }
+    table.stages-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 7.5pt;
+      color: var(--text-muted);
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+      .print-bar {
+        display: none;
+      }
+      .page {
+        margin: 0;
+        box-shadow: none;
+        page-break-after: always;
+        break-after: page;
+        height: 297mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="print-bar">
+    <div>
+      <strong>⚡ LeetCode AI Agent — Cheat Sheet Generator</strong>
+      <span style="opacity: 0.7; font-size: 12px; margin-left: 12px;">Formatted for 2-Page A4 Printable PDF</span>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+      🖨️ Print / Save as PDF
+    </button>
+  </div>
+
+  <!-- ════════════════════ PAGE 1 ════════════════════ -->
+  <div class="page page-break">
+    <div>
+      <!-- Header Banner -->
+      <div class="header-banner">
+        <div>
+          <div class="problem-title">3619. Count Islands Divisible by K</div>
+          <div style="font-size: 9pt; opacity: 0.9;">LeetCode Daily Challenge · Graph Traversal & Connected Components</div>
+        </div>
+        <div class="badge-group">
+          <span class="badge badge-medium">Medium</span>
+          <span class="badge badge-date">2026-10-26</span>
+        </div>
+      </div>
+
+      <!-- Tags Bar -->
+      <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
+        <span class="meta-tag">Array</span>
+        <span class="meta-tag">Depth-First Search (DFS)</span>
+        <span class="meta-tag">Breadth-First Search (BFS)</span>
+        <span class="meta-tag">Matrix Traversal</span>
+        <span class="meta-tag">In-Place Mutation</span>
+      </div>
+
+      <!-- Problem Statement -->
+      <div class="section-title">🎯 1. Problem Statement & Objective</div>
+      <div class="card" style="font-size: 9.5pt;">
+        Given an <code>m x n</code> grid and an integer <code>k</code>.
+        An <strong>island</strong> is a 4-directionally connected cluster of positive numbers (<code>grid[r][c] > 0</code>).
+        The <strong>total value</strong> of an island is the sum of all cell values in that island.
+        <br><strong>Goal:</strong> Return the count of islands whose total value is evenly divisible by <code>k</code> (<code>total_value % k == 0</code>).
+      </div>
+
+      <!-- Two Columns: Prerequisites & Core Concept -->
+      <div class="two-col">
+        <div>
+          <div class="section-title">🧠 2. Topics You Need to Know</div>
+          <div class="card" style="font-size: 8.5pt; height: calc(100% - 28px);">
+            <ul style="padding-left: 16px; display: flex; flex-direction: column; gap: 4px;">
+              <li><strong>2D Matrix as Implicit Graph:</strong> Each cell is connected to its 4 cardinal neighbors (up, down, left, right).</li>
+              <li><strong>Connected Components:</strong> Grouping isolated sets of connected vertices.</li>
+              <li><strong>In-Place Visited Marking:</strong> Changing processed cells to <code>0</code> avoids allocating extra memory.</li>
+              <li><strong>Modulo Arithmetic:</strong> Validating <code>island_sum % k == 0</code>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">💡 3. Core Concept</div>
+          <div class="card card-accent" style="font-size: 8.5pt; height: calc(100% - 28px);">
+            An extension of <strong>Number of Islands (#200)</strong> with an accumulator:
+            $$\text{Total Value}(\text{Island}) = \sum_{(r, c) \in \text{Island}} \text{grid}[r][c]$$
+            Iterate over all cells. When an unvisited land cell (<code>> 0</code>) is found, initiate an iterative DFS stack, collect all neighbor values, zero them out, and test if <code>sum % k == 0</code>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Trick to Remember Box -->
+      <div class="trick-box">
+        <div class="trick-title">⚡ 4. Trick to Remember (Mental Model)</div>
+        <div style="font-size: 9pt; color: #78350f;">
+          <strong>"Sink & Sum on Sight":</strong> Whenever you spot a cell <code>> 0</code>, you have struck a new island! Sink the cell to <code>0</code> immediately upon discovery to prevent endless loops. Accumulate the weights of the entire component. When the DFS stack empties, apply one single test: <code>if (sum % k == 0) ans++</code>. Use an explicit stack to stay safe from recursion depth limits!
+        </div>
+      </div>
+
+      <!-- Example Walkthrough & Complexities -->
+      <div class="two-col">
+        <div>
+          <div class="section-title">🔍 5. Example Walkthrough</div>
+          <div class="card" style="font-size: 8.5pt; font-family: 'Fira Code', monospace;">
+            grid = [[0,2,1],[0,0,3],[4,2,0]], k = 3<br>
+            • Island A: (0,1)=2, (0,2)=1, (1,2)=3<br>
+            &nbsp;&nbsp;Sum = 2+1+3 = <strong>6</strong> (6 % 3 == 0) ✔️<br>
+            • Island B: (2,0)=4, (2,1)=2<br>
+            &nbsp;&nbsp;Sum = 4+2 = <strong>6</strong> (6 % 3 == 0) ✔️<br>
+            <strong>Result = 2 Islands</strong>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">⏱️ 6. Complexity Guarantee</div>
+          <div class="card" style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="complexity-badge">
+              <span>Time:</span> <strong>O(M × N)</strong> — Single full scan
+            </div>
+            <div class="complexity-badge" style="background: #eef2ff; border-color: #c7d2fe; color: #3730a3;">
+              <span>Space:</span> <strong>O(M × N)</strong> — Iterative stack
+            </div>
+            <div style="font-size: 8pt; color: #64748b;">
+              Auxiliary Space is O(1) beyond the traversal stack since visited nodes are marked in-place.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 1 Footer -->
+    <div class="footer">
+      <span>LeetCode AI Agent · Autonomous Daily Problem Solver</span>
+      <span>Page 1 of 2</span>
+      <span>Problem #3619 · Aditya Kumar Sah</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════ PAGE 2 ════════════════════ -->
+  <div class="page">
+    <div>
+      <div class="section-title" style="margin-top: 4px;">💻 7. Optimal Multi-Language Implementation</div>
+
+      <!-- Python Code -->
+      <pre class="code-block"><span class="cm"># Python 3 — Iterative DFS with In-Place Visited Invalidation</span>
+<span class="kw">class</span> <span class="fn">Solution</span>:
+    <span class="kw">def</span> <span class="fn">countIslands</span>(self, grid: List[List[<span class="kw">int</span>]], k: <span class="kw">int</span>) -&gt; <span class="kw">int</span>:
+        <span class="kw">if not</span> grid <span class="kw">or not</span> grid[<span class="num">0</span>]: <span class="kw">return</span> <span class="num">0</span>
+        m, n, ans = len(grid), len(grid[<span class="num">0</span>]), <span class="num">0</span>
+
+        <span class="kw">for</span> r <span class="kw">in</span> range(m):
+            <span class="kw">for</span> c <span class="kw">in</span> range(n):
+                <span class="kw">if</span> grid[r][c] &gt; <span class="num">0</span>:
+                    island_sum, stack = grid[r][c], [(r, c)]
+                    grid[r][c] = <span class="num">0</span>  <span class="cm"># Mark visited in-place</span>
+                    
+                    <span class="kw">while</span> stack:
+                        cr, cc = stack.pop()
+                        <span class="kw">for</span> dr, dc <span class="kw">in</span> ((-<span class="num">1</span>, <span class="num">0</span>), (<span class="num">1</span>, <span class="num">0</span>), (<span class="num">0</span>, -<span class="num">1</span>), (<span class="num">0</span>, <span class="num">1</span>)):
+                            nr, nc = cr + dr, cc + dc
+                            <span class="kw">if</span> <span class="num">0</span> &lt;= nr &lt; m <span class="kw">and</span> <span class="num">0</span> &lt;= nc &lt; n <span class="kw">and</span> grid[nr][nc] &gt; <span class="num">0</span>:
+                                island_sum += grid[nr][nc]
+                                grid[nr][nc] = <span class="num">0</span>  <span class="cm"># Sink immediately</span>
+                                stack.append((nr, nc))
+
+                    <span class="kw">if</span> island_sum % k == <span class="num">0</span>:
+                        ans += <span class="num">1</span>
+        <span class="kw">return</span> ans</pre>
+
+      <!-- C++ Snippet -->
+      <pre class="code-block" style="font-size: 8pt; margin-bottom: 8px;"><span class="cm">// C++17 Solution</span>
+<span class="kw">int</span> <span class="fn">countIslands</span>(vector&lt;vector&lt;<span class="kw">int</span>&gt;&gt;&amp; g, <span class="kw">int</span> k) {
+    <span class="kw">int</span> m = g.size(), n = g[<span class="num">0</span>].size(), ans = <span class="num">0</span>;
+    <span class="kw">int</span> dr[<span class="num">4</span>] = {-<span class="num">1</span>,<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>}, dc[<span class="num">4</span>] = {<span class="num">0</span>,<span class="num">0</span>,-<span class="num">1</span>,<span class="num">1</span>};
+    <span class="kw">for</span> (<span class="kw">int</span> r = <span class="num">0</span>; r &lt; m; ++r) {
+        <span class="kw">for</span> (<span class="kw">int</span> c = <span class="num">0</span>; c &lt; n; ++c) {
+            <span class="kw">if</span> (g[r][c] &gt; <span class="num">0</span>) {
+                <span class="kw">long long</span> sum = g[r][c]; g[r][c] = <span class="num">0</span>;
+                stack&lt;pair&lt;<span class="kw">int</span>,<span class="kw">int</span>&gt;&gt; st; st.push({r, c});
+                <span class="kw">while</span> (!st.empty()) {
+                    <span class="kw">auto</span> [cr, cc] = st.top(); st.pop();
+                    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">4</span>; ++i) {
+                        <span class="kw">int</span> nr = cr + dr[i], nc = cc + dc[i];
+                        <span class="kw">if</span> (nr &gt;= <span class="num">0</span> &amp;&amp; nr &lt; m &amp;&amp; nc &gt;= <span class="num">0</span> &amp;&amp; nc &lt; n &amp;&amp; g[nr][nc] &gt; <span class="num">0</span>) {
+                            sum += g[nr][nc]; g[nr][nc] = <span class="num">0</span>; st.push({nr, nc});
+                        }
+                    }
+                }
+                <span class="kw">if</span> (sum % k == <span class="num">0</span>) ans++;
+            }
+        }
+    }
+    <span class="kw">return</span> ans;
+}</pre>
+
+      <!-- Stages Blueprint Table -->
+      <div class="section-title">🔄 8. All Stages Reasoning Blueprint</div>
+      <table class="stages-table">
+        <thead>
+          <tr>
+            <th style="width: 22%;">Stage</th>
+            <th style="width: 48%;">Action & Technique</th>
+            <th style="width: 30%;">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Understand</strong></td>
+            <td>Parse grid dimensions ($M \times N \le 2 \times 10^5$), values up to $10^6$.</td>
+            <td>Use 64-bit int for sums.</td>
+          </tr>
+          <tr>
+            <td><strong>2. Research</strong></td>
+            <td>Model as implicit 4-directional undirected graph.</td>
+            <td>Flood fill / DFS chosen.</td>
+          </tr>
+          <tr>
+            <td><strong>3. Plan</strong></td>
+            <td>Scan row-major. Encounter $grid[r][c]>0 \to$ run iterative DFS.</td>
+            <td>Sink visited cells to 0.</td>
+          </tr>
+          <tr>
+            <td><strong>4. Code</strong></td>
+            <td>Implement cardinal offsets <code>((-1,0),(1,0),(0,-1),(0,1))</code>.</td>
+            <td>Compact, clean code.</td>
+          </tr>
+          <tr>
+            <td><strong>5. Validate</strong></td>
+            <td>Verify all test cases, empty grids, disconnected components.</td>
+            <td>100% test pass.</td>
+          </tr>
+          <tr>
+            <td><strong>6. Complexity</strong></td>
+            <td>Each cell pushed to stack once: $O(M \times N)$ total time.</td>
+            <td>Optimal asymptotic bound.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Hinglish Quick Revision Box -->
+      <div class="section-title">🇮🇳 9. Hinglish Quick Revision Note</div>
+      <div class="card card-accent" style="font-size: 8.5pt;">
+        <strong>Hinglish Summary:</strong> Problem me positive cells ka cluster (island) dhundhna hai. Matrix me loop chalao, jaise hi <code>cell > 0</code> mile, DFS se uske saare judey huye cells ki values jodo aur unhe <code>0</code> kar do taaki dubara count na ho. Pura island traverse hone par bas check karo <code>sum % k == 0</code> hai ya nahi. Agar haan, toh answer badha do!
+      </div>
+    </div>
+
+    <!-- Page 2 Footer -->
+    <div class="footer">
+      <span>Online Solution Book & Cheat Sheet</span>
+      <span>Page 2 of 2 (Strict A4 Limit)</span>
+      <span>GitHub: Aditya-Kumar-Sah-CSE/LeetcodeAgent</span>
+    </div>
+  </div>
+
+</body>
+</html>

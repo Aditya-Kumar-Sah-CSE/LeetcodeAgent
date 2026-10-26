@@ -91,6 +91,19 @@ export interface SolutionFile {
   code: string;
   created_at: string;
   updated_at: string;
+  id?: number;
+  difficulty?: string;
+  tags?: string[];
+  date?: string;
+  url?: string;
+  concept?: string;
+  trick_english?: string;
+  trick_hinglish?: string;
+  summary_english?: string;
+  summary_hinglish?: string;
+  topics_needed?: string[];
+  stages_summary?: Array<{ stage: string; detail: string }>;
+  folder?: string;
 }
 
 export interface StoredSolution {
@@ -101,6 +114,20 @@ export interface StoredSolution {
   code: string;
   created_at: string;
   updated_at: string;
+  problem_id?: number;
+  difficulty?: "Easy" | "Medium" | "Hard" | string;
+  tags?: string[];
+  date?: string;
+  url?: string;
+  concept?: string;
+  trick_english?: string;
+  trick_hinglish?: string;
+  summary_english?: string;
+  summary_hinglish?: string;
+  topics_needed?: string[];
+  stages_summary?: Array<{ stage: string; detail: string }>;
+  folder?: string;
+  source?: "github" | "local";
 }
 
 export interface ActivityEntry {

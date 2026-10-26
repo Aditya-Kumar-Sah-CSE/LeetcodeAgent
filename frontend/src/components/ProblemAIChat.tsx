@@ -28,6 +28,7 @@ import {
   streamChatMessage,
   syncChatToGitHub,
   exportChatAsMarkdown,
+  getDynamicSuggestions,
 } from "../services/chatService";
 import {
   getChatSessionLocal,
@@ -178,14 +179,8 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
     setModelId(id);
   };
 
-  // Quick prompt suggestions
-  const suggestionChips = [
-    { label: "💡 Explain __builtin_popcount", query: "__builtin_popcount ye kr h bhai samjha do" },
-    { label: "🐛 Check Division by Zero", query: "Bhai kya mere code me s2 / s1 se division by zero ka error aayega agar s1 == 0 ho?" },
-    { label: "🇮🇳 Explain in Hinglish", query: "Bhai mere active code ko Hindi / Hinglish me line by line samjha do" },
-    { label: "⚡ Optimize Complexity", query: "Kya is code ki time aur space complexity optimal hai? Improve karo." },
-    { label: "🧪 Dry Run on Example 1", query: "Aapke inputs ke sath Example 1 ka step-by-step dry run dikhao" },
-  ];
+  // Dynamic contextual suggestions based on problem statement and active code
+  const dynamicSuggestions = getDynamicSuggestions(problem, code, language);
 
   // Send message
   const handleSendMessage = async (textToSend?: string) => {
@@ -221,8 +216,8 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
     setMessages(updatedMessages);
     setIsStreaming(true);
 
-    // Auto-expand reasoning for the new message
-    setExpandedReasoning((prev) => ({ ...prev, [assistantMessageId]: true }));
+    // Keep reasoning collapsed by default (user can tap "Expand" to inspect)
+    // setExpandedReasoning stays false by default
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -528,20 +523,20 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
               </p>
             </div>
 
-            {/* Quick Suggestions Grid */}
+            {/* Dynamic Suggestions Grid */}
             <div className="w-full max-w-md pt-2 space-y-1.5">
               <div className="text-[11px] font-semibold text-gray-400 text-left">
-                Suggested questions:
+                Suggested questions for {problemTitle}:
               </div>
               <div className="flex flex-col gap-1.5">
-                {suggestionChips.map((chip, idx) => (
+                {dynamicSuggestions.map((chip, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSendMessage(chip.query)}
                     className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] hover:bg-white/5 hover:border-cyan-500/40 text-gray-300 hover:text-white transition-all flex items-center justify-between cursor-pointer group"
                   >
                     <span>{chip.label}</span>
-                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 text-cyan-400 transition-opacity" />
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 text-cyan-400 transition-opacity shrink-0" />
                   </button>
                 ))}
               </div>
@@ -757,37 +752,19 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
           borderColor: "var(--color-border-subtle)",
         }}
       >
-        {/* Quick Suggestion Pills (Shown when has messages) */}
+        {/* Dynamic Contextual Suggestion Pills (Shown when has messages) */}
         {messages.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] no-scrollbar">
-            <button
-              onClick={() => handleSendMessage("__builtin_popcount kya karta hai bhai? Explain karo.")}
-              disabled={isStreaming}
-              className="px-2.5 py-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] hover:border-cyan-500/40 text-gray-300 hover:text-white shrink-0 cursor-pointer transition-all"
-            >
-              💡 Explain __builtin_popcount
-            </button>
-            <button
-              onClick={() => handleSendMessage("Bhai mere code me koi division by zero ya edge case bug hai kya?")}
-              disabled={isStreaming}
-              className="px-2.5 py-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] hover:border-cyan-500/40 text-gray-300 hover:text-white shrink-0 cursor-pointer transition-all"
-            >
-              🐛 Check Bug in Code
-            </button>
-            <button
-              onClick={() => handleSendMessage("Hinglish me step-by-step intuition explain karo")}
-              disabled={isStreaming}
-              className="px-2.5 py-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] hover:border-cyan-500/40 text-gray-300 hover:text-white shrink-0 cursor-pointer transition-all"
-            >
-              🇮🇳 Hinglish Explanation
-            </button>
-            <button
-              onClick={() => handleSendMessage("Is logic ki exact time complexity aur space complexity kya hai?")}
-              disabled={isStreaming}
-              className="px-2.5 py-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] hover:border-cyan-500/40 text-gray-300 hover:text-white shrink-0 cursor-pointer transition-all"
-            >
-              ⚡ Time/Space Complexity
-            </button>
+            {dynamicSuggestions.map((chip, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSendMessage(chip.query)}
+                disabled={isStreaming}
+                className="px-2.5 py-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] hover:border-cyan-500/40 text-gray-300 hover:text-white shrink-0 cursor-pointer transition-all flex items-center gap-1 whitespace-nowrap shadow-xs"
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
         )}
 

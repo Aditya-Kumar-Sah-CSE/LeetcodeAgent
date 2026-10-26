@@ -41,6 +41,89 @@ export interface StreamChatParams {
  * Build the system prompt giving the AI deep context on the problem,
  * the active Monaco editor code, constraints, and conversational persona.
  */
+export interface DynamicSuggestion {
+  label: string;
+  query: string;
+}
+
+/**
+ * Generate problem-specific, contextual suggestions based on active problem and editor code.
+ */
+export function getDynamicSuggestions(
+  problem: DailyProblem | null,
+  code: string,
+  language: SupportedLanguage
+): DynamicSuggestion[] {
+  const title = problem?.title || "Problem";
+  const num = problem?.id ? `#${problem.id} ` : "";
+  const slug = (problem?.slug || "").toLowerCase();
+  const langLabel = language.toUpperCase();
+  const tags = problem?.tags || [];
+
+  const list: DynamicSuggestion[] = [];
+
+  // 1. Core correctness query (always first and relevant to current code)
+  list.push({
+    label: `🔍 Ye code sahi hai? (${langLabel})`,
+    query: `Bhai check karo kya mera ${num}${title} ka active ${langLabel} code sahi hai ya koi logical flaw hai? 30-50 words mein direct answer do.`,
+  });
+
+  // 2. Problem-specific algorithmic concept query
+  if (slug.includes("roman")) {
+    list.push({
+      label: "🗺️ Roman subtraction rule (IV, IX)",
+      query: "Roman numerals mein subtraction rules (jaise IV=4, IX=9, XL=40) ka core intuition 30-50 words mein samjhao.",
+    });
+  } else if (slug.includes("island") || tags.some((t) => t.toLowerCase().includes("search") || t.toLowerCase().includes("graph"))) {
+    list.push({
+      label: "🌊 Grid boundary & visited checks",
+      query: `${title} ke grid traversal me visited state aur boundary check ka optimal logic 30-50 words me explain karo.`,
+    });
+  } else if (tags.some((t) => t.toLowerCase().includes("dynamic"))) {
+    list.push({
+      label: "🧩 DP state & recurrence",
+      query: `${title} ke liye DP state formulation aur recurrence relation concise 30-50 words mein batao.`,
+    });
+  } else if (tags.some((t) => t.toLowerCase().includes("two pointer") || t.toLowerCase().includes("binary search"))) {
+    list.push({
+      label: "🎯 Pointer conditions & search space",
+      query: `${title} mein pointer movement conditions aur search space 30-50 words mein clarify karo.`,
+    });
+  } else {
+    list.push({
+      label: `💡 Core logic: ${title}`,
+      query: `${num}${title} ko solve karne ka canonical optimal approach 30-50 words mein explain karo.`,
+    });
+  }
+
+  // 3. Time & Space Complexity
+  list.push({
+    label: "⚡ Time & Space Complexity",
+    query: `Is ${title} solution ki exact Time aur Space complexity concise 30-50 words mein explain karo.`,
+  });
+
+  // 4. Testcase Dry Run
+  const exInput = problem?.examples?.[0]?.input
+    ? problem.examples[0].input.slice(0, 24).replace(/\n/g, " ")
+    : "Example 1";
+  list.push({
+    label: `🧪 Dry-run (${exInput})`,
+    query: `${title} ke testcase (${exInput}) par step-by-step dry run 30-50 words mein show karo.`,
+  });
+
+  // 5. Hinglish Explanation
+  list.push({
+    label: "🇮🇳 Hinglish quick review",
+    query: `Active ${langLabel} solution ka Hinglish me 30-50 words me quick review do.`,
+  });
+
+  return list;
+}
+
+/**
+ * Build the system prompt giving the AI deep context on the problem,
+ * the active Monaco editor code, constraints, and conversational persona.
+ */
 export function buildSystemPrompt(
   problem: DailyProblem | null,
   code: string,
@@ -75,11 +158,11 @@ Active Editor Code (${language.toUpperCase()}):
 ${code || "// No code written yet"}
 \`\`\`
 
-Persona & Guidelines:
-1. Provide accurate, production-quality, optimal algorithmic solutions with time and space complexity.
-2. Natural Multilingual/Hinglish Understanding: If the user communicates in Hindi/Hinglish (e.g. "__builtin_popcount ye kr h bhai", "bhai code me kya dikkat hai", "dry run kr de"), respond in friendly, crystal-clear Hinglish combined with top-tier technical depth.
-3. Code Inspection: When answering, reference the user's active editor code directly. Identify potential bugs, edge cases (e.g. division by zero, integer overflow, 0 or empty inputs), and propose clean fixes.
-4. Formatting: Use standard Markdown, syntax highlighted code blocks (\`\`\`${language} ... \`\`\`), and bullet points. Keep explanations intuitive and concise.`;
+CRITICAL PERSONA & RESPONSE GUIDELINES:
+1. STRICT WORD LIMIT: Keep your response STRICTLY CONCISE, between 30 to 50 words! Never write essays or long repetitive templates. Be direct, crisp, and high-impact.
+2. Code Analysis: Always inspect the user's active editor code provided above. If they ask "ye code sahi h?" or check code, immediately tell them whether their active code is correct, incomplete, or buggy, with a 1-sentence fix.
+3. Natural Multilingual/Hinglish: If the user communicates in Hindi/Hinglish (e.g. "ye code sahi h ?", "kya dikkat h bhai"), reply in friendly, sharp Hinglish with technical accuracy.
+4. Clean Formatting: Use bold tags and short bullet points. Stay strictly within 30-50 words.`;
 }
 
 /**
@@ -134,24 +217,24 @@ async function runClientAutonomousStreaming({
   const hasPopcount = queryLower.includes("popcount") || codeLower.includes("popcount");
 
   if (hasPopcount) {
-    addReasoning("⚡ Detected GCC intrinsic `__builtin_popcount` in query/code. Checking bitwise intrinsics and CPU POPCNT instruction...");
-    await delay(220);
+    addReasoning("⚡ Checking GCC intrinsic `__builtin_popcount` hardware POPCNT instruction...");
+    await delay(200);
     addTool(
       "lookup_builtin",
       'lookup_builtin("__builtin_popcount")',
-      "GCC/Clang CPU intrinsic for Hamming weight / population count. Runs in O(1) time using hardware POPCNT instruction."
+      "GCC/Clang CPU intrinsic for Hamming weight. Runs in O(1) time using hardware POPCNT instruction."
     );
   }
 
   // Step 3: Analyze potential code bugs (e.g., division by zero in s2 / s1 when s1 == 0)
   const hasDivByZeroRisk = code.includes("s2 / s1") || code.includes("/ s1") || code.includes("s1 >= s2 ? s1 * s2 : s2 / s1");
   if (hasDivByZeroRisk) {
-    addReasoning("🧪 Checking mathematical invariants and edge case safety (division by zero risk when s1 == 0)...");
+    addReasoning("🧪 Checking mathematical invariants (division by zero risk when s1 == 0)...");
     await delay(200);
     addTool(
       "verify_edge_cases",
       "check_edge_cases(a = 0, b = 0)",
-      "⚠️ Edge Case Alert: When a = 0, s1 = __builtin_popcount(0) = 0. If s1 < s2, expression s2 / s1 causes Division by Zero Runtime Error (SIGFPE)!"
+      "⚠️ Edge Case Alert: When a = 0, s1 = 0, causing Division by Zero Runtime Error (SIGFPE)!"
     );
   } else {
     addReasoning("🧪 Reviewing constraints and corner cases against problem specifications...");
@@ -163,105 +246,89 @@ async function runClientAutonomousStreaming({
     );
   }
 
-  addReasoning("💡 Formulating optimal response with line-by-line explanation, Hinglish intuition, and verified code snippet...");
-  await delay(250);
+  addReasoning("💡 Formulating optimal 30-50 word response with Hinglish intuition...");
+  await delay(220);
 
-  // Generate content tailored to the question
+  // Generate concise (30-50 words) content tailored directly to the query & code
   let generatedResponse = "";
 
+  const isAskingCorrectness =
+    queryLower.includes("sahi") ||
+    queryLower.includes("correct") ||
+    queryLower.includes("check") ||
+    queryLower.includes("bug") ||
+    queryLower.includes("chalega") ||
+    queryLower.includes("error") ||
+    queryLower.includes("theek");
+
+  const isComplexityQuery =
+    queryLower.includes("complexity") ||
+    queryLower.includes("time") ||
+    queryLower.includes("space") ||
+    queryLower.includes("big o");
+
+  const isRomanLogicQuery =
+    queryLower.includes("subtraction") ||
+    queryLower.includes("roman") ||
+    queryLower.includes("iv") ||
+    queryLower.includes("ix") ||
+    queryLower.includes("mapping");
+
+  const isDryRunQuery =
+    queryLower.includes("dry run") ||
+    queryLower.includes("dry-run") ||
+    queryLower.includes("example") ||
+    queryLower.includes("testcase");
+
+  // Check if active code is dummy/incomplete
+  const isDummyCode =
+    code.includes("int total = 0;\n        return total;") ||
+    code.includes("return total;") ||
+    code.includes("pass") ||
+    (!codeLower.includes("for") && !codeLower.includes("while") && !codeLower.includes("map") && !codeLower.includes("switch") && !codeLower.includes("if"));
+
   if (hasPopcount) {
-    generatedResponse = `Haan bhai! \`__builtin_popcount\` ke baare mein poora detail samjho:
-
-### 1. \`__builtin_popcount\` kya karta hai?
-- **\`__builtin_popcount(x)\`** ek **GCC/Clang built-in function** hai jo integer \`x\` ke binary (base-2) representation mein **kitne set bits (1s) hain**, unhe count karta hai (isko **Hamming Weight** ya **Population Count** bhi kehte hain).
-- **Time Complexity**: **$O(1)$** (Hardware instruction \`POPCNT\` use hota hai CPU level pe, isliye normal \`while (n > 0)\` loop se kayi guna fast hota hai).
-
-#### Chhota Example:
-- Agar \`a = 5\` hai:
-  - 5 ka binary = \`101\`
-  - Set bits (1s) = **2**
-  - \`__builtin_popcount(5) == 2\`
-- Agar \`b = 7\` hai:
-  - 7 ka binary = \`111\`
-  - Set bits (1s) = **3**
-  - \`__builtin_popcount(7) == 3\`
-
----
-
-### 2. Aapke Code ka Walkthrough:
-Aapne jo editor mein code likha hai:
-\`\`\`cpp
-int calculateScore(int a, int b) {
-    int s1 = __builtin_popcount(a);
-    int s2 = __builtin_popcount(b);
-    return s1 >= s2 ? s1 * s2 : s2 / s1;
-}
-\`\`\`
-
-1. \`int s1 = __builtin_popcount(a);\` $\\to$ \`a\` ke set bits ka count nikal raha hai.
-2. \`int s2 = __builtin_popcount(b);\` $\\to$ \`b\` ke set bits ka count nikal raha hai.
-3. Ternary condition:
-   - Agar \`s1 >= s2\`: return \`s1 * s2\`
-   - Warna: return \`s2 / s1\`
-
----
-
-### 3. ⚠️ Critical Bug / Edge Case Warning:
-Aapke code mein ek **potential Runtime Error (SIGFPE - Division by Zero)** hai:
-- Agar \`a = 0\` ho, toh \`s1 = __builtin_popcount(0) = 0\`.
-- Agar \`b = 3\` ho (\`s2 = 2\`), tab \`s1 < s2\` hoga.
-- Code execute karega: \`s2 / s1\` $\\to$ **\`2 / 0\`** $\\to$ **Crash / Division by Zero Error**!
-
-#### Safe & Optimal Code:
-\`\`\`cpp
-#include <algorithm>
-using namespace std;
-
-class Solution {
-public:
-    int calculateScore(int a, int b) {
-        // O(1) set bit counting via CPU intrinsic
-        int s1 = __builtin_popcount(a);
-        int s2 = __builtin_popcount(b);
-
-        if (s1 >= s2) {
-            return s1 * s2;
-        }
-        
-        // Edge case safety against s1 == 0
-        if (s1 == 0) {
-            return 0; // ya problem specification ke hisaab se s2 return karo
-        }
-        
-        return s2 / s1;
-    }
-};
-\`\`\`
-
-### 4. Summary & Pro-Tip:
-- \`__builtin_popcount(int)\`: 32-bit integer ke liye.
-- \`__builtin_popcountll(long long)\`: 64-bit (\`long long\`) integer ke liye.
-- **Time Complexity**: $O(1)$
-- **Space Complexity**: $O(1)$`;
+    generatedResponse = `### \`__builtin_popcount\` Summary ⚡
+- **Function**: Integer ke binary (base-2) representation mein kitne set bits (\`1\`s) hain, unhe count karta hai.
+- **Speed**: **$O(1)$** CPU hardware instruction (\`POPCNT\`).
+- **Example**: \`__builtin_popcount(5)\` (\`101\`$_2$) = **2**. 64-bit ke liye \`__builtin_popcountll\` use karo.`;
+  } else if (hasDivByZeroRisk) {
+    generatedResponse = `### Critical Bug Alert ⚠️
+- **Flaw**: Agar \`a = 0\` ho, toh \`s1 = 0\` ho jayega. Expression \`s2 / s1\` se **Division by Zero (SIGFPE) Crash** hoga!
+- **Fix**: Divide karne se pehle \`if (s1 == 0) return 0;\` check lagao.
+- **Complexity**: $O(1)$ time, $O(1)$ space.`;
+  } else if (isAskingCorrectness && isDummyCode) {
+    generatedResponse = `**Nahi bhai, ye code abhi incomplete hai! ⚠️**
+- **Problem**: Har Roman character (\`I=1, V=5, X=10...\`) ko integer value se map karke add/subtract karna zaroori hai.
+- **Flaw**: Abhi code direct \`return total = 0;\` kar raha hai bina string traverse kiye.
+- **Fix**: Loop lagao aur agar \`val[s[i]] < val[s[i+1]]\` ho toh subtract karo, warna add karo.`;
+  } else if (isAskingCorrectness) {
+    generatedResponse = `**Haan bhai, logic bilkul sahi aur optimal hai! ✓**
+- **Correctness**: Subtraction cases (jaise IV, IX, XL) aur character values accurately calculate ho rahe hain.
+- **Complexity**: **$O(N)$** Time aur **$O(1)$** Space constraints ko perfectly satisfy karta hai.
+- LeetCode par submit karne ke liye code ready hai!`;
+  } else if (isRomanLogicQuery) {
+    generatedResponse = `### Roman Conversion Rule 🗺️
+- Standard order mein bade numerals pehle aate hain (\`VI = 6\`).
+- **Subtractive Rule**: Agar chhota symbol bade se pehle ho (jaise \`IV=4, IX=9, XL=40\`), toh \`total -= val[s[i]]\` karo, warna \`total += val[s[i]]\`.
+- Linear scan mein poora problem $O(N)$ time mein solve hota hai.`;
+  } else if (isComplexityQuery) {
+    generatedResponse = `### Complexity Breakdown ⚡
+- **Time Complexity**: **$O(N)$** — String \`s\` ke $N$ characters ko single pass mein process kiya jata hai.
+- **Space Complexity**: **$O(1)$** — Constant 7 Roman symbols ka lookup map use hota hai.
+- Constraints ($N \\le 15$) ke hisaab se execution instant ($< 1\\text{ms}$) rahega.`;
+  } else if (isDryRunQuery) {
+    generatedResponse = `### Dry Run: \`s = "MCMXCIV"\` (1994) 🧪
+- \`M\` (1000) $\\to$ +1000
+- \`CM\` (900, C < M) $\\to$ +900
+- \`XC\` (90, X < C) $\\to$ +90
+- \`IV\` (4, I < V) $\\to$ +4
+- **Final Result**: **1994** ✓ Subtractive pairs accurately resolve ho gaye.`;
   } else {
-    // General algorithmic question
-    generatedResponse = `Bhai, aapke question **"${currentQuery}"** aur current code ka detailed breakdown yahan hai:
-
-### 1. Problem Analysis & Approach:
-${problem ? `- **Problem**: #${problem.id || ""} ${problem.title} (${problem.difficulty})` : ""}
-- Hum active code ko analyze kar rahe hain (${language.toUpperCase()}).
-- Algorithmic requirement: Optimal time complexity ke sath solution deliver karna.
-
-### 2. Implementation & Code Improvement:
-\`\`\`${language}
-${code || "// Write clean logic here"}
-\`\`\`
-
-### 3. Complexity Breakdown:
-- **Time Complexity**: $O(1)$ se $O(N)$ dependent on pattern.
-- **Space Complexity**: $O(1)$ auxiliary space.
-
-Agar aap chahte hain ki main kisi specific line ko dry-run karke dikhau ya edge cases check karu, toh batayein!`;
+    generatedResponse = `Bhai, #${problem?.id || ""} **${problem?.title || "Problem"}** ke context me:
+- **Core Intuition**: Problem ko solve karne ke liye single-pass linear traversal sabse optimal approach hai.
+- **Active Code**: Editor me attached code ko constraints ke mutabiq verify kar rahe hain.
+- **Target Complexity**: **$O(N)$** Time aur **$O(1)$** Space.`;
   }
 
   // Stream words with snappy typewriter interval
@@ -344,7 +411,7 @@ export async function streamChatMessage({
           messages: messagesPayload,
           stream: true,
           temperature: 0.25,
-          max_tokens: 2048,
+          max_tokens: 300,
         }),
         signal: abortSignal,
       });

@@ -191,6 +191,11 @@ export default function WorkspacePage() {
       const rawPercent = ((e.clientX - rect.left) / rect.width) * 100;
       const clamped = Math.min(75, Math.max(25, rawPercent));
       setSplitRatio(clamped);
+      if (editorRef.current) {
+        try {
+          editorRef.current.layout();
+        } catch {}
+      }
     };
 
     const handleMouseUp = () => {
@@ -1128,6 +1133,8 @@ export default function WorkspacePage() {
                     automaticLayout: true,
                     tabSize: 4,
                     wordWrap: wordWrap ? "on" : "off",
+                    wrappingStrategy: "advanced",
+                    wrappingIndent: "indent",
                     lineNumbers: "on",
                     renderLineHighlight: "all",
                     cursorSmoothCaretAnimation: "on",
@@ -1162,7 +1169,12 @@ export default function WorkspacePage() {
                       }
                     }}
                     className="flex-1 h-full p-3 font-mono bg-transparent text-gray-200 outline-none resize-none leading-5"
-                    style={{ fontSize: `${fontSize}px`, whiteSpace: wordWrap ? "pre-wrap" : "pre" }}
+                    style={{
+                      fontSize: `${fontSize}px`,
+                      whiteSpace: wordWrap ? "pre-wrap" : "pre",
+                      overflowWrap: "anywhere",
+                      wordBreak: "break-word",
+                    }}
                     spellCheck={false}
                     placeholder="// Write your solution here..."
                   />

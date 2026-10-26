@@ -73,7 +73,9 @@ export function setEditorFontSize(size: number) {
 }
 
 export function getEditorWordWrap(): boolean {
-  return localStorage.getItem(LS_KEYS.editorWordWrap) === "true";
+  const val = localStorage.getItem(LS_KEYS.editorWordWrap);
+  if (val === null) return true; // Default word wrap to ON so lines wrap dynamically with slider
+  return val === "true";
 }
 
 export function setEditorWordWrap(wrap: boolean) {

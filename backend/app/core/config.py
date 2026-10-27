@@ -16,7 +16,28 @@ class Settings(BaseSettings):
 
     # OpenRouter
     OPENROUTER_API_KEY: Optional[str] = None
+    VITE_OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+
+    def get_openrouter_api_key(self) -> Optional[str]:
+        """Return configured OpenRouter API key if present."""
+        return self.OPENROUTER_API_KEY or self.VITE_OPENROUTER_API_KEY
+
+    # Groq LPU
+    GROQ_API_KEY: Optional[str] = None
+    VITE_GROQ_API_KEY: Optional[str] = None
+
+    def get_groq_api_key(self) -> Optional[str]:
+        """Return configured Groq API key if present."""
+        return self.GROQ_API_KEY or self.VITE_GROQ_API_KEY
+
+    # Google Gemini
+    GEMINI_API_KEY: Optional[str] = None
+    VITE_GEMINI_API_KEY: Optional[str] = None
+
+    def get_gemini_api_key(self) -> Optional[str]:
+        """Return the configured Gemini API key if present."""
+        return self.GEMINI_API_KEY or self.VITE_GEMINI_API_KEY
 
     # Solution workspace
     SOLUTIONS_DIR: str = "./solutions"

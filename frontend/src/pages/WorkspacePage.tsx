@@ -100,7 +100,7 @@ export default function WorkspacePage() {
   );
   const [selectedStage, setSelectedStage] = useState<AgentStage>("generate");
   const [models, setModels] = useState<AIModel[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>(getModelId() || "");
+  const [selectedModel, setSelectedModel] = useState<string>(getModelId() || "gemini-3-flash-preview");
   const [isRunning, setIsRunning] = useState(false);
 
   // Editor states
@@ -800,13 +800,6 @@ export default function WorkspacePage() {
                 );
               })}
             </optgroup>
-            <optgroup label="🛡️ Autonomous Local Engine">
-              {models.filter((m) => m.tier === "local").map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Local] {m.name} • ✓ Offline
-                </option>
-              ))}
-            </optgroup>
           </select>
 
           {/* Real-time Dynamic Split Slider (Desktop) */}
@@ -966,48 +959,6 @@ export default function WorkspacePage() {
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             </button>
 
-            {/* Real-time Interactive Split Controls on Desktop */}
-            <div className="ml-auto hidden lg:flex items-center gap-1.5 text-[10px] text-muted pr-1">
-              <span className="font-mono text-gray-400 flex items-center gap-1">
-                <Columns size={11} className="text-cyan-400" />
-                <span>Split:</span>
-                <strong className="text-cyan-300 font-bold">{Math.round(splitRatio)}%</strong>
-              </span>
-
-              {/* Dynamic Range Slider */}
-              <input
-                type="range"
-                min="20"
-                max="80"
-                step="1"
-                value={Math.round(splitRatio)}
-                onChange={(e) => handleUpdateSplitRatio(Number(e.target.value))}
-                className="w-16 h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-                title={`Live Split: ${Math.round(splitRatio)}% Chat / ${100 - Math.round(splitRatio)}% Code`}
-              />
-
-              {/* Quick Presets */}
-              {[
-                { label: "35%", val: 35, title: "35% Chat / 65% Code (Code Focus)" },
-                { label: "45%", val: 45, title: "45% Chat / 55% Code" },
-                { label: "50%", val: 50, title: "50% Chat / 50% Code (Balanced)" },
-                { label: "65%", val: 65, title: "65% Chat / 35% Code (Wide Chat)" },
-                { label: "75%", val: 75, title: "75% Chat / 25% Code (Chat Focus)" },
-              ].map((preset) => (
-                <button
-                  key={preset.val}
-                  onClick={() => handleUpdateSplitRatio(preset.val)}
-                  className={`px-1.5 py-0.5 rounded cursor-pointer font-mono transition-colors ${
-                    Math.round(splitRatio) === preset.val
-                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold"
-                      : "hover:bg-white/10 text-gray-400"
-                  }`}
-                  title={preset.title}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Left Content Area */}

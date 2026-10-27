@@ -45,7 +45,12 @@ export function setLanguage(lang: string) {
 }
 
 export function getModelId(): string {
-  return localStorage.getItem(LS_KEYS.modelId) || "";
+  const saved = localStorage.getItem(LS_KEYS.modelId);
+  if (saved && saved.trim() && saved !== "autonomous/local-engine") return saved.trim();
+  if (getGeminiApiKey()) return "gemini-3-flash-preview";
+  if (getGroqApiKey()) return "openai/gpt-oss-120b";
+  if (getOpenRouterApiKey()) return "openrouter/free";
+  return saved || "gemini-3-flash-preview";
 }
 
 export function setModelId(id: string) {
@@ -126,21 +131,40 @@ export function clearDraftCode(slug: string, lang: string) {
 let _sessionApiKey: string | null = null;
 
 export function getEnvGeminiKey(): string {
-  return ((import.meta as any).env?.VITE_GEMINI_API_KEY as string) || "";
+  return (
+    ((import.meta as any).env?.VITE_GEMINI_API_KEY as string) ||
+    ((import.meta as any).env?.GEMINI_API_KEY as string) ||
+    ""
+  );
 }
 
 export function getEnvGroqKey(): string {
-  return ((import.meta as any).env?.VITE_GROQ_API_KEY as string) || "";
+  return (
+    ((import.meta as any).env?.VITE_GROQ_API_KEY as string) ||
+    ((import.meta as any).env?.GROQ_API_KEY as string) ||
+    ""
+  );
 }
 
 export function getEnvOpenRouterKey(): string {
-  return ((import.meta as any).env?.VITE_OPENROUTER_API_KEY as string) || "";
+  return (
+    ((import.meta as any).env?.VITE_OPENROUTER_API_KEY as string) ||
+    ((import.meta as any).env?.OPENROUTER_API_KEY as string) ||
+    ""
+  );
 }
 
 export function getGeminiApiKey(): string {
   const local = localStorage.getItem(LS_KEYS.geminiKey);
-  if (local) return local.trim();
-  return getEnvGeminiKey();
+  if (local && local.trim()) return local.trim();
+  const envKey = getEnvGeminiKey();
+  if (envKey && envKey.trim()) {
+    try {
+      localStorage.setItem(LS_KEYS.geminiKey, envKey.trim());
+    } catch {}
+    return envKey.trim();
+  }
+  return "";
 }
 
 export function setGeminiApiKey(key: string) {
@@ -153,8 +177,15 @@ export function setGeminiApiKey(key: string) {
 
 export function getGroqApiKey(): string {
   const local = localStorage.getItem(LS_KEYS.groqKey);
-  if (local) return local.trim();
-  return getEnvGroqKey();
+  if (local && local.trim()) return local.trim();
+  const envKey = getEnvGroqKey();
+  if (envKey && envKey.trim()) {
+    try {
+      localStorage.setItem(LS_KEYS.groqKey, envKey.trim());
+    } catch {}
+    return envKey.trim();
+  }
+  return "";
 }
 
 export function setGroqApiKey(key: string) {
@@ -167,9 +198,16 @@ export function setGroqApiKey(key: string) {
 
 export function getOpenRouterApiKey(): string {
   const local = localStorage.getItem(LS_KEYS.openrouterKey);
-  if (local) return local.trim();
-  if (_sessionApiKey) return _sessionApiKey.trim();
-  return getEnvOpenRouterKey();
+  if (local && local.trim()) return local.trim();
+  if (_sessionApiKey && _sessionApiKey.trim()) return _sessionApiKey.trim();
+  const envKey = getEnvOpenRouterKey();
+  if (envKey && envKey.trim()) {
+    try {
+      localStorage.setItem(LS_KEYS.openrouterKey, envKey.trim());
+    } catch {}
+    return envKey.trim();
+  }
+  return "";
 }
 
 export function setOpenRouterApiKey(key: string) {
@@ -182,7 +220,10 @@ export function setOpenRouterApiKey(key: string) {
 }
 
 export function getActiveProvider(): string {
-  return localStorage.getItem(LS_KEYS.activeProvider) || "auto";
+  const p = localStorage.getItem(LS_KEYS.activeProvider);
+  if (p && p !== "local") return p;
+  if (getGeminiApiKey()) return "gemini";
+  return p || "auto";
 }
 
 export function setActiveProvider(provider: string) {

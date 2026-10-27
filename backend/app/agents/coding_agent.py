@@ -256,9 +256,9 @@ async def run_agent_stage(request: AIRequest) -> AIResponse:
     logger.info("Running agent stage: %s for problem: %s", stage, request.problem_slug)
 
     from app.core.config import settings
-    has_key = bool(request.api_key or settings.OPENROUTER_API_KEY)
+    has_key = bool(request.api_key or settings.get_openrouter_api_key() or settings.get_gemini_api_key() or settings.get_groq_api_key())
     if not has_key:
-        logger.info("No OpenRouter API key found; using Autonomous Algorithmic Engine.")
+        logger.info("No AI API key found; using Autonomous Algorithmic Engine.")
         return generate_algorithmic_solution(request)
 
     try:
@@ -274,7 +274,8 @@ async def run_agent_stage(request: AIRequest) -> AIResponse:
         messages = builder(request)
 
         # Call AI
-        model_id = request.model_id or "openrouter/free"
+        default_model = "gemini-3-flash-preview" if settings.get_gemini_api_key() else "openrouter/free"
+        model_id = request.model_id or default_model
         response_text = await chat_completion(
             messages=messages,
             model_id=model_id,

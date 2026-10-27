@@ -842,10 +842,14 @@ async function streamGoogleGemini({
     new Set(
       [
         cleanModel.startsWith("gemini") ? cleanModel : null,
-        "gemini-1.5-flash",
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite",
+        "gemini-3.5-flash",
+        "gemini-3.8-flash",
+        "gemini-flash-latest",
+        "gemini-2.5-flash",
         "gemini-2.0-flash",
-        "gemini-1.5-pro",
-        "gemini-1.5-flash-8b",
+        "gemini-1.5-flash",
       ].filter(Boolean) as string[]
     )
   );
@@ -1028,15 +1032,14 @@ async function streamGroqChat({
 }): Promise<boolean> {
   const cleanModel = modelId.startsWith("groq/")
     ? modelId.replace("groq/", "")
-    : modelId.includes("r1")
-    ? "deepseek-r1-distill-llama-70b"
-    : modelId.startsWith("llama")
-    ? modelId
-    : "llama-3.1-8b-instant";
+    : modelId || "openai/gpt-oss-120b";
 
   const candidateModels = Array.from(
     new Set([
       cleanModel,
+      "openai/gpt-oss-120b",
+      "openai/gpt-oss-20b",
+      "qwen/qwen3.8-27b",
       "llama-3.1-8b-instant",
     ].filter(Boolean) as string[])
   );
@@ -1175,13 +1178,15 @@ export async function streamChatMessage({
   const groqKey = getGroqApiKey();
   const openRouterKey = getOpenRouterApiKey();
   const fallbackKey = apiKey || getApiKey();
-  const activeModel = modelId || getModelId() || "openrouter/free";
+  const activeModel = modelId || getModelId() || (geminiKey ? "gemini-3-flash-preview" : "openrouter/free");
   const activeProvider = getActiveProvider();
 
   const systemPrompt = buildSystemPrompt(problem, code, language);
 
   const isGroqModel =
     activeModel.toLowerCase().startsWith("groq/") ||
+    activeModel.toLowerCase().includes("gpt-oss") ||
+    activeModel.toLowerCase().includes("qwen3.8") ||
     activeModel.toLowerCase().includes("llama-3");
 
   const isGeminiModel =
@@ -1373,7 +1378,7 @@ export async function streamChatMessage({
     try {
       const ok = await streamGoogleGemini({
         geminiKey,
-        modelId: "gemini-1.5-flash",
+        modelId: "gemini-3-flash-preview",
         systemPrompt,
         messages,
         currentQuery,
@@ -1400,7 +1405,7 @@ export async function streamChatMessage({
     try {
       const ok = await streamGroqChat({
         groqKey,
-        modelId: "groq/llama-3.1-8b-instant",
+        modelId: "openai/gpt-oss-120b",
         systemPrompt,
         messages,
         currentQuery,

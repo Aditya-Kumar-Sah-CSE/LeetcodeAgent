@@ -74,7 +74,7 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
   const [isStreaming, setIsStreaming] = useState(false);
   const [models, setModels] = useState<AIModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>(
-    () => propSelectedModel || getModelId() || "gemini-2.0-flash"
+    () => propSelectedModel || getModelId() || "gemini-3-flash-preview"
   );
 
   useEffect(() => {
@@ -589,15 +589,6 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
                       </option>
                     );
                   })}
-              </optgroup>
-              <optgroup label="🛡️ Autonomous Local Engine">
-                {models
-                  .filter((m) => m.tier === "local")
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      [Local] {m.name} • 100% Offline (No Key)
-                    </option>
-                  ))}
               </optgroup>
             </select>
             <button

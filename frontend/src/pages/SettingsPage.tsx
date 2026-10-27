@@ -457,11 +457,10 @@ export default function SettingsPage() {
               color: "var(--color-text-primary)",
             }}
           >
-            <option value="auto">Auto Router (Smart Best: Gemini ➔ Groq ➔ OpenRouter ➔ Local)</option>
+            <option value="auto">Auto Router (Smart Best: Gemini ➔ Groq ➔ OpenRouter)</option>
             <option value="gemini">Google Gemini (Direct Google AI Studio - 1M+ Context)</option>
             <option value="groq">Groq LPU (Ultra-Fast Hardware Inference &lt;300ms)</option>
             <option value="openrouter">OpenRouter (Multi-Model Unified Router)</option>
-            <option value="local">Autonomous Local Engine (100% Offline / No Keys)</option>
           </select>
         </div>
 
@@ -530,7 +529,7 @@ export default function SettingsPage() {
                     setGeminiApiKey(geminiKeyInput.trim());
                   }
                 }}
-                placeholder="AIzaSy..."
+                placeholder="AQ.Ab... or AIzaSy..."
                 className="w-full px-3 py-2 text-xs rounded-xl border outline-none font-mono pr-9"
                 style={{
                   background: "var(--color-bg-elevated)",
@@ -844,15 +843,6 @@ export default function SettingsPage() {
                   </option>
                 );
               })}
-          </optgroup>
-          <optgroup label="🛡️ Autonomous Local Engine (Offline / Zero-Config)">
-            {models
-              .filter((m) => m.tier === "local")
-              .map((m) => (
-                <option key={m.id} value={m.id}>
-                  [Local] {m.name} • ✓ Offline (Zero-Config)
-                </option>
-              ))}
           </optgroup>
         </select>
 

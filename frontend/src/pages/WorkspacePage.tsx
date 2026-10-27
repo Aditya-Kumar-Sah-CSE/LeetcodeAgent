@@ -26,6 +26,8 @@ import {
   GripVertical,
   Columns,
   Sliders,
+  Link,
+  X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -41,6 +43,7 @@ import {
 import {
   fetchDailyChallenge,
   fetchProblem,
+  extractProblemSlug,
   runAgentStage,
   fetchModels,
   saveSolution,
@@ -135,6 +138,35 @@ export default function WorkspacePage() {
   };
 
   const platform = detectPlatform();
+
+  // Fetch Problem by URL or Contest Link Modal state
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [customProblemUrl, setCustomProblemUrl] = useState("");
+  const [fetchingCustomProblem, setFetchingCustomProblem] = useState(false);
+  const [urlFetchError, setUrlFetchError] = useState("");
+
+  const handleFetchProblemByUrl = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const input = customProblemUrl.trim();
+    if (!input) return;
+    setFetchingCustomProblem(true);
+    setUrlFetchError("");
+    try {
+      const p = await fetchProblem(input);
+      setProblem(p);
+      setActiveWorkspaceProblem(p);
+      setIsSolved(isProblemSolved(p.slug));
+      initCodeForProblem(p, language);
+      setShowUrlModal(false);
+      setCustomProblemUrl("");
+      showToast(`Loaded "${p.title}" #${p.id || p.slug}`);
+      navigate(`/workspace?slug=${encodeURIComponent(p.slug)}`, { replace: true, state: { problem: p } });
+    } catch (err: any) {
+      setUrlFetchError(err.message || "Failed to fetch problem from LeetCode. Verify URL or network.");
+    } finally {
+      setFetchingCustomProblem(false);
+    }
+  };
 
   // Problem solved status tracking
   const [isSolved, setIsSolved] = useState<boolean>(() =>
@@ -718,6 +750,14 @@ export default function WorkspacePage() {
                 {problem.id ? `#${problem.id} ` : ""}
                 {problem.title}
               </h2>
+              <button
+                onClick={() => setShowUrlModal(true)}
+                className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border text-cyan-300 hover:text-white bg-cyan-500/10 border-cyan-500/30 hover:bg-cyan-500/20 transition-all cursor-pointer shrink-0"
+                title="Paste any LeetCode problem or contest URL/slug to fetch live"
+              >
+                <Link size={12} className="text-cyan-400" />
+                <span>Fetch by URL</span>
+              </button>
               <button
                 onClick={() => navigate("/daily")}
                 className="hidden sm:flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg border text-muted hover:text-white transition-all cursor-pointer shrink-0"
@@ -1386,6 +1426,123 @@ export default function WorkspacePage() {
         copySuccess={copySuccess}
         copyError={copyError}
       />
+
+      {/* Fetch by URL / Contest Link Modal */}
+      {showUrlModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowUrlModal(false)}
+        >
+          <div
+            className="w-full max-w-lg p-5 rounded-2xl border space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+            style={{
+              background: "var(--color-bg-card)",
+              borderColor: "var(--color-border)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <Link size={18} />
+                </span>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white">
+                    Fetch Problem by LeetCode URL or Slug
+                  </h3>
+                  <p className="text-[11px] text-muted">
+                    Paste any LeetCode problem, contest problem, or submission link.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowUrlModal(false)}
+                className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/5 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleFetchProblemByUrl} className="space-y-3.5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-300">
+                  LeetCode URL or Slug:
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={customProblemUrl}
+                  onChange={(e) => {
+                    setCustomProblemUrl(e.target.value);
+                    if (urlFetchError) setUrlFetchError("");
+                  }}
+                  placeholder="https://leetcode.com/contest/.../problems/count-frequency-staircase-subarrays-i/ or count-frequency-staircase-subarrays-i"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono text-white focus:border-cyan-400"
+                  style={{
+                    background: "var(--color-bg-primary)",
+                    borderColor: urlFetchError ? "var(--color-danger)" : "var(--color-border)",
+                  }}
+                />
+              </div>
+
+              {urlFetchError && (
+                <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+                  {urlFetchError}
+                </div>
+              )}
+
+              {/* Quick suggestions */}
+              <div className="space-y-1.5 text-[11px]">
+                <span className="text-muted block font-medium">Quick suggestions (Contest / Live):</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "Count Frequency Staircase Subarrays I", slug: "count-frequency-staircase-subarrays-i" },
+                    { label: "Count Frequency Staircase Subarrays II", slug: "count-frequency-staircase-subarrays-ii" },
+                    { label: "Create Grid With Exactly One Path", slug: "create-grid-with-exactly-one-path" },
+                  ].map((s) => (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      onClick={() => setCustomProblemUrl(s.slug)}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-secondary text-secondary hover:text-white border border-border-subtle cursor-pointer hover:border-cyan-500/40 transition-all"
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
+                <button
+                  type="button"
+                  onClick={() => setShowUrlModal(false)}
+                  className="px-4 py-2 text-xs font-medium rounded-xl border border-border-subtle hover:bg-white/5 text-gray-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={fetchingCustomProblem || !customProblemUrl.trim()}
+                  className="px-5 py-2 text-xs font-bold rounded-xl text-white flex items-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
+                  style={{ background: "var(--color-accent)" }}
+                >
+                  {fetchingCustomProblem ? (
+                    <>
+                      <Sparkles size={13} className="animate-spin" />
+                      <span>Fetching from LeetCode...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ArrowRight size={13} />
+                      <span>Load Problem</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

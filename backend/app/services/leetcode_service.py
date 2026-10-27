@@ -248,19 +248,42 @@ async def fetch_daily_challenge() -> DailyProblem:
     return problem
 
 
+def extract_problem_slug(query: str) -> str:
+    """Extract clean LeetCode problem slug from a URL or raw slug string."""
+    if not query:
+        return ""
+    q = query.strip()
+    # 1. Contest problem URL: /contest/<contest>/problems/<slug>
+    m = re.search(r'contest/[^/]+/problems/([^/?#]+)', q, re.IGNORECASE)
+    if m:
+        return m.group(1).strip().lower()
+    # 2. Standard problem URL: /problems/<slug>
+    m = re.search(r'problems/([^/?#]+)', q, re.IGNORECASE)
+    if m:
+        return m.group(1).strip().lower()
+    # 3. Clean trailing path parts like "count-frequency-staircase-subarrays-i/description"
+    clean = q.strip("/").split("/")[-1].split("?")[0].split("#")[0].strip()
+    if clean in ("description", "submissions", "editorial", "solutions") and "/" in q.strip("/"):
+        parts = [p for p in q.strip("/").split("/") if p not in ("description", "submissions", "editorial", "solutions")]
+        if parts:
+            clean = parts[-1].split("?")[0].split("#")[0].strip()
+    return clean.lower()
+
+
 async def fetch_problem_by_slug(slug: str) -> DailyProblem:
-    """Fetch a specific problem by its slug."""
+    """Fetch a specific problem by its slug or full LeetCode problem/contest URL."""
+    clean_slug = extract_problem_slug(slug) or slug.strip()
     async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT) as client:
         response = await client.post(
             LEETCODE_GRAPHQL_URL,
             json={
                 "query": PROBLEM_DETAIL_QUERY,
-                "variables": {"titleSlug": slug},
+                "variables": {"titleSlug": clean_slug},
             },
             headers={
                 "Content-Type": "application/json",
-                "Referer": "https://leetcode.com",
-                "User-Agent": "Mozilla/5.0 (compatible; LeetCodeAgent/1.0)",
+                "Referer": f"https://leetcode.com/problems/{clean_slug}/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             },
         )
         response.raise_for_status()
@@ -268,7 +291,7 @@ async def fetch_problem_by_slug(slug: str) -> DailyProblem:
 
     question = data.get("data", {}).get("question")
     if not question:
-        raise ValueError(f"Problem '{slug}' not found")
+        raise ValueError(f"Problem '{clean_slug}' not found on LeetCode")
 
     content = question.get("content", "")
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -410,8 +433,31 @@ async def fetch_practice_problems(
         filters["difficulty"] = difficulty.upper()
     if topic and topic.lower() not in ("all", ""):
         filters["tags"] = [topic.lower()]
+    exact_match: Optional[ProblemBrief] = None
     if search and search.strip():
-        filters["searchKeywords"] = search.strip()
+        raw_search = search.strip()
+        extracted_slug = extract_problem_slug(raw_search)
+        if extracted_slug:
+            # 1. Attempt exact problem lookup directly
+            try:
+                exact_p = await fetch_problem_by_slug(extracted_slug)
+                if exact_p:
+                    exact_match = ProblemBrief(
+                        id=exact_p.id,
+                        title=exact_p.title,
+                        slug=exact_p.slug,
+                        difficulty=exact_p.difficulty,
+                        tags=exact_p.tags,
+                        url=exact_p.url,
+                        is_solved=(exact_p.slug in user_solved_slugs) if user_solved_slugs else False,
+                    )
+            except Exception as e:
+                logger.debug("Exact slug match lookup failed for %s: %s", extracted_slug, e)
+
+            # Sanitize search keywords so contest numbers like 525 don't poison results
+            filters["searchKeywords"] = extracted_slug.replace("-", " ")
+        else:
+            filters["searchKeywords"] = raw_search
 
     # If username provided, get their solved slugs
     user_solved_slugs: set[str] = set()
@@ -468,6 +514,11 @@ async def fetch_practice_problems(
             url=url,
             is_solved=is_solved,
         ))
+
+    if exact_match:
+        # Prepend exact match at position 0 and deduplicate
+        questions = [exact_match] + [q for q in questions if q.slug != exact_match.slug]
+        total = max(total, len(questions))
 
     return ProblemListResponse(total=total, questions=questions)
 

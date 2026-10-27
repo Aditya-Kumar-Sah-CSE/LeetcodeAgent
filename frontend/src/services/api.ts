@@ -241,13 +241,35 @@ export async function refreshDailyChallenge(): Promise<DailyProblem> {
 
 // ─── Problems ───────────────────────────────────────────────
 
-export async function fetchProblem(slug: string): Promise<DailyProblem> {
-  try {
-    return await apiFetch<DailyProblem>(`/problem/${slug}`);
-  } catch (err) {
-    console.warn(`Backend unreachable for /problem/${slug}, checking local archives & generating client problem:`, err);
+export function extractProblemSlug(urlOrSlug: string): string {
+  if (!urlOrSlug) return "";
+  const s = urlOrSlug.trim();
+  // 1. Contest problem URL: /contest/<contest>/problems/<slug>
+  const contestMatch = s.match(/contest\/[^/]+\/problems\/([^/?#]+)/i);
+  if (contestMatch) return contestMatch[1].trim().toLowerCase();
+  // 2. Standard problem URL: /problems/<slug>
+  const problemMatch = s.match(/problems\/([^/?#]+)/i);
+  if (problemMatch) return problemMatch[1].trim().toLowerCase();
+  // 3. Clean trailing path parts like "count-frequency-staircase-subarrays-i/description"
+  const clean = s.replace(/\/+$/, "").split("/").pop()?.split("?")[0]?.split("#")[0]?.trim() || "";
+  if (["description", "submissions", "editorial", "solutions"].includes(clean.toLowerCase())) {
+    const parts = s.replace(/\/+$/, "").split("/").filter((p) => !["description", "submissions", "editorial", "solutions"].includes(p.toLowerCase()));
+    return parts[parts.length - 1]?.split("?")[0]?.split("#")[0]?.trim().toLowerCase() || s.toLowerCase();
+  }
+  return clean.toLowerCase();
+}
 
-    if (slug === FALLBACK_DAILY.slug) return FALLBACK_DAILY;
+export async function fetchProblem(rawInput: string): Promise<DailyProblem> {
+  const slug = extractProblemSlug(rawInput) || rawInput.trim();
+  try {
+    return await apiFetch<DailyProblem>(`/problem/resolve?url=${encodeURIComponent(rawInput.trim())}`);
+  } catch {
+    try {
+      return await apiFetch<DailyProblem>(`/problem/${slug}`);
+    } catch (err) {
+      console.warn(`Backend unreachable for /problem/${slug}, checking local archives & generating client problem:`, err);
+
+      if (slug === FALLBACK_DAILY.slug) return FALLBACK_DAILY;
 
     const detailedFallback = getDetailedProblemFallback(slug);
     if (detailedFallback) {
@@ -313,6 +335,7 @@ export async function fetchProblem(slug: string): Promise<DailyProblem> {
       is_solved: isProblemSolved(slug),
     };
   }
+}
 }
 
 export async function fetchCodeSnippets(

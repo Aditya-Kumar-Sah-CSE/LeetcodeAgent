@@ -69,6 +69,18 @@ async def refresh_daily_challenge():
 
 # ─── Problem Details ────────────────────────────────────────────
 
+@router.get("/problem/resolve")
+async def resolve_problem_url(url: str = Query(..., description="Full LeetCode URL or slug")):
+    """Resolve and fetch any problem directly from a full LeetCode problem or contest URL."""
+    try:
+        problem = await fetch_problem_by_slug(url)
+        return problem
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to fetch problem from LeetCode: {str(e)}")
+
+
 @router.get("/problem/{slug}")
 async def get_problem(slug: str):
     """Fetch a specific problem by slug."""

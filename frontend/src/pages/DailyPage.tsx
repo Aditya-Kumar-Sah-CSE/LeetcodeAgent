@@ -42,6 +42,7 @@ import {
   fetchContests,
   fetchContestQuestions,
   syncLeetCodeSolvedProblems,
+  extractProblemSlug,
 } from "../services/api";
 import {
   addActivity,
@@ -390,8 +391,24 @@ export default function DailyPage() {
   };
 
   // Handle Search on Enter or Click
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const query = searchQuery.trim();
+    if (query.includes("leetcode.com") || query.includes("/problems/")) {
+      const slug = extractProblemSlug(query);
+      if (slug) {
+        setNavigatingSlug(slug);
+        try {
+          const fullProblem = await fetchProblem(query);
+          navigate("/workspace", { state: { problem: fullProblem } });
+          return;
+        } catch {
+          // If direct resolution fails, proceed with standard search
+        } finally {
+          setNavigatingSlug(null);
+        }
+      }
+    }
     loadPractice(true);
   };
 
@@ -804,6 +821,27 @@ export default function DailyPage() {
                 Search
               </button>
             </form>
+
+            {/* Direct URL Detection Card */}
+            {searchQuery.trim() && (searchQuery.includes("leetcode.com") || searchQuery.includes("/problems/")) && (
+              <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                <div className="flex items-center gap-2 text-cyan-300">
+                  <Sparkles size={16} className="shrink-0 text-cyan-400" />
+                  <div>
+                    <span className="font-semibold text-white">Direct LeetCode URL Detected: </span>
+                    <span className="font-mono text-cyan-300">{extractProblemSlug(searchQuery)}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  className="px-4 py-1.5 rounded-lg bg-cyan-400 text-black font-bold hover:bg-cyan-300 cursor-pointer transition-all shrink-0 flex items-center justify-center gap-1.5 shadow"
+                >
+                  <span>Open in Workspace</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
 
             {/* Status & Difficulty Filter Pills */}
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t" style={{ borderColor: "var(--color-border-subtle)" }}>

@@ -27,13 +27,17 @@ from app.services.solution_service import (
 from app.services.profile_service import fetch_public_profile
 from app.agents.coding_agent import run_agent_stage
 from app.services.chat_service import save_chat_history, get_chat_history
+from app.services.execution_service import execute_code
 from app.models.schemas import (
     AIRequest,
     SaveSolutionRequest,
     SaveChatRequest,
+    RunCodeRequest,
+    RunCodeResponse,
 )
 
 router = APIRouter()
+
 
 
 # ─── Health ─────────────────────────────────────────────────────
@@ -160,6 +164,19 @@ async def run_agent(request: AIRequest):
     if response.error and not response.content:
         raise HTTPException(status_code=500, detail=response.error)
     return response
+
+
+# ─── Code Execution ─────────────────────────────────────────────
+
+@router.post("/code/run", response_model=RunCodeResponse)
+async def run_code_endpoint(request: RunCodeRequest):
+    """Execute code against problem test cases."""
+    try:
+        response = await execute_code(request)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Code execution error: {str(e)}")
+
 
 
 # ─── Web Search ─────────────────────────────────────────────────

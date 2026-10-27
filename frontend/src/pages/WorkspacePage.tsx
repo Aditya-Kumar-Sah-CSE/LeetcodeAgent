@@ -28,6 +28,12 @@ import {
   Sliders,
   Link,
   X,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -39,6 +45,9 @@ import {
   type AgentStage,
   type SupportedLanguage,
   type AIModel,
+  type TestCaseItem,
+  type RunCodeResponse,
+  type SingleTestResult,
 } from "../types";
 import {
   fetchDailyChallenge,
@@ -48,6 +57,7 @@ import {
   fetchModels,
   saveSolution,
   searchWeb,
+  runCode,
 } from "../services/api";
 import {
   getLanguage,
@@ -112,6 +122,15 @@ export default function WorkspacePage() {
   const [wordWrap, setWordWrapState] = useState<boolean>(getEditorWordWrap());
   const [useSimpleEditor, setUseSimpleEditor] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+
+  // Test runner & console states
+  const [isRunningCode, setIsRunningCode] = useState(false);
+  const [runResult, setRunResult] = useState<RunCodeResponse | null>(null);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [consoleTab, setConsoleTab] = useState<"testcase" | "result">("testcase");
+  const [customTestCases, setCustomTestCases] = useState<TestCaseItem[]>([]);
+  const [selectedCaseIndex, setSelectedCaseIndex] = useState(0);
+
 
   // Mobile navigation tabs: problem / reasoning / editor / research
   const [mobileTab, setMobileTab] = useState<"problem" | "reasoning" | "editor" | "research">("editor");
@@ -682,6 +701,129 @@ export default function WorkspacePage() {
       showToast(`Failed to save: ${e.message}`);
     }
   };
+
+  // Run code against real test cases
+  const handleRunCode = async () => {
+    if (!problem || !code.trim() || isRunningCode) return;
+    setIsRunningCode(true);
+    setConsoleOpen(true);
+    setConsoleTab("result");
+    setSelectedCaseIndex(0);
+
+    const tcs: TestCaseItem[] =
+      customTestCases && customTestCases.length > 0
+        ? customTestCases
+        : (problem.examples || []).map((ex) => ({
+            input: ex.input,
+            expected_output: ex.output,
+          }));
+
+    try {
+      const resp = await runCode({
+        problem_slug: problem.slug,
+        problem_title: problem.title,
+        language: language,
+        code: code,
+        testcases: tcs,
+      });
+      setRunResult(resp);
+      if (resp.status === "ACCEPTED") {
+        showToast("Accepted: All testcases passed! 🎉");
+      } else if (resp.status === "COMPILE_ERROR") {
+        showToast("Compilation Error: See details in console");
+      } else if (resp.status === "RUNTIME_ERROR") {
+        showToast("Runtime Error: Check console output");
+      } else if (resp.status === "TIME_LIMIT_EXCEEDED") {
+        showToast("Time Limit Exceeded");
+      } else {
+        showToast(`${resp.passed_tests}/${resp.total_tests} testcases passed.`);
+      }
+    } catch (err: any) {
+      setRunResult({
+        success: false,
+        status: "RUNTIME_ERROR",
+        message: err.message || "Execution error",
+        total_tests: tcs.length,
+        passed_tests: 0,
+        runtime_ms: 0,
+        runtime_error: err.message || "Unknown error",
+        results: [],
+      });
+      showToast(`Error: ${err.message}`);
+    } finally {
+      setIsRunningCode(false);
+    }
+  };
+
+  const handleAddTestCase = () => {
+    setCustomTestCases((prev) => [
+      ...prev,
+      { input: "", expected_output: "" },
+    ]);
+    setSelectedCaseIndex(customTestCases.length);
+    setConsoleTab("testcase");
+    setConsoleOpen(true);
+  };
+
+  const handleUpdateTestCase = (index: number, field: "input" | "expected_output", val: string) => {
+    setCustomTestCases((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: val };
+      }
+      return updated;
+    });
+  };
+
+  const handleDeleteTestCase = (index: number) => {
+    if (customTestCases.length <= 1) return;
+    setCustomTestCases((prev) => prev.filter((_, i) => i !== index));
+    if (selectedCaseIndex >= index && selectedCaseIndex > 0) {
+      setSelectedCaseIndex((prev) => prev - 1);
+    }
+  };
+
+  const handleResetTestCases = () => {
+    if (problem?.examples && problem.examples.length > 0) {
+      setCustomTestCases(
+        problem.examples.map((ex) => ({
+          input: ex.input,
+          expected_output: ex.output,
+        }))
+      );
+      setSelectedCaseIndex(0);
+      showToast("Reset to official example test cases");
+    }
+  };
+
+  // Sync testcases when problem changes
+  useEffect(() => {
+    if (problem?.examples && problem.examples.length > 0) {
+      setCustomTestCases(
+        problem.examples.map((ex) => ({
+          input: ex.input,
+          expected_output: ex.output,
+        }))
+      );
+    } else {
+      setCustomTestCases([]);
+    }
+    setRunResult(null);
+    setSelectedCaseIndex(0);
+  }, [problem?.slug]);
+
+  // Ctrl+Enter / Cmd+Enter hotkey to run tests
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleRunCode();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [problem, code, language, customTestCases, isRunningCode]);
+
 
   // Download solution file
   const handleDownloadCode = () => {
@@ -1268,15 +1410,38 @@ export default function WorkspacePage() {
                   color: "var(--color-text-primary)",
                   borderColor: "var(--color-border)",
                 }}
+                title="Save draft solution"
               >
                 <Save size={13} />
                 Save
               </button>
+
+              {/* Run Button (Green Play icon next to Save) */}
+              <button
+                id="btn-run-tests"
+                onClick={handleRunCode}
+                disabled={isRunningCode || !code.trim()}
+                className="px-3 py-1 text-xs font-bold rounded flex items-center gap-1.5 cursor-pointer touch-target border transition-all text-white shadow-sm hover:brightness-110 active:scale-95 disabled:opacity-50"
+                style={{
+                  background: "linear-gradient(135deg, #10b981, #059669)",
+                  borderColor: "#059669",
+                  boxShadow: "0 0 10px rgba(16, 185, 129, 0.35)",
+                }}
+                title="Run Real Testcases (Ctrl + Enter)"
+              >
+                {isRunningCode ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Play size={13} className="fill-current" />
+                )}
+                <span>{isRunningCode ? "Running..." : "Run"}</span>
+              </button>
             </div>
           </div>
 
+
           {/* Code Editor Body */}
-          <div className="flex-1 w-full h-full min-h-[380px] relative overflow-hidden bg-[#1e1e1e]">
+          <div className="flex-1 w-full min-h-[220px] relative overflow-hidden bg-[#1e1e1e]">
             <div className="absolute inset-0 w-full h-full">
               {!useSimpleEditor ? (
                 <Editor
@@ -1383,6 +1548,445 @@ export default function WorkspacePage() {
               </div>
             )}
           </div>
+
+          {/* ─── Interactive LeetCode Testcase & Execution Results Console ─── */}
+          <div
+            className={`border-t flex flex-col transition-all duration-200 z-10 shrink-0 ${
+              consoleOpen ? "h-72 sm:h-80" : "h-9"
+            }`}
+            style={{
+              background: "#16181d",
+              borderColor: "var(--color-border-subtle)",
+            }}
+          >
+            {/* Console Control Bar */}
+            <div
+              className="flex items-center justify-between px-3 h-9 select-none shrink-0 border-b"
+              style={{
+                borderColor: "rgba(255, 255, 255, 0.06)",
+                background: "#1a1d24",
+              }}
+            >
+              {/* Tabs: Testcase & Test Result */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setConsoleTab("testcase");
+                    setConsoleOpen(true);
+                  }}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    consoleTab === "testcase" && consoleOpen
+                      ? "bg-white/10 text-white"
+                      : "text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  <Terminal size={12} className="text-cyan-400" />
+                  <span>Testcase</span>
+                  <span className="text-[10px] px-1 py-0.2 rounded bg-white/5 text-gray-400">
+                    {customTestCases.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setConsoleTab("result");
+                    setConsoleOpen(true);
+                  }}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    consoleTab === "result" && consoleOpen
+                      ? "bg-white/10 text-white"
+                      : "text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  <Play
+                    size={11}
+                    className={isRunningCode ? "text-emerald-400 animate-spin" : "text-emerald-400 fill-current"}
+                  />
+                  <span>Test Result</span>
+
+                  {/* Status Indicator Pill */}
+                  {runResult && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase tracking-wider flex items-center gap-1 ${
+                        runResult.status === "ACCEPTED"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                          : runResult.status === "COMPILE_ERROR"
+                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                          : runResult.status === "RUNTIME_ERROR"
+                          ? "bg-red-500/20 text-rose-400 border border-red-500/30"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                      }`}
+                    >
+                      {runResult.status === "ACCEPTED" && <CheckCircle2 size={10} />}
+                      {runResult.status === "COMPILE_ERROR" && <AlertTriangle size={10} />}
+                      {runResult.status === "RUNTIME_ERROR" && <AlertTriangle size={10} />}
+                      {runResult.status === "WRONG_ANSWER" && <XCircle size={10} />}
+                      {runResult.status === "ACCEPTED"
+                        ? "Passed"
+                        : runResult.status === "COMPILE_ERROR"
+                        ? "Compile Error"
+                        : runResult.status === "RUNTIME_ERROR"
+                        ? "Runtime Error"
+                        : "Wrong Answer"}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Right: Quick Run & Expand/Collapse Toggle */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRunCode}
+                  disabled={isRunningCode || !code.trim()}
+                  className="px-2 py-0.5 text-[11px] font-bold rounded flex items-center gap-1 cursor-pointer text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 transition-colors shadow-xs"
+                  title="Run code against tests (Ctrl+Enter)"
+                >
+                  {isRunningCode ? (
+                    <Loader2 size={10} className="animate-spin" />
+                  ) : (
+                    <Play size={10} className="fill-current" />
+                  )}
+                  <span>Run</span>
+                </button>
+
+                <button
+                  onClick={() => setConsoleOpen(!consoleOpen)}
+                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title={consoleOpen ? "Collapse Console" : "Expand Console"}
+                >
+                  {consoleOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Console Body (Shown when open) */}
+            {consoleOpen && (
+              <div className="flex-1 overflow-y-auto p-3 text-xs bg-[#131519] flex flex-col min-h-0">
+                {/* ─── TAB 1: Testcase Editor ─── */}
+                {consoleTab === "testcase" && (
+                  <div className="flex flex-col h-full space-y-2.5">
+                    {/* Testcase Pills */}
+                    <div className="flex items-center justify-between flex-wrap gap-1.5 pb-1 border-b border-white/5">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {customTestCases.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setSelectedCaseIndex(i)}
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
+                              selectedCaseIndex === i
+                                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                                : "bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent"
+                            }`}
+                          >
+                            <span>Case {i + 1}</span>
+                          </button>
+                        ))}
+
+                        <button
+                          onClick={handleAddTestCase}
+                          className="px-2 py-1 text-xs rounded-md bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1 border border-white/5"
+                          title="Add custom test case"
+                        >
+                          <Plus size={11} />
+                          <span>Add Case</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {customTestCases.length > 1 && (
+                          <button
+                            onClick={() => handleDeleteTestCase(selectedCaseIndex)}
+                            className="p-1 text-gray-500 hover:text-red-400 transition-colors cursor-pointer rounded hover:bg-red-500/10"
+                            title="Delete this test case"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                        <button
+                          onClick={handleResetTestCases}
+                          className="text-[11px] text-gray-400 hover:text-cyan-400 flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <RotateCcw size={10} />
+                          <span>Reset Cases</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Active Case Inputs */}
+                    {customTestCases[selectedCaseIndex] ? (
+                      <div className="flex-1 flex flex-col space-y-2">
+                        <div>
+                          <div className="text-[11px] font-mono text-gray-400 mb-1 flex items-center justify-between">
+                            <span>Input:</span>
+                            <span className="text-[10px] text-gray-500">
+                              (e.g. nums = [1,5,2,4,1,3,0], k = 2)
+                            </span>
+                          </div>
+                          <textarea
+                            value={customTestCases[selectedCaseIndex].input}
+                            onChange={(e) =>
+                              handleUpdateTestCase(selectedCaseIndex, "input", e.target.value)
+                            }
+                            rows={3}
+                            placeholder="nums = [1, 2, 3]"
+                            className="w-full p-2.5 font-mono text-xs rounded-lg bg-[#0d0e12] border border-white/10 text-gray-200 outline-none focus:border-cyan-500/50 resize-none"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="text-[11px] font-mono text-gray-400 mb-1">
+                            Expected Output (optional):
+                          </div>
+                          <input
+                            type="text"
+                            value={customTestCases[selectedCaseIndex].expected_output || ""}
+                            onChange={(e) =>
+                              handleUpdateTestCase(selectedCaseIndex, "expected_output", e.target.value)
+                            }
+                            placeholder="e.g. 9 or [0, 1] or true"
+                            className="w-full p-2 font-mono text-xs rounded-lg bg-[#0d0e12] border border-white/10 text-gray-200 outline-none focus:border-cyan-500/50"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-center py-4">No test cases available.</div>
+                    )}
+                  </div>
+                )}
+
+                {/* ─── TAB 2: Test Result ─── */}
+                {consoleTab === "result" && (
+                  <div className="flex flex-col h-full overflow-y-auto space-y-3">
+                    {/* Loading State */}
+                    {isRunningCode && (
+                      <div className="flex flex-col items-center justify-center py-8 gap-2.5 text-center">
+                        <Loader2 className="animate-spin text-emerald-400" size={26} />
+                        <span className="font-semibold text-gray-200 text-xs">
+                          Compiling and executing code...
+                        </span>
+                        <span className="text-[11px] text-gray-500 font-mono">
+                          Testing against {customTestCases.length} case(s) in {currentLangObj.label}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* No Run Yet */}
+                    {!isRunningCode && !runResult && (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-gray-400 gap-2">
+                        <Play size={24} className="text-gray-600" />
+                        <p className="text-xs">You have not run any testcases yet.</p>
+                        <button
+                          onClick={handleRunCode}
+                          className="px-3 py-1.5 text-xs font-bold rounded-lg text-white bg-emerald-600 hover:bg-emerald-500 cursor-pointer shadow-sm transition-all"
+                        >
+                          Run Code Now
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Execution Finished */}
+                    {!isRunningCode && runResult && (
+                      <div className="space-y-3">
+                        {/* Overall Status Banner */}
+                        <div
+                          className={`p-3 rounded-xl border flex items-start justify-between gap-3 ${
+                            runResult.status === "ACCEPTED"
+                              ? "bg-emerald-950/30 border-emerald-500/30"
+                              : runResult.status === "COMPILE_ERROR"
+                              ? "bg-red-950/40 border-red-500/40"
+                              : runResult.status === "RUNTIME_ERROR"
+                              ? "bg-rose-950/40 border-rose-500/40"
+                              : runResult.status === "TIME_LIMIT_EXCEEDED"
+                              ? "bg-amber-950/30 border-amber-500/30"
+                              : "bg-red-950/30 border-red-500/30"
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5">
+                            {runResult.status === "ACCEPTED" && (
+                              <CheckCircle2 size={18} className="text-emerald-400 shrink-0 mt-0.5" />
+                            )}
+                            {(runResult.status === "COMPILE_ERROR" || runResult.status === "RUNTIME_ERROR") && (
+                              <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                            )}
+                            {runResult.status === "WRONG_ANSWER" && (
+                              <XCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                            )}
+                            {runResult.status === "TIME_LIMIT_EXCEEDED" && (
+                              <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                            )}
+
+                            <div>
+                              <div
+                                className={`font-bold text-sm ${
+                                  runResult.status === "ACCEPTED"
+                                    ? "text-emerald-400"
+                                    : runResult.status === "TIME_LIMIT_EXCEEDED"
+                                    ? "text-amber-400"
+                                    : "text-red-400"
+                                }`}
+                              >
+                                {runResult.status === "ACCEPTED"
+                                  ? "Accepted"
+                                  : runResult.status === "COMPILE_ERROR"
+                                  ? "Compile Error"
+                                  : runResult.status === "RUNTIME_ERROR"
+                                  ? "Runtime Error"
+                                  : runResult.status === "TIME_LIMIT_EXCEEDED"
+                                  ? "Time Limit Exceeded"
+                                  : "Wrong Answer"}
+                              </div>
+                              <p className="text-xs text-gray-300 mt-0.5">
+                                {runResult.message}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            {runResult.runtime_ms > 0 && (
+                              <span className="text-[11px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                                ⚡ {runResult.runtime_ms} ms
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Compilation Error Diagnostics (SHOW ERROR ALWAYS AS REQUESTED) */}
+                        {runResult.compile_error && (
+                          <div className="space-y-1.5">
+                            <div className="text-[11px] font-bold text-red-400 flex items-center justify-between">
+                              <span>Compiler Error Output:</span>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(runResult.compile_error || "");
+                                  showToast("Copied compile error");
+                                }}
+                                className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                              >
+                                <Copy size={10} />
+                                <span>Copy Error</span>
+                              </button>
+                            </div>
+                            <pre className="p-3 rounded-lg font-mono text-[11px] bg-[#0c0d10] border border-red-500/30 text-red-300 overflow-x-auto whitespace-pre leading-relaxed select-text shadow-inner">
+                              {runResult.compile_error}
+                            </pre>
+                          </div>
+                        )}
+
+                        {/* Runtime Error Trace */}
+                        {runResult.runtime_error && !runResult.compile_error && (
+                          <div className="space-y-1.5">
+                            <div className="text-[11px] font-bold text-rose-400 flex items-center justify-between">
+                              <span>Runtime Exception Trace:</span>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(runResult.runtime_error || "");
+                                  showToast("Copied error trace");
+                                }}
+                                className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                              >
+                                <Copy size={10} />
+                                <span>Copy Trace</span>
+                              </button>
+                            </div>
+                            <pre className="p-3 rounded-lg font-mono text-[11px] bg-[#0c0d10] border border-rose-500/30 text-rose-300 overflow-x-auto whitespace-pre leading-relaxed select-text shadow-inner">
+                              {runResult.runtime_error}
+                            </pre>
+                          </div>
+                        )}
+
+                        {/* Testcase Results Breakdown */}
+                        {runResult.results && runResult.results.length > 0 && (
+                          <div className="space-y-2 pt-1">
+                            {/* Case Selector Pills */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {runResult.results.map((r, i) => {
+                                const isPassed = r.status === "PASSED";
+                                const isSelected = selectedCaseIndex === i;
+                                return (
+                                  <button
+                                    key={i}
+                                    onClick={() => setSelectedCaseIndex(i)}
+                                    className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1.5 border ${
+                                      isSelected
+                                        ? isPassed
+                                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                          : "bg-red-500/20 text-red-300 border-red-500/40"
+                                        : isPassed
+                                        ? "bg-white/5 text-emerald-400/80 border-transparent hover:border-emerald-500/30"
+                                        : "bg-white/5 text-red-400/80 border-transparent hover:border-red-500/30"
+                                    }`}
+                                  >
+                                    {isPassed ? (
+                                      <CheckCircle2 size={11} className="text-emerald-400" />
+                                    ) : (
+                                      <XCircle size={11} className="text-red-400" />
+                                    )}
+                                    <span>Case {i + 1}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Active Case Inspection */}
+                            {runResult.results[selectedCaseIndex] && (
+                              <div className="p-3 rounded-xl bg-[#0e1014] border border-white/5 space-y-2 font-mono text-xs">
+                                <div>
+                                  <span className="text-gray-400 text-[11px] block mb-0.5">Input:</span>
+                                  <div className="p-2 rounded bg-black/40 border border-white/5 text-gray-200">
+                                    {runResult.results[selectedCaseIndex].input}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div>
+                                    <span className="text-gray-400 text-[11px] block mb-0.5">Your Output:</span>
+                                    <div
+                                      className={`p-2 rounded border font-semibold ${
+                                        runResult.results[selectedCaseIndex].status === "PASSED"
+                                          ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-400"
+                                          : "bg-red-950/20 border-red-500/30 text-red-400"
+                                      }`}
+                                    >
+                                      {runResult.results[selectedCaseIndex].actual_output ?? "null / error"}
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <span className="text-gray-400 text-[11px] block mb-0.5">Expected:</span>
+                                    <div className="p-2 rounded bg-emerald-950/20 border border-emerald-500/30 text-emerald-400 font-semibold">
+                                      {runResult.results[selectedCaseIndex].expected_output ?? "None"}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {runResult.results[selectedCaseIndex].error && (
+                                  <div>
+                                    <span className="text-red-400 text-[11px] block mb-0.5">Error:</span>
+                                    <pre className="p-2 rounded bg-red-950/30 border border-red-500/30 text-red-300 text-[11px] overflow-x-auto whitespace-pre">
+                                      {runResult.results[selectedCaseIndex].error}
+                                    </pre>
+                                  </div>
+                                )}
+
+                                {runResult.results[selectedCaseIndex].stdout && (
+                                  <div>
+                                    <span className="text-gray-400 text-[11px] block mb-0.5">Stdout:</span>
+                                    <pre className="p-2 rounded bg-black/40 border border-white/5 text-gray-300 text-[11px] overflow-x-auto whitespace-pre">
+                                      {runResult.results[selectedCaseIndex].stdout}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1394,6 +1998,20 @@ export default function WorkspacePage() {
           borderColor: "var(--color-border-subtle)",
         }}
       >
+        <button
+          onClick={handleRunCode}
+          disabled={isRunningCode || !code.trim()}
+          className="flex-1 py-3 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-white cursor-pointer touch-target shadow-lg disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+        >
+          {isRunningCode ? (
+            <Loader2 size={15} className="animate-spin" />
+          ) : (
+            <Play size={15} className="fill-current" />
+          )}
+          <span>{isRunningCode ? "Running..." : "Run Tests"}</span>
+        </button>
+
         <button
           onClick={handleRunFullPipeline}
           disabled={isRunning || !problem}
@@ -1407,12 +2025,13 @@ export default function WorkspacePage() {
         <button
           onClick={handleCopyAndOpenLeetCode}
           className="flex-1 py-3 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-white cursor-pointer touch-target shadow-lg"
-          style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+          style={{ background: "var(--color-bg-elevated)", border: "1px solid var(--color-border)" }}
         >
           <Copy size={15} />
-          <span>Copy & Submit</span>
+          <span>Copy</span>
         </button>
       </div>
+
 
       {/* Submission Guidance Modal */}
       <SubmissionModal

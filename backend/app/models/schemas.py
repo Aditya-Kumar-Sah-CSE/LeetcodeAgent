@@ -236,3 +236,46 @@ class SaveChatRequest(BaseModel):
     problem_title: Optional[str] = None
     messages: list[ChatMessageModel]
     push_to_git: bool = False
+
+
+# ─── Code Execution Models ────────────────────────────────────
+
+class TestCaseItem(BaseModel):
+    """A test case input with expected output."""
+    input: str
+    expected_output: Optional[str] = None
+
+
+class RunCodeRequest(BaseModel):
+    """Request to execute code against test cases."""
+    problem_slug: str
+    problem_title: Optional[str] = None
+    language: str = "python"
+    code: str
+    testcases: list[TestCaseItem] = []
+
+
+class SingleTestResult(BaseModel):
+    """Result for an individual test case."""
+    test_index: int
+    status: str  # "PASSED", "FAILED", "ERROR"
+    input: str
+    expected_output: Optional[str] = None
+    actual_output: Optional[str] = None
+    stdout: Optional[str] = None
+    error: Optional[str] = None
+    runtime_ms: Optional[float] = None
+
+
+class RunCodeResponse(BaseModel):
+    """Overall execution response."""
+    success: bool
+    status: str  # "ACCEPTED", "WRONG_ANSWER", "COMPILE_ERROR", "RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED"
+    message: str
+    total_tests: int
+    passed_tests: int
+    runtime_ms: float
+    compile_error: Optional[str] = None
+    runtime_error: Optional[str] = None
+    results: list[SingleTestResult] = []
+

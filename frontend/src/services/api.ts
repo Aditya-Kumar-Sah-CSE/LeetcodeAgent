@@ -17,6 +17,8 @@ import type {
   ContestBrief,
   ContestQuestion,
   ContestDetail,
+  RunCodeRequest,
+  RunCodeResponse,
 } from "../types";
 import {
   getApiKey,
@@ -1506,3 +1508,27 @@ export async function fetchContestQuestions(
     is_solved: isProblemSolved(q.slug) || !!q.is_solved,
   }));
 }
+
+// ─── Real Code Execution ───────────────────────────────────────
+
+export async function runCode(request: RunCodeRequest): Promise<RunCodeResponse> {
+  try {
+    return await apiFetch<RunCodeResponse>("/code/run", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  } catch (err: any) {
+    // If backend is unreachable or threw an error, package into a clear compile/runtime error
+    return {
+      success: false,
+      status: "RUNTIME_ERROR",
+      message: err.message || "Failed to execute code against backend runner",
+      total_tests: request.testcases.length,
+      passed_tests: 0,
+      runtime_ms: 0,
+      runtime_error: err.message || "Network / Backend Error",
+      results: [],
+    };
+  }
+}
+

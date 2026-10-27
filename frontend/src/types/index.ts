@@ -256,3 +256,42 @@ export interface ChatSession {
   synced_to_github?: boolean;
 }
 
+/* ─── Code Execution Types ─────────────────────────────────── */
+
+export interface TestCaseItem {
+  input: string;
+  expected_output?: string;
+}
+
+export interface RunCodeRequest {
+  problem_slug: string;
+  problem_title?: string;
+  language: string;
+  code: string;
+  testcases: TestCaseItem[];
+}
+
+export interface SingleTestResult {
+  test_index: number;
+  status: "PASSED" | "FAILED" | "ERROR";
+  input: string;
+  expected_output?: string | null;
+  actual_output?: string | null;
+  stdout?: string | null;
+  error?: string | null;
+  runtime_ms?: number | null;
+}
+
+export interface RunCodeResponse {
+  success: boolean;
+  status: "ACCEPTED" | "WRONG_ANSWER" | "COMPILE_ERROR" | "RUNTIME_ERROR" | "TIME_LIMIT_EXCEEDED";
+  message: string;
+  total_tests: number;
+  passed_tests: number;
+  runtime_ms: number;
+  compile_error?: string | null;
+  runtime_error?: string | null;
+  results: SingleTestResult[];
+}
+
+

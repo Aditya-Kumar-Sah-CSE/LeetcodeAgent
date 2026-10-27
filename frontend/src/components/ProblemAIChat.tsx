@@ -485,41 +485,16 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
 
   return (
     <div className="flex flex-col h-full max-h-full w-full min-h-0 bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border-subtle)] overflow-hidden shadow-xl relative">
-      {/* ─── Chat Header ─── */}
+      {/* ─── Chat Header (Compact) ─── */}
       <div
-        className="px-3.5 py-2.5 flex items-center justify-between border-b gap-2 flex-wrap shrink-0"
+        className="px-3 py-1.5 flex items-center justify-between border-b gap-2 flex-wrap shrink-0"
         style={{
           background: "var(--color-bg-elevated)",
           borderColor: "var(--color-border-subtle)",
         }}
       >
-        {/* Left: Bot Status & Model */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 shadow-md">
-            <Sparkles size={14} className="text-white" />
-            <span
-              className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-gray-900 ${
-                isStreaming ? "bg-amber-400 animate-ping" : "bg-emerald-400"
-              }`}
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-white tracking-wide">
-                AI Coding Partner
-              </span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">
-                Stateless Context
-              </span>
-            </div>
-            <p className="text-[10px] text-muted truncate max-w-[170px] sm:max-w-[220px]">
-              {isStreaming ? "Streaming response..." : "Online • English & Hinglish"}
-            </p>
-          </div>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-1.5">
+        {/* Left: Key Status & Model Switcher */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           {/* Quick Key Status / Connect Button */}
           {hasAnyKey ? (
             <button
@@ -599,7 +574,10 @@ export const ProblemAIChat: React.FC<ProblemAIChatProps> = ({
               <Info size={13} />
             </button>
           </div>
+        </div>
 
+        {/* Right: Actions */}
+        <div className="flex items-center gap-1.5">
           {/* Sync / Push to GitHub */}
           <button
             onClick={handleSyncToGitHub}

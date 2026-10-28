@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3882. Minimum XOR Path in a Grid - 2-Page Cheat Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.45; font-size: 11pt; }
+    .print-bar { background: #1e293b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .print-btn { background: linear-gradient(135deg, #6366f1, #06b6d4); color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .page { width: 210mm; min-height: 297mm; max-height: 297mm; margin: 20px auto; padding: 14mm 16mm; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+    .page-break { page-break-after: always; break-after: page; }
+    .header-banner { background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #0891b2 100%); color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .card-accent { border-left: 4px solid #4f46e5; background: #f5f3ff; }
+    .trick-box { background: #fffbeb; border-left: 5px solid #d97706; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+    pre.code-block { background: #111827; color: #e5e7eb; font-family: 'Fira Code', monospace; font-size: 8.5pt; line-height: 1.4; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; margin-bottom: 10px; }
+    .footer { border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #64748b; }
+    @media print { body { background: white; } .print-bar { display: none; } .page { margin: 0; box-shadow: none; page-break-after: always; break-after: page; height: 297mm; } }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <div><strong>⚡ LeetCode AI Agent — Cheat Sheet Generator</strong> · 3882. Minimum XOR Path in a Grid</div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+  <div class="page page-break">
+    <div>
+      <div class="header-banner">
+        <div><h1 style="font-size: 16pt;">3882. Minimum XOR Path in a Grid</h1><div style="font-size: 9pt; opacity: 0.9;">LeetCode Daily Challenge · Array, Dynamic Programming, Bit Manipulation, Matrix</div></div>
+        <span style="background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5pt;">Medium</span>
+      </div>
+      <div class="card"><strong>🎯 Problem Goal:</strong><br>You are given a 2D integer array `grid` of size `m * n`. You start at the top-left cell `(0, 0)` and want to reach the bottom-right cell `(m - 1, n - 1)`. At each step, you may move either right or down . The cost of a path is defined as the bitwise XOR of all the values in the cells along that path, including the start and end cells. Return the mi...</div>
+      <div class="card card-accent"><strong>💡 Core Concept:</strong><br>Optimal graph/array pattern.</div>
+      <div class="trick-box"><strong style="color: #92400e;">⚡ Trick to Remember (Interview Intuition):</strong><br><span style="color: #78350f; font-size: 9pt;">Break down the state invariants and avoid duplicate work.</span></div>
+    </div>
+    <div class="footer"><span>LeetCode AI Agent</span><span>Page 1 of 2</span><span>2026-10-28</span></div>
+  </div>
+  <div class="page">
+    <div>
+      <h3 style="margin-bottom: 8px;">💻 Solution Code (Python)</h3>
+      <pre class="code-block">class Solution:
+    def minCost(self, grid: list[list[int]]) -> int:
+        m, n = len(grid), len(grid[0])
+        MAX_XOR = 1024  # grid values are <= 1023, so XOR stays within 0..1023
+
+        # dp[i][j] is a bitset where bit x is 1 iff XOR value x is reachable at (i, j)
+        dp = [[0] * n for _ in range(m)]
+        dp[0][0] = 1 << grid[0][0]
+
+        for i in range(m):
+            for j in range(n):
+                if i == 0 and j == 0:
+                    continue
+                val = grid[i][j]
+                reachable = 0
+                if i > 0:
+                    reachable |= dp[i - 1][j]
+                if j > 0:
+                    reachable |= dp[i][j - 1]
+
+                # Transform reachable XORs: new_xor = old_xor ^ val
+                new_bits = 0
+                for x in range(MAX_XOR):
+                    if reachable & (1 << x):
+                        new_bits |= 1 << (x ^ val)
+                dp[i][j] = new_bits
+
+        # Find the minimum reachable XOR at the bottom-right cell
+        final_bits = dp[m - 1][n - 1]
+        for x in range(MAX_XOR):
+            if final_bits & (1 << x):
+                return x
+        return 0  # unreachable due to constraints</pre>
+      <div class="card card-accent" style="font-size: 9pt;"><strong>🇮🇳 Hinglish Revision:</strong><br>Problem ko step-by-step simplify karo!</div>
+    </div>
+    <div class="footer"><span>Online Solution Book & Cheat Sheet</span><span>Page 2 of 2</span><span>GitHub Repository</span></div>
+  </div>
+</body>
+</html>

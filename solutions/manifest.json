@@ -1,10 +1,44 @@
 [
   {
+    "id": 3882,
+    "title": "Minimum XOR Path in a Grid",
+    "slug": "minimum-xor-path-in-a-grid",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Dynamic Programming",
+      "Bit Manipulation",
+      "Matrix"
+    ],
+    "date": "2026-10-28",
+    "url": "https://leetcode.com/problems/minimum-xor-path-in-a-grid/",
+    "folder": "2026-10-28-minimum-xor-path-in-a-grid",
+    "model_used": "nvidia/nemotron-3.5-super-vl:free",
+    "solved_at": "2026-10-28T04:23:17.467249+00:00",
+    "concept": "Optimal solution using Array, Dynamic Programming",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given a 2D integer array `grid` of size `m * n`. You start at the top-left cell `(0, 0)` and want to reach the bottom-right cell `(m - 1, n - 1)`. At each step, you may move either right or down . The cost of a path is defined as the bitwise ",
+    "summary_hinglish": "Minimum XOR Path in a Grid ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Dynamic Programming",
+      "Bit Manipulation",
+      "Matrix"
+    ],
+    "code_python": "class Solution:\n    def minCost(self, grid: list[list[int]]) -> int:\n        m, n = len(grid), len(grid[0])\n        MAX_XOR = 1024  # grid values are <= 1023, so XOR stays within 0..1023\n\n        # dp[i][j] is a bitset where bit x is 1 iff XOR value x is reachable at (i, j)\n        dp = [[0] * n for _ in range(m)]\n        dp[0][0] = 1 << grid[0][0]\n\n        for i in range(m):\n            for j in range(n):\n                if i == 0 and j == 0:\n                    continue\n                val = grid[i][j]\n                reachable = 0\n                if i > 0:\n                    reachable |= dp[i - 1][j]\n                if j > 0:\n                    reachable |= dp[i][j - 1]\n\n                # Transform reachable XORs: new_xor = old_xor ^ val\n                new_bits = 0\n                for x in range(MAX_XOR):\n                    if reachable & (1 << x):\n                        new_bits |= 1 << (x ^ val)\n                dp[i][j] = new_bits\n\n        # Find the minimum reachable XOR at the bottom-right cell\n        final_bits = dp[m - 1][n - 1]\n        for x in range(MAX_XOR):\n            if final_bits & (1 << x):\n                return x\n        return 0  # unreachable due to constraints\n"
+  },
+  {
     "id": 3619,
     "title": "Count Islands With Total Value Divisible by K",
     "slug": "count-islands-with-total-value-divisible-by-k",
     "difficulty": "Medium",
-    "tags": ["Array", "Depth-First Search", "Breadth-First Search", "Matrix"],
+    "tags": [
+      "Array",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Matrix"
+    ],
     "date": "2026-10-26",
     "url": "https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/",
     "folder": "2026-10-26-count-islands-with-total-value-divisible-by-k",
@@ -21,12 +55,30 @@
       "Modulo Arithmetic & 64-bit sum overflow protection"
     ],
     "stages_summary": [
-      {"stage": "Understand", "detail": "Matrix dimensions up to 1000x1000, sum can exceed 32-bit limits."},
-      {"stage": "Research", "detail": "Connected components traversal using DFS/BFS; sink cells to avoid secondary arrays."},
-      {"stage": "Plan", "detail": "Double loop over rows & cols. For cell > 0, run iterative stack DFS with accumulator."},
-      {"stage": "Code", "detail": "Clean iterative DFS with cardinal offsets: [(-1,0), (1,0), (0,-1), (0,1)]."},
-      {"stage": "Validate", "detail": "Verified on sample tests: g1 -> 2, g2 -> 0."},
-      {"stage": "Complexity", "detail": "Time: O(M * N), Space: O(M * N) auxiliary stack."}
+      {
+        "stage": "Understand",
+        "detail": "Matrix dimensions up to 1000x1000, sum can exceed 32-bit limits."
+      },
+      {
+        "stage": "Research",
+        "detail": "Connected components traversal using DFS/BFS; sink cells to avoid secondary arrays."
+      },
+      {
+        "stage": "Plan",
+        "detail": "Double loop over rows & cols. For cell > 0, run iterative stack DFS with accumulator."
+      },
+      {
+        "stage": "Code",
+        "detail": "Clean iterative DFS with cardinal offsets: [(-1,0), (1,0), (0,-1), (0,1)]."
+      },
+      {
+        "stage": "Validate",
+        "detail": "Verified on sample tests: g1 -> 2, g2 -> 0."
+      },
+      {
+        "stage": "Complexity",
+        "detail": "Time: O(M * N), Space: O(M * N) auxiliary stack."
+      }
     ],
     "code_python": "class Solution:\n    def countIslands(self, grid: List[List[int]], k: int) -> int:\n        if not grid or not grid[0]: return 0\n        m, n, ans = len(grid), len(grid[0]), 0\n        for r in range(m):\n            for c in range(n):\n                if grid[r][c] > 0:\n                    s, stack = grid[r][c], [(r, c)]\n                    grid[r][c] = 0\n                    while stack:\n                        cr, cc = stack.pop()\n                        for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):\n                            nr, nc = cr + dr, cc + dc\n                            if 0 <= nr < m and 0 <= nc < n and grid[nr][nc] > 0:\n                                s += grid[nr][nc]\n                                grid[nr][nc] = 0\n                                stack.append((nr, nc))\n                    if s % k == 0:\n                        ans += 1\n        return ans",
     "code_cpp": "class Solution {\npublic:\n    int countIslands(vector<vector<int>>& grid, int k) {\n        int m = grid.size(), n = grid[0].size(), ans = 0;\n        int dr[4] = {-1, 1, 0, 0}, dc[4] = {0, 0, -1, 1};\n        for (int r = 0; r < m; ++r) {\n            for (int c = 0; c < n; ++c) {\n                if (grid[r][c] > 0) {\n                    long long sum = grid[r][c];\n                    grid[r][c] = 0;\n                    stack<pair<int, int>> st;\n                    st.push({r, c});\n                    while (!st.empty()) {\n                        auto [cr, cc] = st.top(); st.pop();\n                        for (int i = 0; i < 4; ++i) {\n                            int nr = cr + dr[i], nc = cc + dc[i];\n                            if (nr >= 0 && nr < m && nc >= 0 && nc < n && grid[nr][nc] > 0) {\n                                sum += grid[nr][nc]; grid[nr][nc] = 0;\n                                st.push({nr, nc});\n                            }\n                        }\n                    }\n                    if (sum % k == 0) ans++;\n                }\n            }\n        }\n        return ans;\n    }\n};",
@@ -37,7 +89,10 @@
     "title": "Two Sum",
     "slug": "two-sum",
     "difficulty": "Easy",
-    "tags": ["Array", "Hash Table"],
+    "tags": [
+      "Array",
+      "Hash Table"
+    ],
     "date": "2026-10-25",
     "url": "https://leetcode.com/problems/two-sum/",
     "folder": "2026-10-25-two-sum",
@@ -53,12 +108,30 @@
       "One-pass array scan"
     ],
     "stages_summary": [
-      {"stage": "Understand", "detail": "Exactly one valid answer, cannot use same element twice."},
-      {"stage": "Research", "detail": "Hash Map allows O(N) single pass vs O(N^2) brute force."},
-      {"stage": "Plan", "detail": "Iterate through array, check target - num in map, then add num -> index."},
-      {"stage": "Code", "detail": "Clean Python/C++ code with dictionary."},
-      {"stage": "Validate", "detail": "Passed tests with duplicates and negative numbers."},
-      {"stage": "Complexity", "detail": "Time: O(N), Space: O(N)."}
+      {
+        "stage": "Understand",
+        "detail": "Exactly one valid answer, cannot use same element twice."
+      },
+      {
+        "stage": "Research",
+        "detail": "Hash Map allows O(N) single pass vs O(N^2) brute force."
+      },
+      {
+        "stage": "Plan",
+        "detail": "Iterate through array, check target - num in map, then add num -> index."
+      },
+      {
+        "stage": "Code",
+        "detail": "Clean Python/C++ code with dictionary."
+      },
+      {
+        "stage": "Validate",
+        "detail": "Passed tests with duplicates and negative numbers."
+      },
+      {
+        "stage": "Complexity",
+        "detail": "Time: O(N), Space: O(N)."
+      }
     ],
     "code_python": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in seen:\n                return [seen[diff], i]\n            seen[num] = i\n        return []",
     "code_cpp": "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> seen;\n        for (int i = 0; i < nums.size(); ++i) {\n            int comp = target - nums[i];\n            if (seen.count(comp)) return {seen[comp], i};\n            seen[nums[i]] = i;\n        }\n        return {};\n    }\n};",

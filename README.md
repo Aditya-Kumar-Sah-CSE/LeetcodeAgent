@@ -2,16 +2,14 @@
 
 [![Daily LeetCode Solver](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml)
 [![Deploy to GitHub Pages](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml)
-[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-2-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
+[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-3-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
 
-- 🌐 **Live Website**: **[https://aditya-kumar-sah-cse.github.io/LeetcodeAgent/](https://aditya-kumar-sah-cse.github.io/LeetcodeAgent/)**
-- 📱 **Progressive Web App (PWA)**: Installable directly on Android, iOS, Windows, and macOS as a standalone native-like application with offline access.
+- 🌐 **Interactive Web Workspace**: Built with React, TypeScript, Tailwind CSS, and Monaco Editor.
 - 🤖 **Multi-Stage AI Reasoning**: Understand ➔ Research ➔ Plan ➔ Generate ➔ Validate ➔ Explain.
-- 📅 **GitHub Actions Daily Scheduler**: Runs every midnight to fetch the official LeetCode Daily Challenge, generate the optimal solution with OpenRouter AI, validate code syntax with AST, and push commits to GitHub.
-- 👤 **LeetCode Profile Integration**: Directly connected to [Aditya_Kumar_Sah-28](https://leetcode.com/u/Aditya_Kumar_Sah-28/).
+- 📅 **GitHub Actions Daily Scheduler**: Runs every midnight (00:00 UTC) to fetch the official LeetCode Daily Challenge, generate the optimal solution with OpenRouter AI, validate code syntax with AST, and push commits to GitHub.
 - 🔒 **Zero Signup / Privacy First**: Direct browser-to-model execution, localStorage & IndexedDB persistence, no external database required.
 
 ---
@@ -19,26 +17,27 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 ## 🚀 Latest Daily Challenge
 
 
-> **3619. Count Islands With Total Value Divisible by K** (Medium)  
-> 📅 **Date**: `2026-10-26`  
-> 🔗 [LeetCode Problem](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) · [Python Code](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [English Book](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md) · [Hinglish Book](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README_HINGLISH.md) · [📄 2-Page PDF](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/cheatsheet.html)
+> **3882. Minimum XOR Path in a Grid** (Medium)  
+> 📅 **Date**: `2026-10-28`  
+> 🔗 [View on LeetCode](https://leetcode.com/problems/minimum-xor-path-in-a-grid/) · [View Solution Code](solutions/2026-10-28-minimum-xor-path-in-a-grid/solution.py) · [View Editorial](solutions/2026-10-28-minimum-xor-path-in-a-grid/README.md)
 
 
 ### Progress Summary
-| Total Solved | Easy | Medium | Hard | Monthly Book |
-|:---:|:---:|:---:|:---:|:---:|
-| **2** | 🟢 1 | 🟡 1 | 🔴 0 | [📚 October 2026 Book](solutions/books/2026-10-leetcode-solutions-book.md) |
+| Total Solved | Easy | Medium | Hard |
+|:---:|:---:|:---:|:---:|
+| **3** | 🟢 1 | 🟡 2 | 🔴 0 |
 
 ---
 
-## 📂 Recent Solved Challenges (Online Book Chapters)
+## 📂 Recent Solved Challenges
 
-| Date | Problem | Difficulty | Topics | Solutions, Notes & PDFs |
+| Date | Problem | Difficulty | Topics | Solution & Notes |
 |:---|:---|:---:|:---|:---|
-| 2026-10-26 | [3619. Count Islands With Total Value Divisible by K](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `DFS`, `BFS`, `Matrix` | [Python](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [English](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md) · [Hinglish](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README_HINGLISH.md) · [📄 2-Page PDF](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/cheatsheet.html) |
-| 2026-10-25 | [1. Two Sum](https://leetcode.com/problems/two-sum/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array`, `Hash Table` | [Python](solutions/2026-10-25-two-sum/solution.py) · [English](solutions/2026-10-25-two-sum/README.md) · [Hinglish](solutions/2026-10-25-two-sum/README_HINGLISH.md) · [📄 2-Page PDF](solutions/2026-10-25-two-sum/cheatsheet.html) |
+| 2026-10-28 | [3882. Minimum XOR Path in a Grid](https://leetcode.com/problems/minimum-xor-path-in-a-grid/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Dynamic Programming`, `Bit Manipulation` | [Python](solutions/2026-10-28-minimum-xor-path-in-a-grid/solution.py) · [Notes](solutions/2026-10-28-minimum-xor-path-in-a-grid/README.md) |
+| 2026-10-26 | [3619. Count Islands With Total Value Divisible by K](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Depth-First Search`, `Breadth-First Search` | [Python](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [Notes](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md) |
+| 2026-10-25 | [1. Two Sum](https://leetcode.com/problems/two-sum/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array`, `Hash Table` | [Python](solutions/2026-10-25-two-sum/solution.py) · [Notes](solutions/2026-10-25-two-sum/README.md) |
 
-*Full index in [`solutions/manifest.json`](solutions/manifest.json) · [📚 Monthly Solutions Book](solutions/books/2026-10-leetcode-solutions-book.md).*
+*See full index in [`solutions/manifest.json`](solutions/manifest.json).*
 
 ---
 
@@ -52,10 +51,10 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
                          │
                          ▼
                AI Multi-Stage Reasoning
-         (OpenRouter Free Models: Gemini / Llama)
+         (OpenRouter Free Models: Gemini / Gemma)
                          │
                          ▼
-             Python AST Syntax Validation
+             Python AST Syntax & Test Validation
                          │
                          ▼
             Generate Solution & Editorial
@@ -92,7 +91,7 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 python scripts/daily_solver.py
 ```
-*(Optionally set `OPENROUTER_API_KEY` in environment for live AI code generation).*
+*(Requires `OPENROUTER_API_KEY` in environment for live AI code generation).*
 
 ---
 
@@ -105,7 +104,7 @@ To enable daily automated commits to your GitHub repository:
 3. Click **New repository secret**.
 4. Name: `OPENROUTER_API_KEY`
 5. Value: Your free OpenRouter API key from [openrouter.ai/keys](https://openrouter.ai/keys).
-6. Enable GitHub Actions read & write permissions in **Settings** ➔ **Actions** ➔ **General** ➔ **Workflow permissions** (select *Read and write permissions*).
+6. Enable GitHub Actions write permissions in **Settings** ➔ **Actions** ➔ **General** ➔ **Workflow permissions** (select *Read and write permissions*).
 
 The daily workflow will automatically run every day at `00:00 UTC` and commit the new solution!
 

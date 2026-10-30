@@ -1,5 +1,34 @@
 [
   {
+    "id": 3970,
+    "title": "Shortest Path With At Most K Consecutive Identical Characters",
+    "slug": "shortest-path-with-at-most-k-consecutive-identical-characters",
+    "difficulty": "Medium",
+    "tags": [
+      "String",
+      "Graph Theory",
+      "Heap (Priority Queue)",
+      "Shortest Path"
+    ],
+    "date": "2026-10-30",
+    "url": "https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/",
+    "folder": "2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-10-30T04:40:20.381641+00:00",
+    "concept": "Optimal solution using String, Graph Theory",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an integer `n` representing the number of nodes in a directed weighted graph, numbered from 0 to `n - 1`. This is represented by a 2D integer array `edges`, where `edges[i] = [u i , v i , w i ]` represents a directed edge from node `u i",
+    "summary_hinglish": "Shortest Path With At Most K Consecutive Identical Characters ka simple solution aur logic.",
+    "topics_needed": [
+      "String",
+      "Graph Theory",
+      "Heap (Priority Queue)",
+      "Shortest Path"
+    ],
+    "code_python": "from typing import List\nimport heapq\n\nclass Solution:\n    def shortestPath(self, n: int, edges: List[List[int]], labels: str, k: int) -> int:\n        # Build adjacency list\n        graph = [[] for _ in range(n)]\n        for u, v, w in edges:\n            graph[u].append((v, w))\n        \n        # dist[node][count] = minimum total weight to reach node with consecutive count = count\n        # count ranges from 1 to k\n        INF = float('inf')\n        dist = [[INF] * (k + 1) for _ in range(n)]\n        \n        # Priority queue: (total_weight, node, consecutive_count)\n        pq = []\n        \n        # Start from node 0 with consecutive count = 1 (the first node's label forms a run of length 1)\n        dist[0][1] = 0\n        heapq.heappush(pq, (0, 0, 1))\n        \n        while pq:\n            weight, node, count = heapq.heappop(pq)\n            \n            # If we reached the destination node, return the weight\n            if node == n - 1:\n                return weight\n            \n            # Skip if we've already found a better path to this state\n            if weight > dist[node][count]:\n                continue\n            \n            # Explore all neighbors\n            for neighbor, edge_weight in graph[node]:\n                # Calculate new consecutive count based on whether labels match\n                if labels[node] == labels[neighbor]:\n                    new_count = count + 1\n                else:\n                    new_count = 1\n                \n                # Only proceed if the new consecutive count doesn't exceed k\n                if new_count <= k:\n                    new_weight = weight + edge_weight\n                    if new_weight < dist[neighbor][new_count]:\n                        dist[neighbor][new_count] = new_weight\n                        heapq.heappush(pq, (new_weight, neighbor, new_count))\n        \n        # No valid path found\n        return -1\n"
+  },
+  {
     "id": 3882,
     "title": "Minimum XOR Path in a Grid",
     "slug": "minimum-xor-path-in-a-grid",

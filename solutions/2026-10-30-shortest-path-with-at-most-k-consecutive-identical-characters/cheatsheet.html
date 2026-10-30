@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3970. Shortest Path With At Most K Consecutive Identical Characters - 2-Page Cheat Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.45; font-size: 11pt; }
+    .print-bar { background: #1e293b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .print-btn { background: linear-gradient(135deg, #6366f1, #06b6d4); color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .page { width: 210mm; min-height: 297mm; max-height: 297mm; margin: 20px auto; padding: 14mm 16mm; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+    .page-break { page-break-after: always; break-after: page; }
+    .header-banner { background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #0891b2 100%); color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .card-accent { border-left: 4px solid #4f46e5; background: #f5f3ff; }
+    .trick-box { background: #fffbeb; border-left: 5px solid #d97706; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+    pre.code-block { background: #111827; color: #e5e7eb; font-family: 'Fira Code', monospace; font-size: 8.5pt; line-height: 1.4; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; margin-bottom: 10px; }
+    .footer { border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #64748b; }
+    @media print { body { background: white; } .print-bar { display: none; } .page { margin: 0; box-shadow: none; page-break-after: always; break-after: page; height: 297mm; } }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <div><strong>⚡ LeetCode AI Agent — Cheat Sheet Generator</strong> · 3970. Shortest Path With At Most K Consecutive Identical Characters</div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+  <div class="page page-break">
+    <div>
+      <div class="header-banner">
+        <div><h1 style="font-size: 16pt;">3970. Shortest Path With At Most K Consecutive Identical Characters</h1><div style="font-size: 9pt; opacity: 0.9;">LeetCode Daily Challenge · String, Graph Theory, Heap (Priority Queue), Shortest Path</div></div>
+        <span style="background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5pt;">Medium</span>
+      </div>
+      <div class="card"><strong>🎯 Problem Goal:</strong><br>You are given an integer `n` representing the number of nodes in a directed weighted graph, numbered from 0 to `n - 1`. This is represented by a 2D integer array `edges`, where `edges[i] = [u i , v i , w i ]` represents a directed edge from node `u i ` to node `v i ` with weight `w i `. You are also given a string `labels` of length `n`, where `lab...</div>
+      <div class="card card-accent"><strong>💡 Core Concept:</strong><br>Optimal graph/array pattern.</div>
+      <div class="trick-box"><strong style="color: #92400e;">⚡ Trick to Remember (Interview Intuition):</strong><br><span style="color: #78350f; font-size: 9pt;">Break down the state invariants and avoid duplicate work.</span></div>
+    </div>
+    <div class="footer"><span>LeetCode AI Agent</span><span>Page 1 of 2</span><span>2026-10-30</span></div>
+  </div>
+  <div class="page">
+    <div>
+      <h3 style="margin-bottom: 8px;">💻 Solution Code (Python)</h3>
+      <pre class="code-block">from typing import List
+import heapq
+
+class Solution:
+    def shortestPath(self, n: int, edges: List[List[int]], labels: str, k: int) -> int:
+        # Build adjacency list
+        graph = [[] for _ in range(n)]
+        for u, v, w in edges:
+            graph[u].append((v, w))
+        
+        # dist[node][count] = minimum total weight to reach node with consecutive count = count
+        # count ranges from 1 to k
+        INF = float('inf')
+        dist = [[INF] * (k + 1) for _ in range(n)]
+        
+        # Priority queue: (total_weight, node, consecutive_count)
+        pq = []
+        
+        # Start from node 0 with consecutive count = 1 (the first node's label forms a run of length 1)
+        dist[0][1] = 0
+        heapq.heappush(pq, (0, 0, 1))
+        
+        while pq:
+            weight, node, count = heapq.heappop(pq)
+            
+            # If we reached the destination node, return the weight
+            if node == n - 1:
+                return weight
+            
+            # Skip if we've already found a better path to this state
+            if weight > dist[node][count]:
+                continue
+            
+            # Explore all neighbors
+            for neighbor, edge_weight in graph[node]:
+                # Calculate new consecutive count based on whether labels match
+                if labels[node] == labels[neighbor]:
+                    new_count = count + 1
+                else:
+                    new_count = 1
+                
+                # Only proceed if the new consecutive count doesn't exceed k
+                if new_count <= k:
+                    new_weight = weight + edge_weight
+                    if new_weight < dist[neighbor][new_count]:
+                        dist[neighbor][new_count] = new_weight
+                        heapq.heappush(pq, (new_weight, neighbor, new_count))
+        
+        # No valid path found
+        return -1</pre>
+      <div class="card card-accent" style="font-size: 9pt;"><strong>🇮🇳 Hinglish Revision:</strong><br>Problem ko step-by-step simplify karo!</div>
+    </div>
+    <div class="footer"><span>Online Solution Book & Cheat Sheet</span><span>Page 2 of 2</span><span>GitHub Repository</span></div>
+  </div>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 [![Daily LeetCode Solver](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml)
 [![Deploy to GitHub Pages](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml)
-[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-3-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
+[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-4-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
@@ -17,15 +17,15 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 ## 🚀 Latest Daily Challenge
 
 
-> **3882. Minimum XOR Path in a Grid** (Medium)  
-> 📅 **Date**: `2026-10-28`  
-> 🔗 [View on LeetCode](https://leetcode.com/problems/minimum-xor-path-in-a-grid/) · [View Solution Code](solutions/2026-10-28-minimum-xor-path-in-a-grid/solution.py) · [View Editorial](solutions/2026-10-28-minimum-xor-path-in-a-grid/README.md)
+> **3970. Shortest Path With At Most K Consecutive Identical Characters** (Medium)  
+> 📅 **Date**: `2026-10-30`  
+> 🔗 [View on LeetCode](https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/) · [View Solution Code](solutions/2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters/solution.py) · [View Editorial](solutions/2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters/README.md)
 
 
 ### Progress Summary
 | Total Solved | Easy | Medium | Hard |
 |:---:|:---:|:---:|:---:|
-| **3** | 🟢 1 | 🟡 2 | 🔴 0 |
+| **4** | 🟢 1 | 🟡 3 | 🔴 0 |
 
 ---
 
@@ -33,6 +33,7 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 | Date | Problem | Difficulty | Topics | Solution & Notes |
 |:---|:---|:---:|:---|:---|
+| 2026-10-30 | [3970. Shortest Path With At Most K Consecutive Identical Characters](https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `String`, `Graph Theory`, `Heap (Priority Queue)` | [Python](solutions/2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters/solution.py) · [Notes](solutions/2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters/README.md) |
 | 2026-10-28 | [3882. Minimum XOR Path in a Grid](https://leetcode.com/problems/minimum-xor-path-in-a-grid/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Dynamic Programming`, `Bit Manipulation` | [Python](solutions/2026-10-28-minimum-xor-path-in-a-grid/solution.py) · [Notes](solutions/2026-10-28-minimum-xor-path-in-a-grid/README.md) |
 | 2026-10-26 | [3619. Count Islands With Total Value Divisible by K](https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Depth-First Search`, `Breadth-First Search` | [Python](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/solution.py) · [Notes](solutions/2026-10-26-count-islands-with-total-value-divisible-by-k/README.md) |
 | 2026-10-25 | [1. Two Sum](https://leetcode.com/problems/two-sum/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array`, `Hash Table` | [Python](solutions/2026-10-25-two-sum/solution.py) · [Notes](solutions/2026-10-25-two-sum/README.md) |

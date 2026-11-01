@@ -1,5 +1,30 @@
 [
   {
+    "id": 453,
+    "title": "Minimum Moves to Equal Array Elements",
+    "slug": "minimum-moves-to-equal-array-elements",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Math"
+    ],
+    "date": "2026-11-01",
+    "url": "https://leetcode.com/problems/minimum-moves-to-equal-array-elements/",
+    "folder": "2026-11-01-minimum-moves-to-equal-array-elements",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-01T04:43:48.371651+00:00",
+    "concept": "Optimal solution using Array, Math",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "Given an integer array `nums` of size `n`, return the minimum number of moves required to make all array elements equal . In one move, you can increment `n - 1` elements of the array by `1`. Example 1: ``` Input: nums = [1,2,3] Output: 3 Explanation:",
+    "summary_hinglish": "Minimum Moves to Equal Array Elements ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Math"
+    ],
+    "code_python": "class Solution:\n    def minMoves(self, nums: list[int]) -> int:\n        total = sum(nums)\n        min_val = min(nums)\n        return total - min_val * len(nums)\n"
+  },
+  {
     "id": 3970,
     "title": "Shortest Path With At Most K Consecutive Identical Characters",
     "slug": "shortest-path-with-at-most-k-consecutive-identical-characters",

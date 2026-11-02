@@ -1,5 +1,32 @@
 [
   {
+    "id": 462,
+    "title": "Minimum Moves to Equal Array Elements II",
+    "slug": "minimum-moves-to-equal-array-elements-ii",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Math",
+      "Sorting"
+    ],
+    "date": "2026-11-02",
+    "url": "https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/",
+    "folder": "2026-11-02-minimum-moves-to-equal-array-elements-ii",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-02T04:45:48.755712+00:00",
+    "concept": "Optimal solution using Array, Math",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "Given an integer array `nums` of size `n`, return the minimum number of moves required to make all array elements equal . In one move, you can increment or decrement an element of the array by `1`. Test cases are designed so that the answer will fit ",
+    "summary_hinglish": "Minimum Moves to Equal Array Elements II ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Math",
+      "Sorting"
+    ],
+    "code_python": "class Solution:\n    def minMoves2(self, nums: list[int]) -> int:\n        # Sort the array to easily access the median\n        nums.sort()\n        # The median minimizes the sum of absolute deviations\n        median = nums[len(nums) // 2]\n        # Sum the absolute differences to the median\n        moves = 0\n        for x in nums:\n            moves += abs(x - median)\n        return moves\n"
+  },
+  {
     "id": 453,
     "title": "Minimum Moves to Equal Array Elements",
     "slug": "minimum-moves-to-equal-array-elements",

@@ -2,7 +2,7 @@
 
 [![Daily LeetCode Solver](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml)
 [![Deploy to GitHub Pages](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml)
-[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-5-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
+[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-6-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
@@ -17,15 +17,15 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 ## 🚀 Latest Daily Challenge
 
 
-> **453. Minimum Moves to Equal Array Elements** (Medium)  
-> 📅 **Date**: `2026-11-01`  
-> 🔗 [View on LeetCode](https://leetcode.com/problems/minimum-moves-to-equal-array-elements/) · [View Solution Code](solutions/2026-11-01-minimum-moves-to-equal-array-elements/solution.py) · [View Editorial](solutions/2026-11-01-minimum-moves-to-equal-array-elements/README.md)
+> **462. Minimum Moves to Equal Array Elements II** (Medium)  
+> 📅 **Date**: `2026-11-02`  
+> 🔗 [View on LeetCode](https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/) · [View Solution Code](solutions/2026-11-02-minimum-moves-to-equal-array-elements-ii/solution.py) · [View Editorial](solutions/2026-11-02-minimum-moves-to-equal-array-elements-ii/README.md)
 
 
 ### Progress Summary
 | Total Solved | Easy | Medium | Hard |
 |:---:|:---:|:---:|:---:|
-| **5** | 🟢 1 | 🟡 4 | 🔴 0 |
+| **6** | 🟢 1 | 🟡 5 | 🔴 0 |
 
 ---
 
@@ -33,6 +33,7 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 | Date | Problem | Difficulty | Topics | Solution & Notes |
 |:---|:---|:---:|:---|:---|
+| 2026-11-02 | [462. Minimum Moves to Equal Array Elements II](https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Math`, `Sorting` | [Python](solutions/2026-11-02-minimum-moves-to-equal-array-elements-ii/solution.py) · [Notes](solutions/2026-11-02-minimum-moves-to-equal-array-elements-ii/README.md) |
 | 2026-11-01 | [453. Minimum Moves to Equal Array Elements](https://leetcode.com/problems/minimum-moves-to-equal-array-elements/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Math` | [Python](solutions/2026-11-01-minimum-moves-to-equal-array-elements/solution.py) · [Notes](solutions/2026-11-01-minimum-moves-to-equal-array-elements/README.md) |
 | 2026-10-30 | [3970. Shortest Path With At Most K Consecutive Identical Characters](https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `String`, `Graph Theory`, `Heap (Priority Queue)` | [Python](solutions/2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters/solution.py) · [Notes](solutions/2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters/README.md) |
 | 2026-10-28 | [3882. Minimum XOR Path in a Grid](https://leetcode.com/problems/minimum-xor-path-in-a-grid/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Dynamic Programming`, `Bit Manipulation` | [Python](solutions/2026-10-28-minimum-xor-path-in-a-grid/solution.py) · [Notes](solutions/2026-10-28-minimum-xor-path-in-a-grid/README.md) |

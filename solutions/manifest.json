@@ -1,5 +1,30 @@
 [
   {
+    "id": 3736,
+    "title": "Minimum Moves to Equal Array Elements III",
+    "slug": "minimum-moves-to-equal-array-elements-iii",
+    "difficulty": "Easy",
+    "tags": [
+      "Array",
+      "Math"
+    ],
+    "date": "2026-11-03",
+    "url": "https://leetcode.com/problems/minimum-moves-to-equal-array-elements-iii/",
+    "folder": "2026-11-03-minimum-moves-to-equal-array-elements-iii",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-03T05:36:36.688574+00:00",
+    "concept": "Optimal solution using Array, Math",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an integer array `nums`. In one move, you may increase the value of any single element `nums[i]` by 1. Return the minimum total number of moves required so that all elements in `nums` become equal . Example 1: Input: nums = [2,1,3] Outp",
+    "summary_hinglish": "Minimum Moves to Equal Array Elements III ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Math"
+    ],
+    "code_python": "from typing import List\n\nclass Solution:\n    def minMoves(self, nums: List[int]) -> int:\n        \"\"\"\n        Returns the minimum number of moves to make all elements equal.\n        Since we can only increment elements, the optimal target is the maximum element.\n        The total moves is the sum of differences between max and each element.\n        \"\"\"\n        max_val = max(nums)\n        return sum(max_val - x for x in nums)\n"
+  },
+  {
     "id": 462,
     "title": "Minimum Moves to Equal Array Elements II",
     "slug": "minimum-moves-to-equal-array-elements-ii",

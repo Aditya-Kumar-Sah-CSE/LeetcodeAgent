@@ -1,5 +1,34 @@
 [
   {
+    "id": 1385,
+    "title": "Find the Distance Value Between Two Arrays",
+    "slug": "find-the-distance-value-between-two-arrays",
+    "difficulty": "Easy",
+    "tags": [
+      "Array",
+      "Two Pointers",
+      "Binary Search",
+      "Sorting"
+    ],
+    "date": "2026-11-05",
+    "url": "https://leetcode.com/problems/find-the-distance-value-between-two-arrays/",
+    "folder": "2026-11-05-find-the-distance-value-between-two-arrays",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-05T05:27:06.051911+00:00",
+    "concept": "Optimal solution using Array, Two Pointers",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "Given two integer arrays `arr1` and `arr2`, and the integer `d`, return the distance value between the two arrays . The distance value is defined as the number of elements `arr1[i]` such that there is not any element `arr2[j]` where `|arr1[i]-arr2[j]",
+    "summary_hinglish": "Find the Distance Value Between Two Arrays ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Two Pointers",
+      "Binary Search",
+      "Sorting"
+    ],
+    "code_python": "class Solution:\n    def findTheDistanceValue(self, arr1: list[int], arr2: list[int], d: int) -> int:\n        arr2.sort()\n        count = 0\n        import bisect\n        \n        for x in arr1:\n            # Find the first index in arr2 where value >= x\n            idx = bisect.bisect_left(arr2, x)\n            ok = True\n            \n            # Check the element at idx (first >= x)\n            if idx < len(arr2) and arr2[idx] - x <= d:\n                ok = False\n            # Check the element just before idx (largest < x)\n            if idx > 0 and x - arr2[idx - 1] <= d:\n                ok = False\n            \n            if ok:\n                count += 1\n        \n        return count\n"
+  },
+  {
     "id": 3736,
     "title": "Minimum Moves to Equal Array Elements III",
     "slug": "minimum-moves-to-equal-array-elements-iii",

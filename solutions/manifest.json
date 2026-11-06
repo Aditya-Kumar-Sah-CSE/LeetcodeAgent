@@ -1,5 +1,34 @@
 [
   {
+    "id": 2747,
+    "title": "Count Zero Request Servers",
+    "slug": "count-zero-request-servers",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Hash Table",
+      "Sliding Window",
+      "Sorting"
+    ],
+    "date": "2026-11-06",
+    "url": "https://leetcode.com/problems/count-zero-request-servers/",
+    "folder": "2026-11-06-count-zero-request-servers",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-06T05:26:48.001388+00:00",
+    "concept": "Optimal solution using Array, Hash Table",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an integer `n` denoting the total number of servers and a 2D 0-indexed integer array `logs`, where `logs[i] = [server_id, time]` denotes that the server with id `server_id` received a request at time `time`. You are also given an intege",
+    "summary_hinglish": "Count Zero Request Servers ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Hash Table",
+      "Sliding Window",
+      "Sorting"
+    ],
+    "code_python": "from bisect import bisect_left\nfrom typing import List\n\nclass Solution:\n    def countServers(self, n: int, logs: List[List[int]], x: int, queries: List[int]) -> List[int]:\n        # max_time[i] = latest request time for server i (1\u2011based)\n        max_time = [0] * (n + 1)          # 0 means \u201cno request\u201d\n\n        for server, t in logs:\n            if t > max_time[server]:\n                max_time[server] = t\n\n        # collect the latest times of all servers\n        times = [max_time[i] for i in range(1, n + 1)]\n        times.sort()                       # sorted list for binary search\n\n        res = []\n        for q in queries:\n            thresh = q - x                  # we need servers with max_time < thresh\n            cnt = bisect_left(times, thresh)   # number of elements < thresh\n            res.append(cnt)\n\n        return res\n"
+  },
+  {
     "id": 1385,
     "title": "Find the Distance Value Between Two Arrays",
     "slug": "find-the-distance-value-between-two-arrays",

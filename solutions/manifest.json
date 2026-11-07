@@ -1,5 +1,30 @@
 [
   {
+    "id": 1882,
+    "title": "Process Tasks Using Servers",
+    "slug": "process-tasks-using-servers",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Heap (Priority Queue)"
+    ],
+    "date": "2026-11-07",
+    "url": "https://leetcode.com/problems/process-tasks-using-servers/",
+    "folder": "2026-11-07-process-tasks-using-servers",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-07T04:55:10.141907+00:00",
+    "concept": "Optimal solution using Array, Heap (Priority Queue)",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given two 0-indexed integer arrays `servers` and `tasks` of lengths `n`\u200b\u200b\u200b\u200b\u200b\u200b and `m`\u200b\u200b\u200b\u200b\u200b\u200b respectively. `servers[i]` is the weight of the `i \u200b\u200b\u200b\u200b\u200b\u200bth `\u200b\u200b\u200b\u200b server, and `tasks[j]` is the time needed to process the `j \u200b\u200b\u200b\u200b\u200b\u200bth `\u200b\u200b\u200b\u200b task in s",
+    "summary_hinglish": "Process Tasks Using Servers ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Heap (Priority Queue)"
+    ],
+    "code_python": "import heapq\nfrom typing import List\n\nclass Solution:\n    def assignTasks(self, servers: List[int], tasks: List[int]) -> List[int]:\n        # min-heap for available servers: (weight, index)\n        free = []\n        for i, w in enumerate(servers):\n            heapq.heappush(free, (w, i))\n        \n        # min-heap for busy servers: (available_time, weight, index)\n        busy = []\n        \n        ans = [0] * len(tasks)\n        current_time = 0\n        \n        for j, t in enumerate(tasks):\n            # task j becomes available at second j\n            current_time = max(current_time, j)\n            \n            # release servers that have finished by current_time\n            while busy and busy[0][0] <= current_time:\n                avail_time, w, idx = heapq.heappop(busy)\n                heapq.heappush(free, (w, idx))\n            \n            # if no server is free, jump to the earliest time a server becomes free\n            if not free:\n                # wait for the first server to free up\n                avail_time, w, idx = heapq.heappop(busy)\n                current_time = avail_time\n                # push this server and any others that become free at the same time\n                heapq.heappush(free, (w, idx))\n                while busy and busy[0][0] == current_time:\n                    avail_time, w, idx = heapq.heappop(busy)\n                    heapq.heappush(free, (w, idx))\n            \n            # assign the current task to the best free server\n            w, idx = heapq.heappop(free)\n            ans[j] = idx\n            # schedule when this server will be free again\n            heapq.heappush(busy, (current_time + t, w, idx))\n        \n        return ans\n"
+  },
+  {
     "id": 2747,
     "title": "Count Zero Request Servers",
     "slug": "count-zero-request-servers",

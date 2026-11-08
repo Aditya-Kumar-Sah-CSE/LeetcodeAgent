@@ -13,11 +13,15 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
-# Node
+# Node & Next.js
 node_modules/
 **/node_modules/
 dist/
 **/dist/
+.next/
+**/.next/
+out/
+**/out/
 
 # IDE
 .vscode/

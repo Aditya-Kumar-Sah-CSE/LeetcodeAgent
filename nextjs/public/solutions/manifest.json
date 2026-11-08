@@ -1,0 +1,67 @@
+[
+  {
+    "id": 3619,
+    "title": "Count Islands With Total Value Divisible by K",
+    "slug": "count-islands-with-total-value-divisible-by-k",
+    "difficulty": "Medium",
+    "tags": ["Array", "Depth-First Search", "Breadth-First Search", "Matrix"],
+    "date": "2026-10-26",
+    "url": "https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/",
+    "folder": "2026-10-26-count-islands-with-total-value-divisible-by-k",
+    "model_used": "OpenRouter / DeepMind Reasoning Engine",
+    "concept": "Implicit Graph Connected Components with In-Place Visited Invalidation (Sink to 0) and Accumulator Modulo Test.",
+    "trick_english": "Sink & Sum on Sight: As soon as grid[r][c] > 0 is found, run iterative DFS, sink visited cells to 0, sum the island values, and check sum % k == 0.",
+    "trick_hinglish": "Dekhte Hi Sink Karo Aur Jodte Chalo: Grid me loop chalao, positive cell milte hi DFS se cluster ke saare cells jodo aur unhe 0 kar do. Last me sum % k == 0 check karo!",
+    "summary_english": "Given an m x n matrix and positive integer k, find all 4-directionally connected clusters of positive cells whose total sum is divisible by k.",
+    "summary_hinglish": "Matrix me positive cells ka connected island dhoondhna hai aur unka sum k se divide hota hai ya nahi (sum % k == 0) wo count karke return karna hai.",
+    "topics_needed": [
+      "Matrix as Implicit Graph (4 cardinal directions)",
+      "Depth-First Search (DFS) / Breadth-First Search (BFS)",
+      "In-place Visited Invalidation (mutating cells to 0)",
+      "Modulo Arithmetic & 64-bit sum overflow protection"
+    ],
+    "stages_summary": [
+      {"stage": "Understand", "detail": "Matrix dimensions up to 1000x1000, sum can exceed 32-bit limits."},
+      {"stage": "Research", "detail": "Connected components traversal using DFS/BFS; sink cells to avoid secondary arrays."},
+      {"stage": "Plan", "detail": "Double loop over rows & cols. For cell > 0, run iterative stack DFS with accumulator."},
+      {"stage": "Code", "detail": "Clean iterative DFS with cardinal offsets: [(-1,0), (1,0), (0,-1), (0,1)]."},
+      {"stage": "Validate", "detail": "Verified on sample tests: g1 -> 2, g2 -> 0."},
+      {"stage": "Complexity", "detail": "Time: O(M * N), Space: O(M * N) auxiliary stack."}
+    ],
+    "code_python": "class Solution:\n    def countIslands(self, grid: List[List[int]], k: int) -> int:\n        if not grid or not grid[0]: return 0\n        m, n, ans = len(grid), len(grid[0]), 0\n        for r in range(m):\n            for c in range(n):\n                if grid[r][c] > 0:\n                    s, stack = grid[r][c], [(r, c)]\n                    grid[r][c] = 0\n                    while stack:\n                        cr, cc = stack.pop()\n                        for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):\n                            nr, nc = cr + dr, cc + dc\n                            if 0 <= nr < m and 0 <= nc < n and grid[nr][nc] > 0:\n                                s += grid[nr][nc]\n                                grid[nr][nc] = 0\n                                stack.append((nr, nc))\n                    if s % k == 0:\n                        ans += 1\n        return ans",
+    "code_cpp": "class Solution {\npublic:\n    int countIslands(vector<vector<int>>& grid, int k) {\n        int m = grid.size(), n = grid[0].size(), ans = 0;\n        int dr[4] = {-1, 1, 0, 0}, dc[4] = {0, 0, -1, 1};\n        for (int r = 0; r < m; ++r) {\n            for (int c = 0; c < n; ++c) {\n                if (grid[r][c] > 0) {\n                    long long sum = grid[r][c];\n                    grid[r][c] = 0;\n                    stack<pair<int, int>> st;\n                    st.push({r, c});\n                    while (!st.empty()) {\n                        auto [cr, cc] = st.top(); st.pop();\n                        for (int i = 0; i < 4; ++i) {\n                            int nr = cr + dr[i], nc = cc + dc[i];\n                            if (nr >= 0 && nr < m && nc >= 0 && nc < n && grid[nr][nc] > 0) {\n                                sum += grid[nr][nc]; grid[nr][nc] = 0;\n                                st.push({nr, nc});\n                            }\n                        }\n                    }\n                    if (sum % k == 0) ans++;\n                }\n            }\n        }\n        return ans;\n    }\n};",
+    "solved_at": "2026-10-26T06:00:00Z"
+  },
+  {
+    "id": 1,
+    "title": "Two Sum",
+    "slug": "two-sum",
+    "difficulty": "Easy",
+    "tags": ["Array", "Hash Table"],
+    "date": "2026-10-25",
+    "url": "https://leetcode.com/problems/two-sum/",
+    "folder": "2026-10-25-two-sum",
+    "model_used": "OpenRouter / Algorithmic Engine",
+    "concept": "Single-pass Hash Map lookup for complement (target - current_number) in O(1) time.",
+    "trick_english": "Look back, not forward: check if target - num exists in the map before recording the current number.",
+    "trick_hinglish": "Aage dhoondhne ke bajaye peeche dekho! target - num agar pehle dictionary me hai toh dono index return karo.",
+    "summary_english": "Given an array of integers and target, return indices of two numbers that add up to target.",
+    "summary_hinglish": "Array me do aise numbers ke index nikaalne hain jinka sum target ke barabar ho.",
+    "topics_needed": [
+      "Hash Table O(1) average lookup",
+      "Complement formula: target - current",
+      "One-pass array scan"
+    ],
+    "stages_summary": [
+      {"stage": "Understand", "detail": "Exactly one valid answer, cannot use same element twice."},
+      {"stage": "Research", "detail": "Hash Map allows O(N) single pass vs O(N^2) brute force."},
+      {"stage": "Plan", "detail": "Iterate through array, check target - num in map, then add num -> index."},
+      {"stage": "Code", "detail": "Clean Python/C++ code with dictionary."},
+      {"stage": "Validate", "detail": "Passed tests with duplicates and negative numbers."},
+      {"stage": "Complexity", "detail": "Time: O(N), Space: O(N)."}
+    ],
+    "code_python": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in seen:\n                return [seen[diff], i]\n            seen[num] = i\n        return []",
+    "code_cpp": "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> seen;\n        for (int i = 0; i < nums.size(); ++i) {\n            int comp = target - nums[i];\n            if (seen.count(comp)) return {seen[comp], i};\n            seen[nums[i]] = i;\n        }\n        return {};\n    }\n};",
+    "solved_at": "2026-10-25T06:00:00Z"
+  }
+]

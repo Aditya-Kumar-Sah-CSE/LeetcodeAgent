@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1. Two Sum - 2-Page Cheat Sheet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --accent: #10b981;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: #f1f5f9;
+      color: var(--text-main);
+      line-height: 1.45;
+      font-size: 11pt;
+    }
+    .print-bar {
+      background: #1e293b; color: white; padding: 12px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .print-btn {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      color: white; border: none; padding: 8px 18px; border-radius: 8px;
+      font-weight: 600; cursor: pointer;
+    }
+    .page {
+      width: 210mm; min-height: 297mm; max-height: 297mm;
+      margin: 20px auto; padding: 14mm 16mm; background: white;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column; justify-content: space-between;
+      overflow: hidden;
+    }
+    .page-break { page-break-after: always; break-after: page; }
+    .header-banner {
+      background: linear-gradient(135deg, #065f46 0%, #059669 50%, #0d9488 100%);
+      color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .badge-easy { background: #d1fae5; color: #065f46; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 8.5pt; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .card-accent { border-left: 4px solid #10b981; background: #f0fdf4; }
+    .trick-box { background: #fffbeb; border-left: 5px solid #d97706; padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    pre.code-block {
+      background: #111827; color: #e5e7eb; font-family: 'Fira Code', monospace;
+      font-size: 8.5pt; line-height: 1.4; padding: 10px 12px; border-radius: 8px;
+      white-space: pre-wrap; margin-bottom: 10px;
+    }
+    .footer { border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: var(--text-muted); }
+    @media print {
+      body { background: white; }
+      .print-bar { display: none; }
+      .page { margin: 0; box-shadow: none; page-break-after: always; break-after: page; height: 297mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <div><strong>⚡ LeetCode AI Agent — Cheat Sheet Generator</strong> · Two Sum</div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+
+  <div class="page page-break">
+    <div>
+      <div class="header-banner">
+        <div>
+          <h1 style="font-size: 16pt;">1. Two Sum</h1>
+          <div style="font-size: 9pt; opacity: 0.9;">Hash Table & Complement Search · Array Foundation</div>
+        </div>
+        <span class="badge-easy">Easy</span>
+      </div>
+
+      <div class="card" style="font-size: 9.5pt;">
+        <strong>🎯 Problem Goal:</strong> Given an integer array <code>nums</code> and integer <code>target</code>, return indices of two numbers such that they add up to <code>target</code>. Exactly one solution exists.
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <strong>🧠 Topics Need to Know:</strong>
+          <ul style="padding-left: 16px; font-size: 8.5pt; margin-top: 4px;">
+            <li>Hash Table O(1) average lookup</li>
+            <li>Complement: <code>target - current_num</code></li>
+            <li>One-Pass Invariant (prevent self-pairing)</li>
+          </ul>
+        </div>
+        <div class="card card-accent">
+          <strong>💡 Core Concept:</strong>
+          <p style="font-size: 8.5pt; margin-top: 4px;">
+            Convert pair search to key search: instead of $O(N^2)$ brute force, check if complement was already seen in $O(1)$ time using a Hash Map.
+          </p>
+        </div>
+      </div>
+
+      <div class="trick-box">
+        <strong style="color: #92400e;">⚡ Trick to Remember (Interview Intuition):</strong>
+        <p style="font-size: 9pt; color: #78350f; margin-top: 3px;">
+          <strong>"Look Back for the Complement":</strong> Don't search forward! As you walk, ask: <em>"Did I already see my missing puzzle piece <code>target - num</code>?"</em> If yes, boom! You found the pair. If not, record your own index and continue.
+        </p>
+      </div>
+
+      <div class="two-col">
+        <div class="card" style="font-size: 8.5pt;">
+          <strong>🔍 Example:</strong><br>
+          <code>nums = [2, 7, 11, 15], target = 9</code><br>
+          • i=0, num=2: need 7. Not in map. seen[2]=0.<br>
+          • i=1, num=7: need 2. In map at index 0!<br>
+          <strong>Return [0, 1]</strong>
+        </div>
+        <div class="card" style="font-size: 8.5pt;">
+          <strong>⏱️ Complexity:</strong><br>
+          • <strong>Time: O(N)</strong> — Single linear pass.<br>
+          • <strong>Space: O(N)</strong> — Stores up to N elements.
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <span>LeetCode AI Agent · Two Sum</span>
+      <span>Page 1 of 2</span>
+      <span>Aditya Kumar Sah</span>
+    </div>
+  </div>
+
+  <div class="page">
+    <div>
+      <h3 style="margin-bottom: 8px;">💻 Optimal Multi-Language Solutions</h3>
+      <pre class="code-block"># Python 3
+class Solution:
+    def twoSum(self, nums: List[int], target: int) -> List[int]:
+        seen = {}
+        for i, num in enumerate(nums):
+            complement = target - num
+            if complement in seen:
+                return [seen[complement], i]
+            seen[num] = i
+        return []</pre>
+
+      <pre class="code-block">// C++
+vector&lt;int&gt; twoSum(vector&lt;int&gt;&amp; nums, int target) {
+    unordered_map&lt;int, int&gt; seen;
+    for (int i = 0; i &lt; nums.size(); ++i) {
+        int comp = target - nums[i];
+        if (seen.count(comp)) return {seen[comp], i};
+        seen[nums[i]] = i;
+    }
+    return {};
+}</pre>
+
+      <div class="card card-accent" style="font-size: 9pt;">
+        <strong>🇮🇳 Hinglish Revision:</strong> Do numbers ka sum target banana hai. Array me aage badhte huye har number ka difference nikal lo (target - num). Agar difference pehle dictionary me hai toh direct indices return karo, nahi toh number ko save kar lo!
+      </div>
+    </div>
+    <div class="footer">
+      <span>Online Solution Book & Cheat Sheet</span>
+      <span>Page 2 of 2</span>
+      <span>GitHub: Aditya-Kumar-Sah-CSE/LeetcodeAgent</span>
+    </div>
+  </div>
+</body>
+</html>

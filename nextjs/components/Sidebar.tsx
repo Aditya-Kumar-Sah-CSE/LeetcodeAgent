@@ -1,0 +1,173 @@
+"use client";
+
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  LayoutDashboard,
+  Calendar,
+  BrainCircuit,
+  FolderCode,
+  Activity,
+  Settings,
+  Menu,
+  X,
+  Zap,
+  Terminal,
+} from "lucide-react";
+import { InstallPwaButton } from "./InstallPwaPrompt";
+import LocalDevModal from "./LocalDevModal";
+
+const NAV_ITEMS = [
+  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/daily", icon: Calendar, label: "Daily Challenge" },
+  { to: "/workspace", icon: BrainCircuit, label: "AI Workspace" },
+  { to: "/solutions", icon: FolderCode, label: "My Solutions" },
+  { to: "/activity", icon: Activity, label: "Activity" },
+  { to: "/settings", icon: Settings, label: "Settings" },
+];
+
+interface SidebarProps {
+  collapsed?: boolean;
+  setCollapsed?: (val: boolean) => void;
+}
+
+export default function Sidebar({ collapsed: propCollapsed, setCollapsed: propSetCollapsed }: SidebarProps) {
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const [showLocalDev, setShowLocalDev] = useState(false);
+  const pathname = usePathname();
+
+  const collapsed = propCollapsed !== undefined ? propCollapsed : internalCollapsed;
+  const setCollapsed = propSetCollapsed || setInternalCollapsed;
+
+  return (
+    <aside
+      className={`hidden md:flex fixed top-0 left-0 h-full z-50 flex-col transition-all duration-300 ease-in-out ${
+        collapsed ? "w-[68px]" : "w-[240px]"
+      }`}
+      style={{
+        background: "var(--color-bg-secondary)",
+        borderRight: "1px solid var(--color-border-subtle)",
+      }}
+    >
+      {/* Logo */}
+      <div
+        className="flex items-center gap-3 px-4 h-16 shrink-0"
+        style={{ borderBottom: "1px solid var(--color-border-subtle)" }}
+      >
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{
+            background: "linear-gradient(135deg, var(--color-accent), #a78bfa)",
+          }}
+        >
+          <Zap size={18} color="#fff" />
+        </div>
+        {!collapsed && (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="font-bold text-sm tracking-tight whitespace-nowrap"
+            style={{ color: "var(--color-text-primary)" }}
+          >
+            LeetCode Agent
+          </motion.span>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="ml-auto p-1.5 rounded-lg transition-colors cursor-pointer"
+          style={{ color: "var(--color-text-muted)" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "var(--color-bg-hover)")
+          }
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <Menu size={18} /> : <X size={18} />}
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 flex flex-col gap-1 py-3 px-2 overflow-y-auto">
+        {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
+          const isActive =
+            to === "/" ? pathname === "/" : pathname.startsWith(to);
+          return (
+            <Link
+              key={to}
+              href={to}
+              className="relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 no-underline group"
+              style={{
+                background: isActive
+                  ? "var(--color-accent-glow)"
+                  : "transparent",
+                color: isActive
+                  ? "var(--color-accent)"
+                  : "var(--color-text-secondary)",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive)
+                  e.currentTarget.style.background = "var(--color-bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive)
+                  e.currentTarget.style.background = "transparent";
+              }}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-indicator"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
+                  style={{ background: "var(--color-accent)" }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+              <Icon size={20} className="shrink-0" />
+              {!collapsed && (
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {label}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div
+        className="px-3 py-3 shrink-0 flex flex-col gap-2"
+        style={{ borderTop: "1px solid var(--color-border-subtle)" }}
+      >
+        <button
+          onClick={() => setShowLocalDev(true)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors border cursor-pointer hover:border-blue-500/40 hover:bg-blue-500/10 ${
+            collapsed ? "justify-center p-2" : "w-full"
+          }`}
+          style={{
+            borderColor: "var(--color-border-subtle)",
+            background: "var(--color-bg-primary)",
+            color: "var(--color-text-secondary)",
+          }}
+          title="Run Local Backend & Frontend"
+        >
+          <Terminal size={15} className="text-blue-400 shrink-0" />
+          {!collapsed && <span>Local Dev Hub</span>}
+        </button>
+
+        <InstallPwaButton
+          variant={collapsed ? "compact" : "default"}
+          className={collapsed ? "justify-center p-2" : "w-full justify-center"}
+        />
+        {!collapsed && (
+          <div className="text-xs text-center" style={{ color: "var(--color-text-muted)" }}>
+            v1.0.0 · Next.js Fullstack
+          </div>
+        )}
+      </div>
+
+      <LocalDevModal isOpen={showLocalDev} onClose={() => setShowLocalDev(false)} />
+    </aside>
+  );
+}
+

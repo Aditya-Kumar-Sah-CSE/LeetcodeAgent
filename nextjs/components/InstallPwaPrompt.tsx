@@ -172,7 +172,7 @@ export function InstallPwaBanner() {
           borderColor: "rgba(99, 102, 241, 0.35)",
         }}
       >
-        <div className="flex items-start sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md"
@@ -181,9 +181,9 @@ export function InstallPwaBanner() {
               <Download size={20} color="#fff" />
             </div>
             <div>
-              <h4 className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
+              <h4 className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2 flex-wrap">
                 Install LeetCode Agent as an App
-                <span className="text-[10px] px-1.5 py-0.2 rounded font-normal bg-accent/20 text-accent">
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-accent/20 text-accent">
                   PWA Ready
                 </span>
               </h4>
@@ -193,17 +193,17 @@ export function InstallPwaBanner() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             <button
               onClick={handleInstall}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white shadow-md active:scale-95 transition-all cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white shadow-md active:scale-95 transition-all cursor-pointer touch-target flex items-center justify-center"
               style={{ background: "linear-gradient(135deg, var(--color-accent), #8b5cf6)" }}
             >
               Install Now
             </button>
             <button
               onClick={handleDismiss}
-              className="p-1.5 text-muted hover:text-white rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-muted hover:text-white rounded-lg transition-colors cursor-pointer touch-target flex items-center justify-center"
               aria-label="Dismiss install banner"
             >
               <X size={16} />

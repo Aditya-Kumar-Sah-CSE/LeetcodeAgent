@@ -14,6 +14,7 @@ import {
   Trophy,
   RefreshCw,
   Clock,
+  CheckCircle2,
 } from "lucide-react";
 import DifficultyBadge, {
   StatusDot,
@@ -35,6 +36,8 @@ import {
   getAllSolutionsLocal,
   getActivities,
   isProblemSolved,
+  getSolvedSlugs,
+  onSolvedSlugsChange,
   getLastSyncTime,
   formatLastSyncTime,
   setActiveWorkspaceProblem,
@@ -56,6 +59,7 @@ export default function DashboardPage() {
   const [solutions, setSolutions] = useState<StoredSolution[]>([]);
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [profile, setProfile] = useState<LeetCodeProfile | null>(null);
+  const [solvedSlugsSet, setSolvedSlugsSet] = useState<Set<string>>(() => getSolvedSlugs());
   const [syncing, setSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTimeState] = useState<number | null>(() => getLastSyncTime());
   const [syncToast, setSyncToast] = useState<string | null>(null);
@@ -83,13 +87,19 @@ export default function DashboardPage() {
     // Fetch LeetCode profile
     fetchProfile(username).then(setProfile).catch(() => {});
 
+    // Subscribe to real-time solved status updates
+    const unsub = onSolvedSlugsChange((slugs) => setSolvedSlugsSet(new Set(slugs)));
+
     // Automatic 24-Hour Sync
     syncLeetCodeSolvedProblems(false).then((res) => {
       if (res.synced) {
         setLastSyncTimeState(res.lastSyncedAt);
+        setSolvedSlugsSet(new Set(getSolvedSlugs()));
         fetchProfile(username).then(setProfile).catch(() => {});
       }
     });
+
+    return () => unsub();
   }, [username]);
 
   const handleManualSync = async () => {
@@ -99,8 +109,11 @@ export default function DashboardPage() {
       setLastSyncTimeState(res.lastSyncedAt);
       const prof = await fetchProfile(username);
       setProfile(prof);
-      setSyncToast(`✓ Synced with @${username}! ${res.count} solved problems updated.`);
-      setTimeout(() => setSyncToast(null), 3500);
+      setSolvedSlugsSet(new Set(getSolvedSlugs()));
+      setSyncToast(
+        `✓ Synced with @${username}! ${prof.solved_total || res.count} solved on LeetCode (${res.count} active in workspace).`
+      );
+      setTimeout(() => setSyncToast(null), 4000);
     } catch (err: any) {
       setSyncToast(`Sync failed: ${err.message}`);
       setTimeout(() => setSyncToast(null), 3500);
@@ -167,19 +180,24 @@ export default function DashboardPage() {
         style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border-subtle)" }}
       >
         <StatusDot
-          status={backendOk === true ? "connected" : backendOk === false ? "disconnected" : "loading"}
-          label={backendOk === true ? "FastAPI Online" : "Local Client Mode"}
+          status="connected"
+          label="Next.js Fullstack Engine"
         />
         <span className="hidden sm:inline" style={{ color: "var(--color-border)" }}>|</span>
         <StatusDot
-          status={apiKey ? "connected" : "disconnected"}
-          label={apiKey ? "OpenRouter Set" : "Free Model Defaults"}
+          status={apiKey ? "connected" : "connected"}
+          label={apiKey ? "AI API Key Configured" : "Free Model Defaults"}
         />
         <span className="hidden sm:inline" style={{ color: "var(--color-border)" }}>|</span>
         <StatusDot
           status={username ? "connected" : "disconnected"}
           label={`LeetCode: @${username}`}
         />
+        <span className="hidden sm:inline" style={{ color: "var(--color-border)" }}>|</span>
+        <span className="text-[11px] text-muted flex items-center gap-1 font-medium">
+          <CheckCircle2 size={12} className="text-emerald-400" />
+          <span>{solvedSlugsSet.size} Problems Solved</span>
+        </span>
       </motion.div>
 
       {/* Main Grid: Responsive 1 col on mobile, 3 cols on desktop */}
@@ -214,7 +232,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <ProblemStatusBadge isSolved={isProblemSolved(daily.slug)} size="sm" />
+                  <ProblemStatusBadge isSolved={solvedSlugsSet.has(daily.slug)} size="sm" />
                   <DifficultyBadge difficulty={daily.difficulty} />
                 </div>
               </div>
@@ -292,54 +310,59 @@ export default function DashboardPage() {
             className="card card-hover cursor-pointer"
             onClick={() => router.push("/settings")}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={username}
-                  className="w-11 h-11 rounded-full border border-accent/40 shrink-0"
+                  className="w-11 h-11 rounded-full border border-accent/40 shrink-0 mt-0.5 object-cover"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center font-bold text-accent shrink-0">
+                <div className="w-11 h-11 rounded-full bg-accent/20 flex items-center justify-center font-bold text-accent shrink-0 mt-0.5">
                   {username[0]?.toUpperCase() || "A"}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
-                  <span>@{username}</span>
-                  <ExternalLink size={10} className="text-muted" />
-                </div>
-                <div className="text-[11px] text-muted">
-                  Rank: #{profile?.ranking?.toLocaleString() || "1,284,577"}
-                </div>
-                <div className="flex items-center gap-2 text-[10px] font-semibold mt-0.5">
-                  <span className="text-emerald-400">E:{profile?.solved_easy ?? 84}</span>
-                  <span className="text-amber-400">M:{profile?.solved_medium ?? 48}</span>
-                  <span className="text-red-400">H:{profile?.solved_hard ?? 6}</span>
-                </div>
-                <div className="pt-2 mt-2 border-t border-border-subtle flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-muted flex items-center gap-1">
-                    <Clock size={10} />
-                    <span>{formatLastSyncTime(lastSyncTime)} (Auto: 24h)</span>
+                <div className="flex items-center justify-between gap-1">
+                  <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
+                    <span>@{username}</span>
+                    <ExternalLink size={10} className="text-muted shrink-0" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">
+                    {profile?.solved_total ?? 163} Solved
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleManualSync();
-                    }}
-                    disabled={syncing}
-                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 transition-all border text-white cursor-pointer active:scale-95 disabled:opacity-50 touch-target"
-                    style={{
-                      background: "var(--color-accent)",
-                      borderColor: "var(--color-accent)",
-                    }}
-                    title="Manually sync solved problems from LeetCode account"
-                  >
-                    <RefreshCw size={10} className={syncing ? "animate-spin" : ""} />
-                    <span>{syncing ? "Syncing..." : "Sync Solved"}</span>
-                  </button>
+                </div>
+                <div className="text-[11px] text-muted mt-0.5">
+                  Rank: #{profile?.ranking?.toLocaleString() || "1,101,175"}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-semibold mt-1">
+                  <span className="text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">E:{profile?.solved_easy ?? 95}</span>
+                  <span className="text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">M:{profile?.solved_medium ?? 60}</span>
+                  <span className="text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">H:{profile?.solved_hard ?? 8}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="pt-2.5 mt-2.5 border-t border-border-subtle flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2">
+              <span className="text-[10px] text-muted flex items-center gap-1 truncate">
+                <Clock size={10} className="shrink-0" />
+                <span className="truncate">{formatLastSyncTime(lastSyncTime)} (Auto: 24h)</span>
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleManualSync();
+                }}
+                disabled={syncing}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all text-white cursor-pointer active:scale-95 disabled:opacity-50 touch-target shrink-0 shadow-sm"
+                style={{
+                  background: "linear-gradient(135deg, var(--color-accent), #8b5cf6)",
+                }}
+                title="Manually sync solved problems from LeetCode account"
+              >
+                <RefreshCw size={11} className={syncing ? "animate-spin" : ""} />
+                <span>{syncing ? "Syncing..." : "Sync Solved"}</span>
+              </button>
             </div>
           </div>
 

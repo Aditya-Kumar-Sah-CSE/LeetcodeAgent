@@ -190,3 +190,24 @@
   font-weight: 600;
 }
 
+/* ─── Mobile Responsiveness & Safe Area Helpers ─────────── */
+.pb-safe {
+  padding-bottom: max(1.5rem, calc(env(safe-area-inset-bottom, 16px) + 1rem));
+}
+
+.touch-target {
+  min-height: 38px;
+  min-width: 38px;
+}
+
+@media (max-width: 640px) {
+  .touch-target {
+    min-height: 42px;
+  }
+}
+
+/* Smooth horizontal scroll for tab lists on mobile */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+

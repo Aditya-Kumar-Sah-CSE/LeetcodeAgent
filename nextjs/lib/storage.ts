@@ -487,6 +487,26 @@ export async function clearAllData(): Promise<void> {
 const LS_SOLVED_KEY = "lca-solved-problem-slugs";
 
 const INITIAL_SOLVED_SLUGS: string[] = [
+  "count-servers-that-communicate",
+  "process-tasks-using-servers",
+  "count-zero-request-servers",
+  "find-the-distance-value-between-two-arrays",
+  "minimum-operations-to-make-elements-within-k-subarrays-equal",
+  "minimum-moves-to-equal-array-elements-iii",
+  "minimum-moves-to-equal-array-elements-ii",
+  "minimum-moves-to-equal-array-elements",
+  "twisted-mirror-path-count",
+  "shortest-path-with-at-most-k-consecutive-identical-characters",
+  "palindromic-path-queries-in-a-tree",
+  "remove-duplicates-from-sorted-list",
+  "climbing-stairs",
+  "add-binary",
+  "plus-one",
+  "minimum-xor-path-in-a-grid",
+  "length-of-last-word",
+  "find-the-index-of-the-first-occurrence-in-a-string",
+  "difference-between-peaks-and-valleys",
+  "count-frequency-staircase-subarrays-i",
   "count-islands-with-total-value-divisible-by-k",
   "two-sum",
   "palindrome-number",
@@ -505,6 +525,26 @@ const INITIAL_SOLVED_SLUGS: string[] = [
   "number-of-islands",
 ];
 
+function notifySolvedSlugsChanged(slugs: Set<string>) {
+  if (!isClient()) return;
+  try {
+    window.dispatchEvent(
+      new CustomEvent("lca-solved-updated", { detail: { slugs: Array.from(slugs) } })
+    );
+  } catch {}
+}
+
+export function onSolvedSlugsChange(callback: (slugs: Set<string>) => void): () => void {
+  if (!isClient()) return () => {};
+  const handler = () => callback(getSolvedSlugs());
+  window.addEventListener("lca-solved-updated", handler);
+  window.addEventListener("storage", handler);
+  return () => {
+    window.removeEventListener("lca-solved-updated", handler);
+    window.removeEventListener("storage", handler);
+  };
+}
+
 export function getSolvedSlugs(): Set<string> {
   if (!isClient()) return new Set(INITIAL_SOLVED_SLUGS);
   try {
@@ -514,7 +554,12 @@ export function getSolvedSlugs(): Set<string> {
       return new Set(INITIAL_SOLVED_SLUGS);
     }
     const arr = JSON.parse(raw);
-    return new Set(Array.isArray(arr) ? arr : INITIAL_SOLVED_SLUGS);
+    const set = new Set(Array.isArray(arr) ? arr : INITIAL_SOLVED_SLUGS);
+    // ensure initial verified slugs are included
+    for (const s of INITIAL_SOLVED_SLUGS) {
+      set.add(s);
+    }
+    return set;
   } catch {
     return new Set(INITIAL_SOLVED_SLUGS);
   }
@@ -534,6 +579,7 @@ export function setProblemSolved(slug: string, solved: boolean) {
     current.delete(slug);
   }
   localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(Array.from(current)));
+  notifySolvedSlugsChanged(current);
 }
 
 export function toggleProblemSolved(slug: string): boolean {
@@ -546,6 +592,7 @@ export function toggleProblemSolved(slug: string): boolean {
     current.delete(slug);
   }
   localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(Array.from(current)));
+  notifySolvedSlugsChanged(current);
   return willBeSolved;
 }
 
@@ -556,6 +603,7 @@ export function syncSolvedSlugs(newSlugs: string[]) {
     if (s) current.add(s);
   }
   localStorage.setItem(LS_SOLVED_KEY, JSON.stringify(Array.from(current)));
+  notifySolvedSlugsChanged(current);
 }
 
 // ─── 24-Hour & Manual Sync Tracking ─────────────────────────

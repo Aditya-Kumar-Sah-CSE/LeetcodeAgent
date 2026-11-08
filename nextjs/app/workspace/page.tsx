@@ -79,6 +79,7 @@ import {
   isProblemSolved,
   toggleProblemSolved,
   setProblemSolved,
+  onSolvedSlugsChange,
   getActiveWorkspaceProblem,
   setActiveWorkspaceProblem,
   getUiDensity,
@@ -336,6 +337,15 @@ function WorkspaceContent() {
     setIsSolved(nowSolved);
     showToast(nowSolved ? `Marked "${problem.title}" as Solved ✓` : `Marked "${problem.title}" as New ★`);
   };
+
+  // Subscribe to real-time solved status updates for the active problem
+  useEffect(() => {
+    if (!problem?.slug) return;
+    const unsub = onSolvedSlugsChange((slugs) => {
+      setIsSolved(slugs.has(problem.slug));
+    });
+    return () => unsub();
+  }, [problem?.slug]);
 
   // Load problem on mount
   useEffect(() => {
@@ -686,7 +696,9 @@ function WorkspaceContent() {
       });
       setHasUnsavedChanges(false);
       clearDraftCode(problem.slug, language);
-      showToast("Solution saved successfully!");
+      setProblemSolved(problem.slug, true);
+      setIsSolved(true);
+      showToast("Solution saved successfully! Marked as Solved ✓");
       addActivity({
         type: "save",
         problem_slug: problem.slug,

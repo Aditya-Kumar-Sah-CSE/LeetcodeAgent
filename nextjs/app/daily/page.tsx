@@ -53,6 +53,7 @@ import {
   getLastSyncTime,
   formatLastSyncTime,
   setActiveWorkspaceProblem,
+  onSolvedSlugsChange,
 } from "@/lib/storage";
 import type { DailyProblem, ProblemBrief, TopicTag, ContestBrief, ContestQuestion } from "@/lib/types";
 
@@ -162,7 +163,7 @@ export default function DailyPage() {
       setSolvedSlugsSet(new Set(getSolvedSlugs()));
       setLastSyncTimeState(res.lastSyncedAt);
       setToastMessage(
-        `✓ Synced with @Aditya_Kumar_Sah-28! (${res.count} solved problems active)`
+        `✓ Synced with @Aditya_Kumar_Sah-28! (${res.totalLeetCodeSolved || 163} solved on LeetCode, ${res.count} active)`
       );
     } catch (e: any) {
       setToastMessage(`Failed to sync: ${e.message || "Network error"}`);
@@ -232,6 +233,7 @@ export default function DailyPage() {
   useEffect(() => {
     loadDaily();
     loadTopics();
+    const unsub = onSolvedSlugsChange((slugs) => setSolvedSlugsSet(new Set(slugs)));
     // Automatic 24-hour sync from connected LeetCode profile
     syncLeetCodeSolvedProblems(false).then((res) => {
       if (res.synced) {
@@ -239,6 +241,7 @@ export default function DailyPage() {
         setLastSyncTimeState(res.lastSyncedAt);
       }
     });
+    return () => unsub();
   }, []);
 
   useEffect(() => {
@@ -591,7 +594,7 @@ export default function DailyPage() {
               Live LeetCode GraphQL Synchronized
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleManualSync}
                 disabled={syncing}
@@ -1268,7 +1271,7 @@ export default function DailyPage() {
                         Start Virtual Contest (90m)
                       </button>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => setVirtualPaused((p) => !p)}
                           className="px-3 py-2 text-xs font-semibold rounded-xl border flex items-center gap-1.5 cursor-pointer touch-target"

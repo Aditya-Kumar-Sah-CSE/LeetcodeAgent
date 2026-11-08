@@ -25,7 +25,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { getAllSolutionsLocal, deleteSolutionLocal } from "@/lib/storage";
+import { getAllSolutionsLocal, deleteSolutionLocal, syncSolvedSlugs } from "@/lib/storage";
 import { fetchSolutions, deleteSolution as deleteApiSolution } from "@/lib/api";
 import { copyToClipboard, getCanonicalLeetCodeUrl } from "@/lib/leetcodeNavigation";
 import { LANGUAGES, type StoredSolution, type SolutionFile } from "@/lib/types";
@@ -106,6 +106,11 @@ export default function SolutionsPage() {
       }));
 
       setSolutions(mapped);
+      // Sync solved slugs into local storage
+      const validSlugs = mapped.map((s) => s.problem_slug).filter(Boolean);
+      if (validSlugs.length > 0) {
+        syncSolvedSlugs(validSlugs);
+      }
       const savedSlug = localStorage.getItem("lca-sol-selected-slug");
       const target = (savedSlug && mapped.find((s) => s.problem_slug === savedSlug)) || mapped[0] || null;
       setSelectedSolution(target);

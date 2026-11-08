@@ -11,6 +11,7 @@ import {
   Check,
 } from "lucide-react";
 import { detectPlatform, getCanonicalLeetCodeUrl } from "@/lib/leetcodeNavigation";
+import { setProblemSolved, isProblemSolved } from "@/lib/storage";
 
 interface SubmissionModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function SubmissionModal({
   if (!isOpen) return null;
 
   const [copiedManual, setCopiedManual] = useState(false);
+  const [markedSolved, setMarkedSolved] = useState(() => isProblemSolved(problemSlug));
   const platform = detectPlatform();
   const canonicalUrl = problemUrl || getCanonicalLeetCodeUrl(problemSlug);
 
@@ -193,8 +195,23 @@ export default function SubmissionModal({
           🔒 <strong>Privacy & Security:</strong> You retain complete manual control over submissions. LeetCodeAgent never requires passwords, never accesses session cookies, and never automatically submits code.
         </div>
 
-        {/* Dismiss Button */}
-        <div className="flex justify-end pt-1">
+        {/* Actions: Mark as Solved & Dismiss Button */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
+          <button
+            onClick={() => {
+              setProblemSolved(problemSlug, true);
+              setMarkedSolved(true);
+            }}
+            className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer touch-target border"
+            style={{
+              background: markedSolved ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.12)",
+              borderColor: "rgba(16, 185, 129, 0.4)",
+              color: "#34d399",
+            }}
+          >
+            <CheckCircle2 size={15} />
+            <span>{markedSolved ? "Marked as Solved ✓" : "Mark as Solved in Workspace"}</span>
+          </button>
           <button
             onClick={onClose}
             className="w-full sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/15 text-white cursor-pointer touch-target"

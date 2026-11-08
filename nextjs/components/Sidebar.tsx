@@ -14,10 +14,8 @@ import {
   Menu,
   X,
   Zap,
-  Terminal,
 } from "lucide-react";
 import { InstallPwaButton } from "./InstallPwaPrompt";
-import LocalDevModal from "./LocalDevModal";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -35,7 +33,6 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed: propCollapsed, setCollapsed: propSetCollapsed }: SidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
-  const [showLocalDev, setShowLocalDev] = useState(false);
   const pathname = usePathname();
 
   const collapsed = propCollapsed !== undefined ? propCollapsed : internalCollapsed;
@@ -139,22 +136,6 @@ export default function Sidebar({ collapsed: propCollapsed, setCollapsed: propSe
         className="px-3 py-3 shrink-0 flex flex-col gap-2"
         style={{ borderTop: "1px solid var(--color-border-subtle)" }}
       >
-        <button
-          onClick={() => setShowLocalDev(true)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors border cursor-pointer hover:border-blue-500/40 hover:bg-blue-500/10 ${
-            collapsed ? "justify-center p-2" : "w-full"
-          }`}
-          style={{
-            borderColor: "var(--color-border-subtle)",
-            background: "var(--color-bg-primary)",
-            color: "var(--color-text-secondary)",
-          }}
-          title="Run Local Backend & Frontend"
-        >
-          <Terminal size={15} className="text-blue-400 shrink-0" />
-          {!collapsed && <span>Local Dev Hub</span>}
-        </button>
-
         <InstallPwaButton
           variant={collapsed ? "compact" : "default"}
           className={collapsed ? "justify-center p-2" : "w-full justify-center"}
@@ -165,8 +146,6 @@ export default function Sidebar({ collapsed: propCollapsed, setCollapsed: propSe
           </div>
         )}
       </div>
-
-      <LocalDevModal isOpen={showLocalDev} onClose={() => setShowLocalDev(false)} />
     </aside>
   );
 }

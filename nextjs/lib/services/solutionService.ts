@@ -18,9 +18,9 @@ const LANG_EXTENSIONS: Record<string, string> = {
 };
 
 function getSolutionsDir(): string {
-  // Check root repository solutions directory
-  const rootDir = path.resolve(process.cwd(), "..", "solutions");
-  return rootDir;
+  // First check inside Next.js public directory (always bundled on Vercel)
+  const localDir = path.join(process.cwd(), "public", "solutions");
+  return localDir;
 }
 
 function makeFilename(slug: string, language: string): string {
@@ -136,9 +136,34 @@ export async function listSolutions(): Promise<SolutionFile[]> {
   const dir = getSolutionsDir();
   const solutions: SolutionFile[] = [];
 
+  // First, check manifest.json
   try {
-    const files = await fs.readdir(dir, { withFileTypes: true });
-    for (const f of files) {
+    const manifestPath = path.join(dir, "manifest.json");
+    const raw = await fs.readFile(manifestPath, "utf-8");
+    const manifest = JSON.parse(raw);
+    if (Array.isArray(manifest)) {
+      for (const m of manifest) {
+        const slug = m.slug || m.problem_slug;
+        if (!slug) continue;
+        const title = m.title || slug.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+        const code = m.code_python || m.code || "";
+        solutions.push({
+          problem_slug: slug,
+          problem_title: title,
+          language: "python",
+          filename: "solution.py",
+          code,
+          created_at: m.solved_at || new Date().toISOString(),
+          updated_at: m.solved_at || new Date().toISOString(),
+        });
+      }
+    }
+  } catch {}
+
+  // Then also check directory files and subdirectories
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const f of entries) {
       if (f.isFile() && f.name !== "manifest.json") {
         const ext = path.extname(f.name).toLowerCase();
         let lang = "python";
@@ -148,19 +173,50 @@ export async function listSolutions(): Promise<SolutionFile[]> {
         else if (ext === ".ts") lang = "typescript";
 
         const slug = path.basename(f.name, ext);
-        const fullPath = path.join(dir, f.name);
+        if (!solutions.some((s) => s.problem_slug === slug)) {
+          const fullPath = path.join(dir, f.name);
+          try {
+            const code = await fs.readFile(fullPath, "utf-8");
+            const stat = await fs.stat(fullPath);
+            solutions.push({
+              problem_slug: slug,
+              problem_title: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+              language: lang,
+              filename: f.name,
+              code,
+              created_at: stat.birthtime.toISOString(),
+              updated_at: stat.mtime.toISOString(),
+            });
+          } catch {}
+        }
+      } else if (f.isDirectory() && f.name !== "books") {
+        const subPath = path.join(dir, f.name);
         try {
-          const code = await fs.readFile(fullPath, "utf-8");
-          const stat = await fs.stat(fullPath);
-          solutions.push({
-            problem_slug: slug,
-            problem_title: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-            language: lang,
-            filename: f.name,
-            code,
-            created_at: stat.birthtime.toISOString(),
-            updated_at: stat.mtime.toISOString(),
-          });
+          const subFiles = await fs.readdir(subPath);
+          for (const sf of subFiles) {
+            if (sf.startsWith("solution.")) {
+              const ext = path.extname(sf).toLowerCase();
+              let lang = "python";
+              if (ext === ".cpp") lang = "cpp";
+              else if (ext === ".java") lang = "java";
+              else if (ext === ".js") lang = "javascript";
+              else if (ext === ".ts") lang = "typescript";
+
+              const slug = f.name.replace(/^\d{4}-\d{2}-\d{2}-/, "");
+              if (!solutions.some((s) => s.problem_slug === slug && s.language === lang)) {
+                const code = await fs.readFile(path.join(subPath, sf), "utf-8");
+                solutions.push({
+                  problem_slug: slug,
+                  problem_title: slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+                  language: lang,
+                  filename: sf,
+                  code,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                });
+              }
+            }
+          }
         } catch {}
       }
     }

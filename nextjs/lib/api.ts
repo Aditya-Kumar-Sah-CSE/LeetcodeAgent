@@ -1239,6 +1239,14 @@ export async function fetchProfile(
     // If backend offline, return verified fallback stats for user
     const isAditya = username.toLowerCase() === "aditya_kumar_sah-28".toLowerCase();
     const fallbackSlugs = [
+      "count-servers-that-communicate",
+      "process-tasks-using-servers",
+      "count-zero-request-servers",
+      "find-the-distance-value-between-two-arrays",
+      "minimum-operations-to-make-elements-within-k-subarrays-equal",
+      "minimum-moves-to-equal-array-elements-iii",
+      "minimum-moves-to-equal-array-elements-ii",
+      "minimum-moves-to-equal-array-elements",
       "count-islands-with-total-value-divisible-by-k",
       "two-sum",
       "palindrome-number",
@@ -1255,11 +1263,11 @@ export async function fetchProfile(
       avatar_url: isAditya
         ? "https://assets.leetcode.com/users/Aditya_Kumar_Sah-28/avatar_1749833262.png"
         : `https://avatar.vercel.sh/${username}.png`,
-      ranking: isAditya ? 1284577 : 154230,
-      solved_total: isAditya ? 139 : 247,
-      solved_easy: isAditya ? 84 : 112,
-      solved_medium: isAditya ? 49 : 108,
-      solved_hard: isAditya ? 6 : 27,
+      ranking: isAditya ? 1101175 : 154230,
+      solved_total: isAditya ? 163 : 247,
+      solved_easy: isAditya ? 95 : 112,
+      solved_medium: isAditya ? 60 : 108,
+      solved_hard: isAditya ? 8 : 27,
       reputation: isAditya ? 0 : 42,
       verified: true,
       solved_slugs: fallbackSlugs,
@@ -1271,6 +1279,7 @@ export async function syncLeetCodeSolvedProblems(force = false): Promise<{
   synced: boolean;
   count: number;
   lastSyncedAt: number;
+  totalLeetCodeSolved?: number;
 }> {
   const username = getUsername() || "Aditya_Kumar_Sah-28";
 
@@ -1287,11 +1296,29 @@ export async function syncLeetCodeSolvedProblems(force = false): Promise<{
     if (prof.solved_slugs && prof.solved_slugs.length > 0) {
       syncSolvedSlugs(prof.solved_slugs);
     }
+
+    // Also sync repo & local solutions
+    try {
+      const solRes = await apiFetch<any[]>("/solutions").catch(() => []);
+      if (Array.isArray(solRes) && solRes.length > 0) {
+        const solSlugs = solRes.map((s) => s.slug || s.problem_slug).filter(Boolean);
+        if (solSlugs.length > 0) syncSolvedSlugs(solSlugs);
+      }
+    } catch {}
+
+    try {
+      const localSols = await getAllSolutionsLocal();
+      if (localSols.length > 0) {
+        syncSolvedSlugs(localSols.map((s) => s.problem_slug));
+      }
+    } catch {}
+
     const now = Date.now();
     setLastSyncTime(now);
     return {
       synced: true,
       count: getSolvedSlugs().size,
+      totalLeetCodeSolved: prof.solved_total,
       lastSyncedAt: now,
     };
   } catch {

@@ -62,13 +62,24 @@ export async function fetchPublicProfile(username: string): Promise<LeetCodeProf
     const submitStats = user.submitStatsGlobal?.acSubmissionNum || [];
     const recentAc = data.data?.recentAcSubmissionList || [];
 
-    const solvedSlugs = Array.from(
-      new Set(
-        recentAc
-          .map((item: any) => item.titleSlug)
-          .filter(Boolean) as string[]
-      )
-    );
+    const acSlugs = recentAc
+      .map((item: any) => item.titleSlug)
+      .filter(Boolean) as string[];
+
+    // Include repo solutions if available
+    let repoSlugs: string[] = [];
+    try {
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const manifestPath = path.join(process.cwd(), "public", "solutions", "manifest.json");
+      const raw = await fs.readFile(manifestPath, "utf-8");
+      const items = JSON.parse(raw);
+      if (Array.isArray(items)) {
+        repoSlugs = items.map((x: any) => x.slug || x.problem_slug).filter(Boolean);
+      }
+    } catch {}
+
+    const solvedSlugs = Array.from(new Set([...acSlugs, ...repoSlugs]));
 
     const solved: Record<string, number> = {};
     for (const s of submitStats) {

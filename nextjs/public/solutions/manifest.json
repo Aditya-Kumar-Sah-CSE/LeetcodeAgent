@@ -1,10 +1,266 @@
 [
   {
+    "id": 1267,
+    "title": "Count Servers that Communicate",
+    "slug": "count-servers-that-communicate",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Union-Find",
+      "Matrix",
+      "Counting"
+    ],
+    "date": "2026-11-08",
+    "url": "https://leetcode.com/problems/count-servers-that-communicate/",
+    "folder": "2026-11-08-count-servers-that-communicate",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-08T04:46:43.398146+00:00",
+    "concept": "Optimal solution using Array, Depth-First Search",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given a map of a server center, represented as a `m * n` integer matrix `grid`, where 1 means that on that cell there is a server and 0 means that it is no server. Two servers are said to communicate if they are on the same row or on the same",
+    "summary_hinglish": "Count Servers that Communicate ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Union-Find",
+      "Matrix",
+      "Counting"
+    ],
+    "code_python": "class Solution:\n    def countServers(self, grid: list[list[int]]) -> int:\n        m = len(grid)\n        n = len(grid[0])\n        \n        # Count servers in each row and column\n        row_counts = [0] * m\n        col_counts = [0] * n\n        \n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] == 1:\n                    row_counts[i] += 1\n                    col_counts[j] += 1\n        \n        # Count servers that communicate (have at least one other server in row or column)\n        result = 0\n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] == 1 and (row_counts[i] > 1 or col_counts[j] > 1):\n                    result += 1\n        \n        return result\n"
+  },
+  {
+    "id": 1882,
+    "title": "Process Tasks Using Servers",
+    "slug": "process-tasks-using-servers",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Heap (Priority Queue)"
+    ],
+    "date": "2026-11-07",
+    "url": "https://leetcode.com/problems/process-tasks-using-servers/",
+    "folder": "2026-11-07-process-tasks-using-servers",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-07T04:55:10.141907+00:00",
+    "concept": "Optimal solution using Array, Heap (Priority Queue)",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given two 0-indexed integer arrays `servers` and `tasks` of lengths `n`\u200b\u200b\u200b\u200b\u200b\u200b and `m`\u200b\u200b\u200b\u200b\u200b\u200b respectively. `servers[i]` is the weight of the `i \u200b\u200b\u200b\u200b\u200b\u200bth `\u200b\u200b\u200b\u200b server, and `tasks[j]` is the time needed to process the `j \u200b\u200b\u200b\u200b\u200b\u200bth `\u200b\u200b\u200b\u200b task in s",
+    "summary_hinglish": "Process Tasks Using Servers ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Heap (Priority Queue)"
+    ],
+    "code_python": "import heapq\nfrom typing import List\n\nclass Solution:\n    def assignTasks(self, servers: List[int], tasks: List[int]) -> List[int]:\n        # min-heap for available servers: (weight, index)\n        free = []\n        for i, w in enumerate(servers):\n            heapq.heappush(free, (w, i))\n        \n        # min-heap for busy servers: (available_time, weight, index)\n        busy = []\n        \n        ans = [0] * len(tasks)\n        current_time = 0\n        \n        for j, t in enumerate(tasks):\n            # task j becomes available at second j\n            current_time = max(current_time, j)\n            \n            # release servers that have finished by current_time\n            while busy and busy[0][0] <= current_time:\n                avail_time, w, idx = heapq.heappop(busy)\n                heapq.heappush(free, (w, idx))\n            \n            # if no server is free, jump to the earliest time a server becomes free\n            if not free:\n                # wait for the first server to free up\n                avail_time, w, idx = heapq.heappop(busy)\n                current_time = avail_time\n                # push this server and any others that become free at the same time\n                heapq.heappush(free, (w, idx))\n                while busy and busy[0][0] == current_time:\n                    avail_time, w, idx = heapq.heappop(busy)\n                    heapq.heappush(free, (w, idx))\n            \n            # assign the current task to the best free server\n            w, idx = heapq.heappop(free)\n            ans[j] = idx\n            # schedule when this server will be free again\n            heapq.heappush(busy, (current_time + t, w, idx))\n        \n        return ans\n"
+  },
+  {
+    "id": 2747,
+    "title": "Count Zero Request Servers",
+    "slug": "count-zero-request-servers",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Hash Table",
+      "Sliding Window",
+      "Sorting"
+    ],
+    "date": "2026-11-06",
+    "url": "https://leetcode.com/problems/count-zero-request-servers/",
+    "folder": "2026-11-06-count-zero-request-servers",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-06T05:26:48.001388+00:00",
+    "concept": "Optimal solution using Array, Hash Table",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an integer `n` denoting the total number of servers and a 2D 0-indexed integer array `logs`, where `logs[i] = [server_id, time]` denotes that the server with id `server_id` received a request at time `time`. You are also given an intege",
+    "summary_hinglish": "Count Zero Request Servers ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Hash Table",
+      "Sliding Window",
+      "Sorting"
+    ],
+    "code_python": "from bisect import bisect_left\nfrom typing import List\n\nclass Solution:\n    def countServers(self, n: int, logs: List[List[int]], x: int, queries: List[int]) -> List[int]:\n        # max_time[i] = latest request time for server i (1\u2011based)\n        max_time = [0] * (n + 1)          # 0 means \u201cno request\u201d\n\n        for server, t in logs:\n            if t > max_time[server]:\n                max_time[server] = t\n\n        # collect the latest times of all servers\n        times = [max_time[i] for i in range(1, n + 1)]\n        times.sort()                       # sorted list for binary search\n\n        res = []\n        for q in queries:\n            thresh = q - x                  # we need servers with max_time < thresh\n            cnt = bisect_left(times, thresh)   # number of elements < thresh\n            res.append(cnt)\n\n        return res\n"
+  },
+  {
+    "id": 1385,
+    "title": "Find the Distance Value Between Two Arrays",
+    "slug": "find-the-distance-value-between-two-arrays",
+    "difficulty": "Easy",
+    "tags": [
+      "Array",
+      "Two Pointers",
+      "Binary Search",
+      "Sorting"
+    ],
+    "date": "2026-11-05",
+    "url": "https://leetcode.com/problems/find-the-distance-value-between-two-arrays/",
+    "folder": "2026-11-05-find-the-distance-value-between-two-arrays",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-05T05:27:06.051911+00:00",
+    "concept": "Optimal solution using Array, Two Pointers",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "Given two integer arrays `arr1` and `arr2`, and the integer `d`, return the distance value between the two arrays . The distance value is defined as the number of elements `arr1[i]` such that there is not any element `arr2[j]` where `|arr1[i]-arr2[j]",
+    "summary_hinglish": "Find the Distance Value Between Two Arrays ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Two Pointers",
+      "Binary Search",
+      "Sorting"
+    ],
+    "code_python": "class Solution:\n    def findTheDistanceValue(self, arr1: list[int], arr2: list[int], d: int) -> int:\n        arr2.sort()\n        count = 0\n        import bisect\n        \n        for x in arr1:\n            # Find the first index in arr2 where value >= x\n            idx = bisect.bisect_left(arr2, x)\n            ok = True\n            \n            # Check the element at idx (first >= x)\n            if idx < len(arr2) and arr2[idx] - x <= d:\n                ok = False\n            # Check the element just before idx (largest < x)\n            if idx > 0 and x - arr2[idx - 1] <= d:\n                ok = False\n            \n            if ok:\n                count += 1\n        \n        return count\n"
+  },
+  {
+    "id": 3736,
+    "title": "Minimum Moves to Equal Array Elements III",
+    "slug": "minimum-moves-to-equal-array-elements-iii",
+    "difficulty": "Easy",
+    "tags": [
+      "Array",
+      "Math"
+    ],
+    "date": "2026-11-03",
+    "url": "https://leetcode.com/problems/minimum-moves-to-equal-array-elements-iii/",
+    "folder": "2026-11-03-minimum-moves-to-equal-array-elements-iii",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-03T05:36:36.688574+00:00",
+    "concept": "Optimal solution using Array, Math",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an integer array `nums`. In one move, you may increase the value of any single element `nums[i]` by 1. Return the minimum total number of moves required so that all elements in `nums` become equal . Example 1: Input: nums = [2,1,3] Outp",
+    "summary_hinglish": "Minimum Moves to Equal Array Elements III ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Math"
+    ],
+    "code_python": "from typing import List\n\nclass Solution:\n    def minMoves(self, nums: List[int]) -> int:\n        \"\"\"\n        Returns the minimum number of moves to make all elements equal.\n        Since we can only increment elements, the optimal target is the maximum element.\n        The total moves is the sum of differences between max and each element.\n        \"\"\"\n        max_val = max(nums)\n        return sum(max_val - x for x in nums)\n"
+  },
+  {
+    "id": 462,
+    "title": "Minimum Moves to Equal Array Elements II",
+    "slug": "minimum-moves-to-equal-array-elements-ii",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Math",
+      "Sorting"
+    ],
+    "date": "2026-11-02",
+    "url": "https://leetcode.com/problems/minimum-moves-to-equal-array-elements-ii/",
+    "folder": "2026-11-02-minimum-moves-to-equal-array-elements-ii",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-02T04:45:48.755712+00:00",
+    "concept": "Optimal solution using Array, Math",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "Given an integer array `nums` of size `n`, return the minimum number of moves required to make all array elements equal . In one move, you can increment or decrement an element of the array by `1`. Test cases are designed so that the answer will fit ",
+    "summary_hinglish": "Minimum Moves to Equal Array Elements II ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Math",
+      "Sorting"
+    ],
+    "code_python": "class Solution:\n    def minMoves2(self, nums: list[int]) -> int:\n        # Sort the array to easily access the median\n        nums.sort()\n        # The median minimizes the sum of absolute deviations\n        median = nums[len(nums) // 2]\n        # Sum the absolute differences to the median\n        moves = 0\n        for x in nums:\n            moves += abs(x - median)\n        return moves\n"
+  },
+  {
+    "id": 453,
+    "title": "Minimum Moves to Equal Array Elements",
+    "slug": "minimum-moves-to-equal-array-elements",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Math"
+    ],
+    "date": "2026-11-01",
+    "url": "https://leetcode.com/problems/minimum-moves-to-equal-array-elements/",
+    "folder": "2026-11-01-minimum-moves-to-equal-array-elements",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-01T04:43:48.371651+00:00",
+    "concept": "Optimal solution using Array, Math",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "Given an integer array `nums` of size `n`, return the minimum number of moves required to make all array elements equal . In one move, you can increment `n - 1` elements of the array by `1`. Example 1: ``` Input: nums = [1,2,3] Output: 3 Explanation:",
+    "summary_hinglish": "Minimum Moves to Equal Array Elements ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Math"
+    ],
+    "code_python": "class Solution:\n    def minMoves(self, nums: list[int]) -> int:\n        total = sum(nums)\n        min_val = min(nums)\n        return total - min_val * len(nums)\n"
+  },
+  {
+    "id": 3970,
+    "title": "Shortest Path With At Most K Consecutive Identical Characters",
+    "slug": "shortest-path-with-at-most-k-consecutive-identical-characters",
+    "difficulty": "Medium",
+    "tags": [
+      "String",
+      "Graph Theory",
+      "Heap (Priority Queue)",
+      "Shortest Path"
+    ],
+    "date": "2026-10-30",
+    "url": "https://leetcode.com/problems/shortest-path-with-at-most-k-consecutive-identical-characters/",
+    "folder": "2026-10-30-shortest-path-with-at-most-k-consecutive-identical-characters",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-10-30T04:40:20.381641+00:00",
+    "concept": "Optimal solution using String, Graph Theory",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an integer `n` representing the number of nodes in a directed weighted graph, numbered from 0 to `n - 1`. This is represented by a 2D integer array `edges`, where `edges[i] = [u i , v i , w i ]` represents a directed edge from node `u i",
+    "summary_hinglish": "Shortest Path With At Most K Consecutive Identical Characters ka simple solution aur logic.",
+    "topics_needed": [
+      "String",
+      "Graph Theory",
+      "Heap (Priority Queue)",
+      "Shortest Path"
+    ],
+    "code_python": "from typing import List\nimport heapq\n\nclass Solution:\n    def shortestPath(self, n: int, edges: List[List[int]], labels: str, k: int) -> int:\n        # Build adjacency list\n        graph = [[] for _ in range(n)]\n        for u, v, w in edges:\n            graph[u].append((v, w))\n        \n        # dist[node][count] = minimum total weight to reach node with consecutive count = count\n        # count ranges from 1 to k\n        INF = float('inf')\n        dist = [[INF] * (k + 1) for _ in range(n)]\n        \n        # Priority queue: (total_weight, node, consecutive_count)\n        pq = []\n        \n        # Start from node 0 with consecutive count = 1 (the first node's label forms a run of length 1)\n        dist[0][1] = 0\n        heapq.heappush(pq, (0, 0, 1))\n        \n        while pq:\n            weight, node, count = heapq.heappop(pq)\n            \n            # If we reached the destination node, return the weight\n            if node == n - 1:\n                return weight\n            \n            # Skip if we've already found a better path to this state\n            if weight > dist[node][count]:\n                continue\n            \n            # Explore all neighbors\n            for neighbor, edge_weight in graph[node]:\n                # Calculate new consecutive count based on whether labels match\n                if labels[node] == labels[neighbor]:\n                    new_count = count + 1\n                else:\n                    new_count = 1\n                \n                # Only proceed if the new consecutive count doesn't exceed k\n                if new_count <= k:\n                    new_weight = weight + edge_weight\n                    if new_weight < dist[neighbor][new_count]:\n                        dist[neighbor][new_count] = new_weight\n                        heapq.heappush(pq, (new_weight, neighbor, new_count))\n        \n        # No valid path found\n        return -1\n"
+  },
+  {
+    "id": 3882,
+    "title": "Minimum XOR Path in a Grid",
+    "slug": "minimum-xor-path-in-a-grid",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Dynamic Programming",
+      "Bit Manipulation",
+      "Matrix"
+    ],
+    "date": "2026-10-28",
+    "url": "https://leetcode.com/problems/minimum-xor-path-in-a-grid/",
+    "folder": "2026-10-28-minimum-xor-path-in-a-grid",
+    "model_used": "nvidia/nemotron-3.5-super-vl:free",
+    "solved_at": "2026-10-28T04:23:17.467249+00:00",
+    "concept": "Optimal solution using Array, Dynamic Programming",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given a 2D integer array `grid` of size `m * n`. You start at the top-left cell `(0, 0)` and want to reach the bottom-right cell `(m - 1, n - 1)`. At each step, you may move either right or down . The cost of a path is defined as the bitwise ",
+    "summary_hinglish": "Minimum XOR Path in a Grid ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Dynamic Programming",
+      "Bit Manipulation",
+      "Matrix"
+    ],
+    "code_python": "class Solution:\n    def minCost(self, grid: list[list[int]]) -> int:\n        m, n = len(grid), len(grid[0])\n        MAX_XOR = 1024  # grid values are <= 1023, so XOR stays within 0..1023\n\n        # dp[i][j] is a bitset where bit x is 1 iff XOR value x is reachable at (i, j)\n        dp = [[0] * n for _ in range(m)]\n        dp[0][0] = 1 << grid[0][0]\n\n        for i in range(m):\n            for j in range(n):\n                if i == 0 and j == 0:\n                    continue\n                val = grid[i][j]\n                reachable = 0\n                if i > 0:\n                    reachable |= dp[i - 1][j]\n                if j > 0:\n                    reachable |= dp[i][j - 1]\n\n                # Transform reachable XORs: new_xor = old_xor ^ val\n                new_bits = 0\n                for x in range(MAX_XOR):\n                    if reachable & (1 << x):\n                        new_bits |= 1 << (x ^ val)\n                dp[i][j] = new_bits\n\n        # Find the minimum reachable XOR at the bottom-right cell\n        final_bits = dp[m - 1][n - 1]\n        for x in range(MAX_XOR):\n            if final_bits & (1 << x):\n                return x\n        return 0  # unreachable due to constraints\n"
+  },
+  {
     "id": 3619,
     "title": "Count Islands With Total Value Divisible by K",
     "slug": "count-islands-with-total-value-divisible-by-k",
     "difficulty": "Medium",
-    "tags": ["Array", "Depth-First Search", "Breadth-First Search", "Matrix"],
+    "tags": [
+      "Array",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Matrix"
+    ],
     "date": "2026-10-26",
     "url": "https://leetcode.com/problems/count-islands-with-total-value-divisible-by-k/",
     "folder": "2026-10-26-count-islands-with-total-value-divisible-by-k",
@@ -21,12 +277,30 @@
       "Modulo Arithmetic & 64-bit sum overflow protection"
     ],
     "stages_summary": [
-      {"stage": "Understand", "detail": "Matrix dimensions up to 1000x1000, sum can exceed 32-bit limits."},
-      {"stage": "Research", "detail": "Connected components traversal using DFS/BFS; sink cells to avoid secondary arrays."},
-      {"stage": "Plan", "detail": "Double loop over rows & cols. For cell > 0, run iterative stack DFS with accumulator."},
-      {"stage": "Code", "detail": "Clean iterative DFS with cardinal offsets: [(-1,0), (1,0), (0,-1), (0,1)]."},
-      {"stage": "Validate", "detail": "Verified on sample tests: g1 -> 2, g2 -> 0."},
-      {"stage": "Complexity", "detail": "Time: O(M * N), Space: O(M * N) auxiliary stack."}
+      {
+        "stage": "Understand",
+        "detail": "Matrix dimensions up to 1000x1000, sum can exceed 32-bit limits."
+      },
+      {
+        "stage": "Research",
+        "detail": "Connected components traversal using DFS/BFS; sink cells to avoid secondary arrays."
+      },
+      {
+        "stage": "Plan",
+        "detail": "Double loop over rows & cols. For cell > 0, run iterative stack DFS with accumulator."
+      },
+      {
+        "stage": "Code",
+        "detail": "Clean iterative DFS with cardinal offsets: [(-1,0), (1,0), (0,-1), (0,1)]."
+      },
+      {
+        "stage": "Validate",
+        "detail": "Verified on sample tests: g1 -> 2, g2 -> 0."
+      },
+      {
+        "stage": "Complexity",
+        "detail": "Time: O(M * N), Space: O(M * N) auxiliary stack."
+      }
     ],
     "code_python": "class Solution:\n    def countIslands(self, grid: List[List[int]], k: int) -> int:\n        if not grid or not grid[0]: return 0\n        m, n, ans = len(grid), len(grid[0]), 0\n        for r in range(m):\n            for c in range(n):\n                if grid[r][c] > 0:\n                    s, stack = grid[r][c], [(r, c)]\n                    grid[r][c] = 0\n                    while stack:\n                        cr, cc = stack.pop()\n                        for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):\n                            nr, nc = cr + dr, cc + dc\n                            if 0 <= nr < m and 0 <= nc < n and grid[nr][nc] > 0:\n                                s += grid[nr][nc]\n                                grid[nr][nc] = 0\n                                stack.append((nr, nc))\n                    if s % k == 0:\n                        ans += 1\n        return ans",
     "code_cpp": "class Solution {\npublic:\n    int countIslands(vector<vector<int>>& grid, int k) {\n        int m = grid.size(), n = grid[0].size(), ans = 0;\n        int dr[4] = {-1, 1, 0, 0}, dc[4] = {0, 0, -1, 1};\n        for (int r = 0; r < m; ++r) {\n            for (int c = 0; c < n; ++c) {\n                if (grid[r][c] > 0) {\n                    long long sum = grid[r][c];\n                    grid[r][c] = 0;\n                    stack<pair<int, int>> st;\n                    st.push({r, c});\n                    while (!st.empty()) {\n                        auto [cr, cc] = st.top(); st.pop();\n                        for (int i = 0; i < 4; ++i) {\n                            int nr = cr + dr[i], nc = cc + dc[i];\n                            if (nr >= 0 && nr < m && nc >= 0 && nc < n && grid[nr][nc] > 0) {\n                                sum += grid[nr][nc]; grid[nr][nc] = 0;\n                                st.push({nr, nc});\n                            }\n                        }\n                    }\n                    if (sum % k == 0) ans++;\n                }\n            }\n        }\n        return ans;\n    }\n};",
@@ -37,7 +311,10 @@
     "title": "Two Sum",
     "slug": "two-sum",
     "difficulty": "Easy",
-    "tags": ["Array", "Hash Table"],
+    "tags": [
+      "Array",
+      "Hash Table"
+    ],
     "date": "2026-10-25",
     "url": "https://leetcode.com/problems/two-sum/",
     "folder": "2026-10-25-two-sum",
@@ -53,12 +330,30 @@
       "One-pass array scan"
     ],
     "stages_summary": [
-      {"stage": "Understand", "detail": "Exactly one valid answer, cannot use same element twice."},
-      {"stage": "Research", "detail": "Hash Map allows O(N) single pass vs O(N^2) brute force."},
-      {"stage": "Plan", "detail": "Iterate through array, check target - num in map, then add num -> index."},
-      {"stage": "Code", "detail": "Clean Python/C++ code with dictionary."},
-      {"stage": "Validate", "detail": "Passed tests with duplicates and negative numbers."},
-      {"stage": "Complexity", "detail": "Time: O(N), Space: O(N)."}
+      {
+        "stage": "Understand",
+        "detail": "Exactly one valid answer, cannot use same element twice."
+      },
+      {
+        "stage": "Research",
+        "detail": "Hash Map allows O(N) single pass vs O(N^2) brute force."
+      },
+      {
+        "stage": "Plan",
+        "detail": "Iterate through array, check target - num in map, then add num -> index."
+      },
+      {
+        "stage": "Code",
+        "detail": "Clean Python/C++ code with dictionary."
+      },
+      {
+        "stage": "Validate",
+        "detail": "Passed tests with duplicates and negative numbers."
+      },
+      {
+        "stage": "Complexity",
+        "detail": "Time: O(N), Space: O(N)."
+      }
     ],
     "code_python": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        seen = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in seen:\n                return [seen[diff], i]\n            seen[num] = i\n        return []",
     "code_cpp": "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> seen;\n        for (int i = 0; i < nums.size(); ++i) {\n            int comp = target - nums[i];\n            if (seen.count(comp)) return {seen[comp], i};\n            seen[nums[i]] = i;\n        }\n        return {};\n    }\n};",

@@ -1,5 +1,38 @@
 [
   {
+    "id": 1267,
+    "title": "Count Servers that Communicate",
+    "slug": "count-servers-that-communicate",
+    "difficulty": "Medium",
+    "tags": [
+      "Array",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Union-Find",
+      "Matrix",
+      "Counting"
+    ],
+    "date": "2026-11-08",
+    "url": "https://leetcode.com/problems/count-servers-that-communicate/",
+    "folder": "2026-11-08-count-servers-that-communicate",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-08T04:46:43.398146+00:00",
+    "concept": "Optimal solution using Array, Depth-First Search",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given a map of a server center, represented as a `m * n` integer matrix `grid`, where 1 means that on that cell there is a server and 0 means that it is no server. Two servers are said to communicate if they are on the same row or on the same",
+    "summary_hinglish": "Count Servers that Communicate ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Depth-First Search",
+      "Breadth-First Search",
+      "Union-Find",
+      "Matrix",
+      "Counting"
+    ],
+    "code_python": "class Solution:\n    def countServers(self, grid: list[list[int]]) -> int:\n        m = len(grid)\n        n = len(grid[0])\n        \n        # Count servers in each row and column\n        row_counts = [0] * m\n        col_counts = [0] * n\n        \n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] == 1:\n                    row_counts[i] += 1\n                    col_counts[j] += 1\n        \n        # Count servers that communicate (have at least one other server in row or column)\n        result = 0\n        for i in range(m):\n            for j in range(n):\n                if grid[i][j] == 1 and (row_counts[i] > 1 or col_counts[j] > 1):\n                    result += 1\n        \n        return result\n"
+  },
+  {
     "id": 1882,
     "title": "Process Tasks Using Servers",
     "slug": "process-tasks-using-servers",

@@ -2,7 +2,7 @@
 
 [![Daily LeetCode Solver](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml)
 [![Deploy to GitHub Pages](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml)
-[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-10-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
+[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-11-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
@@ -17,15 +17,15 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 ## 🚀 Latest Daily Challenge
 
 
-> **1882. Process Tasks Using Servers** (Medium)  
-> 📅 **Date**: `2026-11-07`  
-> 🔗 [View on LeetCode](https://leetcode.com/problems/process-tasks-using-servers/) · [View Solution Code](solutions/2026-11-07-process-tasks-using-servers/solution.py) · [View Editorial](solutions/2026-11-07-process-tasks-using-servers/README.md)
+> **1267. Count Servers that Communicate** (Medium)  
+> 📅 **Date**: `2026-11-08`  
+> 🔗 [View on LeetCode](https://leetcode.com/problems/count-servers-that-communicate/) · [View Solution Code](solutions/2026-11-08-count-servers-that-communicate/solution.py) · [View Editorial](solutions/2026-11-08-count-servers-that-communicate/README.md)
 
 
 ### Progress Summary
 | Total Solved | Easy | Medium | Hard |
 |:---:|:---:|:---:|:---:|
-| **10** | 🟢 3 | 🟡 7 | 🔴 0 |
+| **11** | 🟢 3 | 🟡 8 | 🔴 0 |
 
 ---
 
@@ -33,6 +33,7 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 | Date | Problem | Difficulty | Topics | Solution & Notes |
 |:---|:---|:---:|:---|:---|
+| 2026-11-08 | [1267. Count Servers that Communicate](https://leetcode.com/problems/count-servers-that-communicate/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Depth-First Search`, `Breadth-First Search` | [Python](solutions/2026-11-08-count-servers-that-communicate/solution.py) · [Notes](solutions/2026-11-08-count-servers-that-communicate/README.md) |
 | 2026-11-07 | [1882. Process Tasks Using Servers](https://leetcode.com/problems/process-tasks-using-servers/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Heap (Priority Queue)` | [Python](solutions/2026-11-07-process-tasks-using-servers/solution.py) · [Notes](solutions/2026-11-07-process-tasks-using-servers/README.md) |
 | 2026-11-06 | [2747. Count Zero Request Servers](https://leetcode.com/problems/count-zero-request-servers/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Hash Table`, `Sliding Window` | [Python](solutions/2026-11-06-count-zero-request-servers/solution.py) · [Notes](solutions/2026-11-06-count-zero-request-servers/README.md) |
 | 2026-11-05 | [1385. Find the Distance Value Between Two Arrays](https://leetcode.com/problems/find-the-distance-value-between-two-arrays/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array`, `Two Pointers`, `Binary Search` | [Python](solutions/2026-11-05-find-the-distance-value-between-two-arrays/solution.py) · [Notes](solutions/2026-11-05-find-the-distance-value-between-two-arrays/README.md) |

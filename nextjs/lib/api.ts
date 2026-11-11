@@ -245,6 +245,24 @@ export async function refreshDailyChallenge(): Promise<DailyProblem> {
 export function extractProblemSlug(urlOrSlug: string): string {
   if (!urlOrSlug) return "";
   const s = urlOrSlug.trim();
+
+  // Multi-platform URL matches:
+  // Codeforces: /problemset/problem/4/A or /contest/1900/problem/B
+  const cfMatch = s.match(/(?:problemset\/problem|contest|gym)\/(\d+)\/(?:problem\/)?([a-zA-Z]\d?)/i);
+  if (cfMatch) return `codeforces-${cfMatch[1]}-${cfMatch[2].toLowerCase()}`;
+
+  // CodeChef: /problems/FLOW001
+  const ccMatch = s.match(/codechef\.com\/(?:[a-zA-Z0-9_]+\/)?problems\/([a-zA-Z0-9_]+)/i);
+  if (ccMatch) return `codechef-${ccMatch[1].toLowerCase()}`;
+
+  // GeeksforGeeks: /problems/reverse-a-string/1
+  const gfgMatch = s.match(/geeksforgeeks\.org\/problems\/([a-zA-Z0-9\-_]+)/i);
+  if (gfgMatch) return `gfg-${gfgMatch[1].replace(/\/1$/, "").toLowerCase()}`;
+
+  // AtCoder: /contests/abc300/tasks/abc300_a
+  const acMatch = s.match(/atcoder\.jp\/contests\/[a-zA-Z0-9_\-]+\/tasks\/([a-zA-Z0-9_\-]+)/i);
+  if (acMatch) return `atcoder-${acMatch[1].toLowerCase()}`;
+
   // 1. Contest problem URL: /contest/<contest>/problems/<slug>
   const contestMatch = s.match(/contest\/[^/]+\/problems\/([^/?#]+)/i);
   if (contestMatch) return contestMatch[1].trim().toLowerCase();

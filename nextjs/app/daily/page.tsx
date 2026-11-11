@@ -410,20 +410,33 @@ export default function DailyPage() {
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const query = searchQuery.trim();
-    if (query.includes("leetcode.com") || query.includes("/problems/")) {
-      const slug = extractProblemSlug(query);
-      if (slug) {
-        setNavigatingSlug(slug);
-        try {
-          const fullProblem = await fetchProblem(query);
-          setActiveWorkspaceProblem(fullProblem);
-          router.push(`/workspace?slug=${encodeURIComponent(slug)}`);
-          return;
-        } catch {
-          // If direct resolution fails, proceed with standard search
-        } finally {
-          setNavigatingSlug(null);
-        }
+    if (!query) {
+      loadPractice(true);
+      return;
+    }
+
+    const isDirectProblemInput =
+      query.includes("leetcode.com") ||
+      query.includes("codeforces.com") ||
+      query.includes("codechef.com") ||
+      query.includes("geeksforgeeks.org") ||
+      query.includes("atcoder.jp") ||
+      query.includes("/problems/") ||
+      /^(?:cf|cc|gfg|lc|atcoder)[:\-\s]/i.test(query) ||
+      /^\d{1,5}[\-_]?[a-zA-Z]\d?$/i.test(query) ||
+      (/^[A-Z][A-Z0-9_]{3,9}$/.test(query) && !query.includes("-"));
+
+    if (isDirectProblemInput) {
+      setNavigatingSlug(query);
+      try {
+        const fullProblem = await fetchProblem(query);
+        setActiveWorkspaceProblem(fullProblem);
+        router.push(`/workspace?slug=${encodeURIComponent(fullProblem.slug)}`);
+        return;
+      } catch {
+        // If direct resolution fails, proceed with standard keyword search
+      } finally {
+        setNavigatingSlug(null);
       }
     }
     loadPractice(true);

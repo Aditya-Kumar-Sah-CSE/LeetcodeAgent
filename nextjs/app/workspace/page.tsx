@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Editor from "@/components/MonacoEditorWrapper";
 import {
@@ -29,6 +29,7 @@ import {
   Columns,
   Sliders,
   Link,
+  Globe,
   X,
   Loader2,
   AlertTriangle,
@@ -157,11 +158,53 @@ function WorkspaceContent() {
 
   const platform = detectPlatform();
 
-  // Fetch Problem by URL or Contest Link Modal state
+  // Multi-Platform Problem Modal state (LeetCode, Codeforces, CodeChef, GFG, AtCoder)
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [customProblemUrl, setCustomProblemUrl] = useState("");
   const [fetchingCustomProblem, setFetchingCustomProblem] = useState(false);
   const [urlFetchError, setUrlFetchError] = useState("");
+  const [selectedPlatformTab, setSelectedPlatformTab] = useState<"all" | "codeforces" | "codechef" | "gfg" | "atcoder" | "leetcode">("all");
+
+  const detectedInputInfo = useMemo(() => {
+    const s = customProblemUrl.trim().toLowerCase();
+    if (!s) {
+      if (selectedPlatformTab === "codeforces") return { name: "Codeforces", badgeBg: "rgba(59, 130, 246, 0.15)", badgeColor: "#60a5fa", badgeBorder: "rgba(59, 130, 246, 0.35)" };
+      if (selectedPlatformTab === "codechef") return { name: "CodeChef", badgeBg: "rgba(245, 158, 11, 0.15)", badgeColor: "#fbbf24", badgeBorder: "rgba(245, 158, 11, 0.35)" };
+      if (selectedPlatformTab === "gfg") return { name: "GeeksforGeeks", badgeBg: "rgba(16, 185, 129, 0.15)", badgeColor: "#34d399", badgeBorder: "rgba(16, 185, 129, 0.35)" };
+      if (selectedPlatformTab === "atcoder") return { name: "AtCoder", badgeBg: "rgba(168, 85, 247, 0.15)", badgeColor: "#c084fc", badgeBorder: "rgba(168, 85, 247, 0.35)" };
+      return { name: "LeetCode / Auto", badgeBg: "rgba(56, 189, 248, 0.12)", badgeColor: "#38bdf8", badgeBorder: "rgba(56, 189, 248, 0.25)" };
+    }
+    if (s.includes("codeforces.com") || /^(?:cf|codeforces)[:\-\s]/i.test(s) || /^\d{1,5}[\-_]?[a-z]\d?$/i.test(s)) {
+      return { name: "Codeforces", badgeBg: "rgba(59, 130, 246, 0.15)", badgeColor: "#60a5fa", badgeBorder: "rgba(59, 130, 246, 0.35)" };
+    }
+    if (s.includes("codechef.com") || /^(?:cc|codechef)[:\-\s]/i.test(s) || (/^[a-z][a-z0-9_]{3,9}$/i.test(s) && !s.includes("-"))) {
+      return { name: "CodeChef", badgeBg: "rgba(245, 158, 11, 0.15)", badgeColor: "#fbbf24", badgeBorder: "rgba(245, 158, 11, 0.35)" };
+    }
+    if (s.includes("geeksforgeeks.org") || /^(?:gfg|geeksforgeeks)[:\-\s]/i.test(s) || s.endsWith("-gfg")) {
+      return { name: "GeeksforGeeks", badgeBg: "rgba(16, 185, 129, 0.15)", badgeColor: "#34d399", badgeBorder: "rgba(16, 185, 129, 0.35)" };
+    }
+    if (s.includes("atcoder.jp") || /^(?:atcoder|ac)[:\-\s]/i.test(s) || /^[a-z0-9]+_[a-z0-9]+$/i.test(s)) {
+      return { name: "AtCoder", badgeBg: "rgba(168, 85, 247, 0.15)", badgeColor: "#c084fc", badgeBorder: "rgba(168, 85, 247, 0.35)" };
+    }
+    return { name: "LeetCode", badgeBg: "rgba(249, 115, 22, 0.15)", badgeColor: "#fb923c", badgeBorder: "rgba(249, 115, 22, 0.35)" };
+  }, [customProblemUrl, selectedPlatformTab]);
+
+  const QUICK_SUGGESTIONS = [
+    { platform: "codeforces", code: "4A", label: "4A - Watermelon", badge: "CF", badgeColor: "#3b82f6" },
+    { platform: "codeforces", code: "71A", label: "71A - Way Too Long Words", badge: "CF", badgeColor: "#3b82f6" },
+    { platform: "codechef", code: "FLOW001", label: "FLOW001 - Add Two Numbers", badge: "CC", badgeColor: "#d97706" },
+    { platform: "codechef", code: "TSORT", label: "TSORT - Turbo Sort", badge: "CC", badgeColor: "#d97706" },
+    { platform: "gfg", code: "gfg:reverse-a-string", label: "Reverse a String", badge: "GFG", badgeColor: "#059669" },
+    { platform: "atcoder", code: "https://atcoder.jp/contests/abc300/tasks/abc300_a", label: "abc300_a - N-choice question", badge: "AC", badgeColor: "#7c3aed" },
+    { platform: "leetcode", code: "two-sum", label: "Two Sum", badge: "LC", badgeColor: "#ea580c" },
+    { platform: "leetcode", code: "count-frequency-staircase-subarrays-i", label: "Count Frequency Staircase Subarrays I", badge: "LC", badgeColor: "#ea580c" },
+    { platform: "leetcode", code: "create-grid-with-exactly-one-path", label: "Create Grid With Exactly One Path", badge: "LC", badgeColor: "#ea580c" },
+  ];
+
+  const filteredSuggestions = useMemo(() => {
+    if (selectedPlatformTab === "all") return QUICK_SUGGESTIONS;
+    return QUICK_SUGGESTIONS.filter((s) => s.platform === selectedPlatformTab);
+  }, [selectedPlatformTab]);
 
   const handleFetchProblemByUrl = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -177,10 +220,10 @@ function WorkspaceContent() {
       initCodeForProblem(p, language);
       setShowUrlModal(false);
       setCustomProblemUrl("");
-      showToast(`Loaded "${p.title}" #${p.id || p.slug}`);
+      showToast(`Loaded "${p.title}" [${p.platform || "Problem"}] ✓`);
       router.push(`/workspace?slug=${encodeURIComponent(p.slug)}`);
     } catch (err: any) {
-      setUrlFetchError(err.message || "Failed to fetch problem from LeetCode. Verify URL or network.");
+      setUrlFetchError(err.message || "Failed to fetch problem. Verify the ID/link and try again.");
     } finally {
       setFetchingCustomProblem(false);
     }
@@ -893,6 +936,34 @@ function WorkspaceContent() {
         <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
           {problem && (
             <>
+              {problem.platform && (
+                <span
+                  className="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider"
+                  style={{
+                    background: problem.platform.toLowerCase().includes("codeforces")
+                      ? "rgba(59, 130, 246, 0.15)"
+                      : problem.platform.toLowerCase().includes("codechef")
+                      ? "rgba(245, 158, 11, 0.15)"
+                      : problem.platform.toLowerCase().includes("geek")
+                      ? "rgba(16, 185, 129, 0.15)"
+                      : problem.platform.toLowerCase().includes("atcoder")
+                      ? "rgba(168, 85, 247, 0.15)"
+                      : "rgba(249, 115, 22, 0.15)",
+                    color: problem.platform.toLowerCase().includes("codeforces")
+                      ? "#60a5fa"
+                      : problem.platform.toLowerCase().includes("codechef")
+                      ? "#fbbf24"
+                      : problem.platform.toLowerCase().includes("geek")
+                      ? "#34d399"
+                      : problem.platform.toLowerCase().includes("atcoder")
+                      ? "#c084fc"
+                      : "#fb923c",
+                    border: "1px solid currentColor",
+                  }}
+                >
+                  {problem.platform}
+                </span>
+              )}
               <DifficultyBadge difficulty={problem.difficulty} />
               <ProblemStatusBadge isSolved={isSolved} size="sm" showAccountHint={isSolved} />
               <h2
@@ -905,10 +976,10 @@ function WorkspaceContent() {
               <button
                 onClick={() => setShowUrlModal(true)}
                 className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border text-cyan-300 hover:text-white bg-cyan-500/10 border-cyan-500/30 hover:bg-cyan-500/20 transition-all cursor-pointer shrink-0"
-                title="Paste any LeetCode problem or contest URL/slug to fetch live"
+                title="Fetch problem by link or ID from LeetCode, Codeforces, CodeChef, GeeksforGeeks, or AtCoder"
               >
-                <Link size={12} className="text-cyan-400" />
-                <span>Fetch by URL</span>
+                <Globe size={12} className="text-cyan-400" />
+                <span>Fetch Problem</span>
               </button>
               <button
                 onClick={() => router.push("/daily")}
@@ -1055,7 +1126,7 @@ function WorkspaceContent() {
             <span>{isRunning ? "Solving..." : "Auto-Solve"}</span>
           </button>
 
-          {/* One-Tap Copy Solution & Open LeetCode Button */}
+          {/* One-Tap Copy Solution & Open Submission Page Button */}
           <button
             onClick={handleCopyAndOpenLeetCode}
             className="px-4 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition-all hover:scale-105 touch-target"
@@ -1064,10 +1135,10 @@ function WorkspaceContent() {
               color: "#fff",
               boxShadow: "0 2px 12px rgba(16, 185, 129, 0.3)",
             }}
-            title="Copy entire code and open LeetCode submission page"
+            title={`Copy entire code and open ${problem?.platform || "LeetCode"} problem page`}
           >
             <Copy size={14} />
-            <span>Copy & Open LeetCode</span>
+            <span>Copy & Open {problem?.platform ? (problem.platform === "GeeksforGeeks" ? "GFG" : problem.platform) : "LeetCode"}</span>
           </button>
         </div>
       </div>
@@ -2056,31 +2127,32 @@ function WorkspaceContent() {
         copyError={copyError}
       />
 
-      {/* Fetch by URL / Contest Link Modal */}
+      {/* Universal Multi-Platform Problem Modal (CodeChef, Codeforces, GFG, AtCoder, LeetCode) */}
       {showUrlModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
           onClick={() => setShowUrlModal(false)}
         >
           <div
-            className="w-full max-w-lg p-5 rounded-2xl border space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+            className="w-full max-w-xl p-5 sm:p-6 rounded-2xl border space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
             style={{
               background: "var(--color-bg-card)",
               borderColor: "var(--color-border)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Modal Header */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <span className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  <Link size={18} />
+                  <Globe size={20} />
                 </span>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-white">
-                    Fetch Problem by LeetCode URL or Slug
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    Fetch Problem from Any Platform
                   </h3>
                   <p className="text-[11px] text-muted">
-                    Paste any LeetCode problem, contest problem, or submission link.
+                    Fetch by link or ID from CodeChef, Codeforces, GeeksforGeeks, AtCoder, LeetCode & more.
                   </p>
                 </div>
               </div>
@@ -2092,53 +2164,137 @@ function WorkspaceContent() {
               </button>
             </div>
 
-            <form onSubmit={handleFetchProblemByUrl} className="space-y-3.5">
+            {/* Platform Filter Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {[
+                { id: "all", label: "All / Auto", color: "text-gray-300" },
+                { id: "codeforces", label: "Codeforces", color: "text-blue-400" },
+                { id: "codechef", label: "CodeChef", color: "text-amber-400" },
+                { id: "gfg", label: "GeeksforGeeks", color: "text-emerald-400" },
+                { id: "atcoder", label: "AtCoder", color: "text-purple-400" },
+                { id: "leetcode", label: "LeetCode", color: "text-orange-400" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setSelectedPlatformTab(tab.id as any)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border ${
+                    selectedPlatformTab === tab.id
+                      ? "bg-white/10 text-white border-cyan-500/40 shadow-sm"
+                      : "bg-black/20 text-muted border-transparent hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span className={selectedPlatformTab === tab.id ? "text-cyan-300" : tab.color}>●</span> {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleFetchProblemByUrl} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300">
-                  LeetCode URL or Slug:
-                </label>
-                <input
-                  type="text"
-                  autoFocus
-                  value={customProblemUrl}
-                  onChange={(e) => {
-                    setCustomProblemUrl(e.target.value);
-                    if (urlFetchError) setUrlFetchError("");
-                  }}
-                  placeholder="https://leetcode.com/contest/.../problems/count-frequency-staircase-subarrays-i/ or count-frequency-staircase-subarrays-i"
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono text-white focus:border-cyan-400"
-                  style={{
-                    background: "var(--color-bg-primary)",
-                    borderColor: urlFetchError ? "var(--color-danger)" : "var(--color-border)",
-                  }}
-                />
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-gray-300">
+                    Problem Link or ID:
+                  </label>
+                  {/* Live Platform Detection Badge */}
+                  {customProblemUrl.trim() && (
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"
+                      style={{
+                        background: detectedInputInfo.badgeBg,
+                        color: detectedInputInfo.badgeColor,
+                        border: `1px solid ${detectedInputInfo.badgeBorder}`,
+                      }}
+                    >
+                      <span>Detected:</span>
+                      <span>{detectedInputInfo.name}</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={customProblemUrl}
+                    onChange={(e) => {
+                      setCustomProblemUrl(e.target.value);
+                      if (urlFetchError) setUrlFetchError("");
+                    }}
+                    placeholder={
+                      selectedPlatformTab === "codeforces"
+                        ? "e.g. 4A, 1900B, or https://codeforces.com/problemset/problem/4/A"
+                        : selectedPlatformTab === "codechef"
+                        ? "e.g. FLOW001, TSORT, or https://www.codechef.com/problems/FLOW001"
+                        : selectedPlatformTab === "gfg"
+                        ? "e.g. reverse-a-string or https://practice.geeksforgeeks.org/problems/..."
+                        : selectedPlatformTab === "atcoder"
+                        ? "e.g. abc300_a or https://atcoder.jp/contests/abc300/tasks/abc300_a"
+                        : selectedPlatformTab === "leetcode"
+                        ? "e.g. two-sum, 1, or contest problem URL"
+                        : "Paste any link or ID (e.g. 4A, FLOW001, reverse-a-string, two-sum)..."
+                    }
+                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none font-mono text-white focus:border-cyan-400 pr-10"
+                    style={{
+                      background: "var(--color-bg-primary)",
+                      borderColor: urlFetchError ? "var(--color-danger)" : "var(--color-border)",
+                    }}
+                  />
+                  {customProblemUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomProblemUrl("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-white p-1 cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {urlFetchError && (
-                <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-                  {urlFetchError}
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-start gap-2">
+                  <AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-400" />
+                  <span className="leading-relaxed">{urlFetchError}</span>
                 </div>
               )}
 
-              {/* Quick suggestions */}
-              <div className="space-y-1.5 text-[11px]">
-                <span className="text-muted block font-medium">Quick suggestions (Contest / Live):</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { label: "Count Frequency Staircase Subarrays I", slug: "count-frequency-staircase-subarrays-i" },
-                    { label: "Count Frequency Staircase Subarrays II", slug: "count-frequency-staircase-subarrays-ii" },
-                    { label: "Create Grid With Exactly One Path", slug: "create-grid-with-exactly-one-path" },
-                  ].map((s) => (
+              {/* Quick suggestions with platform badges */}
+              <div className="space-y-2 text-[11px]">
+                <div className="flex items-center justify-between text-muted">
+                  <span className="font-semibold">Quick Suggestions:</span>
+                  <span className="text-[10px] text-gray-400">Click to paste</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                  {filteredSuggestions.map((s) => (
                     <button
-                      key={s.slug}
+                      key={s.code}
                       type="button"
-                      onClick={() => setCustomProblemUrl(s.slug)}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-medium bg-secondary text-secondary hover:text-white border border-border-subtle cursor-pointer hover:border-cyan-500/40 transition-all"
+                      onClick={() => setCustomProblemUrl(s.code)}
+                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-secondary text-secondary hover:text-white border border-border-subtle cursor-pointer hover:border-cyan-500/40 transition-all flex items-center gap-1.5 group"
                     >
-                      {s.label}
+                      <span
+                        className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+                        style={{
+                          background: s.badgeColor,
+                          color: "#fff",
+                        }}
+                      >
+                        {s.badge}
+                      </span>
+                      <span>{s.label}</span>
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Supported formats hint */}
+              <div className="p-2.5 rounded-xl bg-white/[0.02] border border-border-subtle text-[10px] text-muted flex flex-wrap gap-x-3 gap-y-1">
+                <span className="font-semibold text-gray-400">Supported Formats:</span>
+                <span>• Codeforces: <code className="text-blue-300">4A</code>, <code className="text-blue-300">1900B</code></span>
+                <span>• CodeChef: <code className="text-amber-300">FLOW001</code></span>
+                <span>• GFG: <code className="text-emerald-300">reverse-a-string</code></span>
+                <span>• AtCoder: <code className="text-purple-300">abc300_a</code></span>
+                <span>• LeetCode: <code className="text-orange-300">two-sum</code>, URL</span>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
@@ -2158,7 +2314,7 @@ function WorkspaceContent() {
                   {fetchingCustomProblem ? (
                     <>
                       <Sparkles size={13} className="animate-spin" />
-                      <span>Fetching from LeetCode...</span>
+                      <span>Fetching from {detectedInputInfo.name}...</span>
                     </>
                   ) : (
                     <>

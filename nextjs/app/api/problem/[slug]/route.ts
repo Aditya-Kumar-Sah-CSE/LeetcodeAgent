@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchProblemBySlug } from "@/lib/services/leetcodeService";
+import { resolveAnyProblem } from "@/lib/services/problemResolverService";
 
 export async function GET(
   req: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   const { slug } = await params;
   try {
-    const problem = await fetchProblemBySlug(slug);
+    const problem = await resolveAnyProblem(slug);
     return NextResponse.json(problem);
   } catch (err: any) {
     return NextResponse.json(
@@ -16,4 +16,5 @@ export async function GET(
     );
   }
 }
+
 

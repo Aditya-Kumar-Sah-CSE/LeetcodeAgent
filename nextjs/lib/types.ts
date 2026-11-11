@@ -7,10 +7,10 @@ export interface ProblemExample {
 }
 
 export interface DailyProblem {
-  id: number;
+  id: number | string;
   title: string;
   slug: string;
-  difficulty: "Easy" | "Medium" | "Hard";
+  difficulty: "Easy" | "Medium" | "Hard" | string;
   description: string;
   examples: ProblemExample[];
   constraints: string[];
@@ -20,16 +20,18 @@ export interface DailyProblem {
   fetched_at: string;
   code_snippets?: Record<string, string>;
   is_solved?: boolean;
+  platform?: string;
 }
 
 export interface ProblemBrief {
-  id: number;
+  id: number | string;
   title: string;
   slug: string;
-  difficulty: "Easy" | "Medium" | "Hard";
+  difficulty: "Easy" | "Medium" | "Hard" | string;
   tags: string[];
   url: string;
   is_solved?: boolean;
+  platform?: string;
 }
 
 export interface TopicTag {

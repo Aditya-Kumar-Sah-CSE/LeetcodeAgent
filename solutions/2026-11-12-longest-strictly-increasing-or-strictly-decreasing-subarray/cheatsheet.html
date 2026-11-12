@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3105. Longest Strictly Increasing or Strictly Decreasing Subarray - 2-Page Cheat Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.45; font-size: 11pt; }
+    .print-bar { background: #1e293b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .print-btn { background: linear-gradient(135deg, #6366f1, #06b6d4); color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .page { width: 210mm; min-height: 297mm; max-height: 297mm; margin: 20px auto; padding: 14mm 16mm; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+    .page-break { page-break-after: always; break-after: page; }
+    .header-banner { background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #0891b2 100%); color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .card-accent { border-left: 4px solid #4f46e5; background: #f5f3ff; }
+    .trick-box { background: #fffbeb; border-left: 5px solid #d97706; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+    pre.code-block { background: #111827; color: #e5e7eb; font-family: 'Fira Code', monospace; font-size: 8.5pt; line-height: 1.4; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; margin-bottom: 10px; }
+    .footer { border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #64748b; }
+    @media print { body { background: white; } .print-bar { display: none; } .page { margin: 0; box-shadow: none; page-break-after: always; break-after: page; height: 297mm; } }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <div><strong>⚡ LeetCode AI Agent — Cheat Sheet Generator</strong> · 3105. Longest Strictly Increasing or Strictly Decreasing Subarray</div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+  <div class="page page-break">
+    <div>
+      <div class="header-banner">
+        <div><h1 style="font-size: 16pt;">3105. Longest Strictly Increasing or Strictly Decreasing Subarray</h1><div style="font-size: 9pt; opacity: 0.9;">LeetCode Daily Challenge · Array</div></div>
+        <span style="background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5pt;">Easy</span>
+      </div>
+      <div class="card"><strong>🎯 Problem Goal:</strong><br>You are given an array of integers `nums`. Return the length of the longest subarray of `nums` which is either strictly increasing or strictly decreasing . Example 1: Input: nums = [1,4,3,3,2] Output: 2 Explanation: The strictly increasing subarrays of `nums` are `[1]`, `[2]`, `[3]`, `[3]`, `[4]`, and `[1,4]`. The strictly decreasing subarrays of `...</div>
+      <div class="card card-accent"><strong>💡 Core Concept:</strong><br>Optimal graph/array pattern.</div>
+      <div class="trick-box"><strong style="color: #92400e;">⚡ Trick to Remember (Interview Intuition):</strong><br><span style="color: #78350f; font-size: 9pt;">Break down the state invariants and avoid duplicate work.</span></div>
+    </div>
+    <div class="footer"><span>LeetCode AI Agent</span><span>Page 1 of 2</span><span>2026-11-12</span></div>
+  </div>
+  <div class="page">
+    <div>
+      <h3 style="margin-bottom: 8px;">💻 Solution Code (Python)</h3>
+      <pre class="code-block">from typing import List
+
+class Solution:
+    def longestMonotonicSubarray(self, nums: List[int]) -> int:
+        """
+        Returns the length of the longest subarray that is either strictly
+        increasing or strictly decreasing.
+        """
+        n = len(nums)
+        if n == 0:
+            return 0
+
+        max_len = 1          # at least one element forms a valid subarray
+        inc_len = 1          # length of current strictly increasing run
+        dec_len = 1          # length of current strictly decreasing run
+
+        for i in range(1, n):
+            if nums[i] > nums[i - 1]:
+                # extend increasing run, reset decreasing run
+                inc_len += 1
+                dec_len = 1
+            elif nums[i] < nums[i - 1]:
+                # extend decreasing run, reset increasing run
+                dec_len += 1
+                inc_len = 1
+            else:
+                # equal elements break both strict monotonicity
+                inc_len = 1
+                dec_len = 1
+
+            max_len = max(max_len, inc_len, dec_len)
+
+        return max_len</pre>
+      <div class="card card-accent" style="font-size: 9pt;"><strong>🇮🇳 Hinglish Revision:</strong><br>Problem ko step-by-step simplify karo!</div>
+    </div>
+    <div class="footer"><span>Online Solution Book & Cheat Sheet</span><span>Page 2 of 2</span><span>GitHub Repository</span></div>
+  </div>
+</body>
+</html>

@@ -1,5 +1,28 @@
 [
   {
+    "id": 3105,
+    "title": "Longest Strictly Increasing or Strictly Decreasing Subarray",
+    "slug": "longest-strictly-increasing-or-strictly-decreasing-subarray",
+    "difficulty": "Easy",
+    "tags": [
+      "Array"
+    ],
+    "date": "2026-11-12",
+    "url": "https://leetcode.com/problems/longest-strictly-increasing-or-strictly-decreasing-subarray/",
+    "folder": "2026-11-12-longest-strictly-increasing-or-strictly-decreasing-subarray",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-12T05:59:52.980720+00:00",
+    "concept": "Optimal solution using Array",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an array of integers `nums`. Return the length of the longest subarray of `nums` which is either strictly increasing or strictly decreasing . Example 1: Input: nums = [1,4,3,3,2] Output: 2 Explanation: The strictly increasing subarrays ",
+    "summary_hinglish": "Longest Strictly Increasing or Strictly Decreasing Subarray ka simple solution aur logic.",
+    "topics_needed": [
+      "Array"
+    ],
+    "code_python": "from typing import List\n\nclass Solution:\n    def longestMonotonicSubarray(self, nums: List[int]) -> int:\n        \"\"\"\n        Returns the length of the longest subarray that is either strictly\n        increasing or strictly decreasing.\n        \"\"\"\n        n = len(nums)\n        if n == 0:\n            return 0\n\n        max_len = 1          # at least one element forms a valid subarray\n        inc_len = 1          # length of current strictly increasing run\n        dec_len = 1          # length of current strictly decreasing run\n\n        for i in range(1, n):\n            if nums[i] > nums[i - 1]:\n                # extend increasing run, reset decreasing run\n                inc_len += 1\n                dec_len = 1\n            elif nums[i] < nums[i - 1]:\n                # extend decreasing run, reset increasing run\n                dec_len += 1\n                inc_len = 1\n            else:\n                # equal elements break both strict monotonicity\n                inc_len = 1\n                dec_len = 1\n\n            max_len = max(max_len, inc_len, dec_len)\n\n        return max_len\n"
+  },
+  {
     "id": 1267,
     "title": "Count Servers that Communicate",
     "slug": "count-servers-that-communicate",

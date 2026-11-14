@@ -1,5 +1,32 @@
 [
   {
+    "id": 3364,
+    "title": "Minimum Positive Sum Subarray ",
+    "slug": "minimum-positive-sum-subarray",
+    "difficulty": "Easy",
+    "tags": [
+      "Array",
+      "Sliding Window",
+      "Prefix Sum"
+    ],
+    "date": "2026-11-14",
+    "url": "https://leetcode.com/problems/minimum-positive-sum-subarray/",
+    "folder": "2026-11-14-minimum-positive-sum-subarray",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-14T05:13:50.594616+00:00",
+    "concept": "Optimal solution using Array, Sliding Window",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an integer array `nums` and two integers `l` and `r`. Your task is to find the minimum sum of a subarray whose size is between `l` and `r` (inclusive) and whose sum is greater than 0. Return the minimum sum of such a subarray. If no suc",
+    "summary_hinglish": "Minimum Positive Sum Subarray  ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Sliding Window",
+      "Prefix Sum"
+    ],
+    "code_python": "from typing import List\n\nclass Solution:\n    def minimumSumSubarray(self, nums: List[int], l: int, r: int) -> int:\n        n = len(nums)\n        # Build prefix sum array\n        prefix = [0] * (n + 1)\n        for i in range(n):\n            prefix[i + 1] = prefix[i] + nums[i]\n        \n        min_positive = float('inf')\n        # Check every possible starting index\n        for i in range(n):\n            # Check every allowed length\n            for length in range(l, r + 1):\n                if i + length > n:\n                    break\n                current_sum = prefix[i + length] - prefix[i]\n                if current_sum > 0:\n                    min_positive = min(min_positive, current_sum)\n        \n        return min_positive if min_positive != float('inf') else -1\n"
+  },
+  {
     "id": 3105,
     "title": "Longest Strictly Increasing or Strictly Decreasing Subarray",
     "slug": "longest-strictly-increasing-or-strictly-decreasing-subarray",

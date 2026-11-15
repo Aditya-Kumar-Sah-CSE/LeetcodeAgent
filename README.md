@@ -2,7 +2,7 @@
 
 [![Daily LeetCode Solver](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml)
 [![Deploy to GitHub Pages](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml)
-[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-13-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
+[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-14-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
@@ -17,15 +17,15 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 ## 🚀 Latest Daily Challenge
 
 
-> **3364. Minimum Positive Sum Subarray ** (Easy)  
-> 📅 **Date**: `2026-11-14`  
-> 🔗 [View on LeetCode](https://leetcode.com/problems/minimum-positive-sum-subarray/) · [View Solution Code](solutions/2026-11-14-minimum-positive-sum-subarray/solution.py) · [View Editorial](solutions/2026-11-14-minimum-positive-sum-subarray/README.md)
+> **1524. Number of Sub-arrays With Odd Sum** (Medium)  
+> 📅 **Date**: `2026-11-15`  
+> 🔗 [View on LeetCode](https://leetcode.com/problems/number-of-sub-arrays-with-odd-sum/) · [View Solution Code](solutions/2026-11-15-number-of-sub-arrays-with-odd-sum/solution.py) · [View Editorial](solutions/2026-11-15-number-of-sub-arrays-with-odd-sum/README.md)
 
 
 ### Progress Summary
 | Total Solved | Easy | Medium | Hard |
 |:---:|:---:|:---:|:---:|
-| **13** | 🟢 5 | 🟡 8 | 🔴 0 |
+| **14** | 🟢 5 | 🟡 9 | 🔴 0 |
 
 ---
 
@@ -33,6 +33,7 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 | Date | Problem | Difficulty | Topics | Solution & Notes |
 |:---|:---|:---:|:---|:---|
+| 2026-11-15 | [1524. Number of Sub-arrays With Odd Sum](https://leetcode.com/problems/number-of-sub-arrays-with-odd-sum/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Math`, `Dynamic Programming` | [Python](solutions/2026-11-15-number-of-sub-arrays-with-odd-sum/solution.py) · [Notes](solutions/2026-11-15-number-of-sub-arrays-with-odd-sum/README.md) |
 | 2026-11-14 | [3364. Minimum Positive Sum Subarray ](https://leetcode.com/problems/minimum-positive-sum-subarray/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array`, `Sliding Window`, `Prefix Sum` | [Python](solutions/2026-11-14-minimum-positive-sum-subarray/solution.py) · [Notes](solutions/2026-11-14-minimum-positive-sum-subarray/README.md) |
 | 2026-11-12 | [3105. Longest Strictly Increasing or Strictly Decreasing Subarray](https://leetcode.com/problems/longest-strictly-increasing-or-strictly-decreasing-subarray/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array` | [Python](solutions/2026-11-12-longest-strictly-increasing-or-strictly-decreasing-subarray/solution.py) · [Notes](solutions/2026-11-12-longest-strictly-increasing-or-strictly-decreasing-subarray/README.md) |
 | 2026-11-08 | [1267. Count Servers that Communicate](https://leetcode.com/problems/count-servers-that-communicate/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Depth-First Search`, `Breadth-First Search` | [Python](solutions/2026-11-08-count-servers-that-communicate/solution.py) · [Notes](solutions/2026-11-08-count-servers-that-communicate/README.md) |

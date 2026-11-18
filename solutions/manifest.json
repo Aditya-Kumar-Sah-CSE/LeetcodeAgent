@@ -1,5 +1,28 @@
 [
   {
+    "id": 2914,
+    "title": "Minimum Number of Changes to Make Binary String Beautiful",
+    "slug": "minimum-number-of-changes-to-make-binary-string-beautiful",
+    "difficulty": "Medium",
+    "tags": [
+      "String"
+    ],
+    "date": "2026-11-18",
+    "url": "https://leetcode.com/problems/minimum-number-of-changes-to-make-binary-string-beautiful/",
+    "folder": "2026-11-18-minimum-number-of-changes-to-make-binary-string-beautiful",
+    "model_used": "openrouter/free",
+    "solved_at": "2026-11-18T06:11:22.617289+00:00",
+    "concept": "Optimal solution using String",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given a 0-indexed binary string `s` having an even length. A string is beautiful if it's possible to partition it into one or more substrings such that: Each substring has an even length . Each substring contains only `1`'s or only `0`'s. You",
+    "summary_hinglish": "Minimum Number of Changes to Make Binary String Beautiful ka simple solution aur logic.",
+    "topics_needed": [
+      "String"
+    ],
+    "code_python": "class Solution:\n    def minChanges(self, s: str) -> int:\n        \"\"\"\n        Returns the minimum number of character changes required to make the binary string beautiful.\n        A string is beautiful if it can be partitioned into even-length substrings of all '0's or all '1's.\n        The optimal strategy is to consider each consecutive pair of characters (since any even-length\n        uniform block can be split into length-2 uniform blocks). For each pair, if the two characters\n        differ, we need exactly one change to make them equal (either \"00\" or \"11\").\n        \"\"\"\n        changes = 0\n        # Iterate over the string in steps of 2\n        for i in range(0, len(s), 2):\n            if s[i] != s[i + 1]:\n                changes += 1\n        return changes\n"
+  },
+  {
     "id": 1524,
     "title": "Number of Sub-arrays With Odd Sum",
     "slug": "number-of-sub-arrays-with-odd-sum",

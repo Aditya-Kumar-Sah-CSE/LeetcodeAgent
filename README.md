@@ -2,7 +2,7 @@
 
 [![Daily LeetCode Solver](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/daily-solve.yml)
 [![Deploy to GitHub Pages](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Aditya-Kumar-Sah-CSE/LeetcodeAgent/actions/workflows/deploy-pages.yml)
-[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-15-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
+[![Solutions Solved](https://img.shields.io/badge/Solutions%20Solved-16-6c63ff?style=for-the-badge&logo=leetcode)](solutions/manifest.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem Solver**.
@@ -17,15 +17,15 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 ## 🚀 Latest Daily Challenge
 
 
-> **2914. Minimum Number of Changes to Make Binary String Beautiful** (Medium)  
-> 📅 **Date**: `2026-11-18`  
-> 🔗 [View on LeetCode](https://leetcode.com/problems/minimum-number-of-changes-to-make-binary-string-beautiful/) · [View Solution Code](solutions/2026-11-18-minimum-number-of-changes-to-make-binary-string-beautiful/solution.py) · [View Editorial](solutions/2026-11-18-minimum-number-of-changes-to-make-binary-string-beautiful/README.md)
+> **2124. Check if All A's Appears Before All B's** (Easy)  
+> 📅 **Date**: `2026-11-22`  
+> 🔗 [View on LeetCode](https://leetcode.com/problems/check-if-all-as-appears-before-all-bs/) · [View Solution Code](solutions/2026-11-22-check-if-all-as-appears-before-all-bs/solution.py) · [View Editorial](solutions/2026-11-22-check-if-all-as-appears-before-all-bs/README.md)
 
 
 ### Progress Summary
 | Total Solved | Easy | Medium | Hard |
 |:---:|:---:|:---:|:---:|
-| **15** | 🟢 5 | 🟡 10 | 🔴 0 |
+| **16** | 🟢 6 | 🟡 10 | 🔴 0 |
 
 ---
 
@@ -33,6 +33,7 @@ An intelligent, local-first **LeetCode AI Assistant & Automated Daily Problem So
 
 | Date | Problem | Difficulty | Topics | Solution & Notes |
 |:---|:---|:---:|:---|:---|
+| 2026-11-22 | [2124. Check if All A's Appears Before All B's](https://leetcode.com/problems/check-if-all-as-appears-before-all-bs/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `String` | [Python](solutions/2026-11-22-check-if-all-as-appears-before-all-bs/solution.py) · [Notes](solutions/2026-11-22-check-if-all-as-appears-before-all-bs/README.md) |
 | 2026-11-18 | [2914. Minimum Number of Changes to Make Binary String Beautiful](https://leetcode.com/problems/minimum-number-of-changes-to-make-binary-string-beautiful/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `String` | [Python](solutions/2026-11-18-minimum-number-of-changes-to-make-binary-string-beautiful/solution.py) · [Notes](solutions/2026-11-18-minimum-number-of-changes-to-make-binary-string-beautiful/README.md) |
 | 2026-11-15 | [1524. Number of Sub-arrays With Odd Sum](https://leetcode.com/problems/number-of-sub-arrays-with-odd-sum/) | ![Medium](https://img.shields.io/badge/-Medium-yellow?style=flat-square) | `Array`, `Math`, `Dynamic Programming` | [Python](solutions/2026-11-15-number-of-sub-arrays-with-odd-sum/solution.py) · [Notes](solutions/2026-11-15-number-of-sub-arrays-with-odd-sum/README.md) |
 | 2026-11-14 | [3364. Minimum Positive Sum Subarray ](https://leetcode.com/problems/minimum-positive-sum-subarray/) | ![Easy](https://img.shields.io/badge/-Easy-brightgreen?style=flat-square) | `Array`, `Sliding Window`, `Prefix Sum` | [Python](solutions/2026-11-14-minimum-positive-sum-subarray/solution.py) · [Notes](solutions/2026-11-14-minimum-positive-sum-subarray/README.md) |

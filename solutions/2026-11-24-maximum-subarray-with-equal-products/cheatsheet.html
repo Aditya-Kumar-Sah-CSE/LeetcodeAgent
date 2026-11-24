@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3411. Maximum Subarray With Equal Products - 2-Page Cheat Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; line-height: 1.45; font-size: 11pt; }
+    .print-bar { background: #1e293b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .print-btn { background: linear-gradient(135deg, #6366f1, #06b6d4); color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .page { width: 210mm; min-height: 297mm; max-height: 297mm; margin: 20px auto; padding: 14mm 16mm; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+    .page-break { page-break-after: always; break-after: page; }
+    .header-banner { background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #0891b2 100%); color: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+    .card-accent { border-left: 4px solid #4f46e5; background: #f5f3ff; }
+    .trick-box { background: #fffbeb; border-left: 5px solid #d97706; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+    pre.code-block { background: #111827; color: #e5e7eb; font-family: 'Fira Code', monospace; font-size: 8.5pt; line-height: 1.4; padding: 10px 12px; border-radius: 8px; white-space: pre-wrap; margin-bottom: 10px; }
+    .footer { border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; font-size: 7.5pt; color: #64748b; }
+    @media print { body { background: white; } .print-bar { display: none; } .page { margin: 0; box-shadow: none; page-break-after: always; break-after: page; height: 297mm; } }
+  </style>
+</head>
+<body>
+  <div class="print-bar">
+    <div><strong>⚡ LeetCode AI Agent — Cheat Sheet Generator</strong> · 3411. Maximum Subarray With Equal Products</div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+  <div class="page page-break">
+    <div>
+      <div class="header-banner">
+        <div><h1 style="font-size: 16pt;">3411. Maximum Subarray With Equal Products</h1><div style="font-size: 9pt; opacity: 0.9;">LeetCode Daily Challenge · Array, Math, Sliding Window, Enumeration, Number Theory</div></div>
+        <span style="background: #fef3c7; color: #b45309; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 8.5pt;">Easy</span>
+      </div>
+      <div class="card"><strong>🎯 Problem Goal:</strong><br>You are given an array of positive integers `nums`. An array `arr` is called product equivalent if `prod(arr) == lcm(arr) * gcd(arr)`, where: `prod(arr)` is the product of all elements of `arr`. `gcd(arr)` is the GCD of all elements of `arr`. `lcm(arr)` is the LCM of all elements of `arr`. Return the length of the longest product equivalent subarra...</div>
+      <div class="card card-accent"><strong>💡 Core Concept:</strong><br>Optimal graph/array pattern.</div>
+      <div class="trick-box"><strong style="color: #92400e;">⚡ Trick to Remember (Interview Intuition):</strong><br><span style="color: #78350f; font-size: 9pt;">Break down the state invariants and avoid duplicate work.</span></div>
+    </div>
+    <div class="footer"><span>LeetCode AI Agent</span><span>Page 1 of 2</span><span>2026-11-24</span></div>
+  </div>
+  <div class="page">
+    <div>
+      <h3 style="margin-bottom: 8px;">💻 Solution Code (Python)</h3>
+      <pre class="code-block">import math
+from typing import List
+from functools import reduce
+
+class Solution:
+    def maxLength(self, nums: List[int]) -> int:
+        """
+        A subarray is product equivalent if prod(arr) == lcm(arr) * gcd(arr).
+        
+        Key Insight:
+        For any two numbers a and b, we know that a * b = gcd(a, b) * lcm(a, b).
+        For a subarray of length 1, the condition is trivially true (x = x * x is only true if x=1, 
+        but the problem asks for subarrays, and the formula prod = lcm * gcd always holds for length 1).
+        For a subarray of length 2, the condition prod(a, b) = lcm(a, b) * gcd(a, b) is always true.
+        For a subarray of length > 2, the condition prod(a, b, c, ...) = lcm(a, b, c, ...) * gcd(a, b, c, ...)
+        is much stricter. It essentially means that the elements must be pairwise coprime 
+        relative to the GCD of the whole set.
+        
+        Given the constraints (nums.length <= 100, nums[i] <= 10), we can use a brute-force 
+        approach to check all possible subarrays.
+        """
+        
+        def get_gcd(a, b):
+            while b:
+                a, b = b, a % b
+            return a
+
+        def get_lcm(a, b):
+            if a == 0 or b == 0: return 0
+            return abs(a * b) // get_gcd(a, b)
+
+        n = len(nums)
+        max_len = 0
+        
+        for i in range(n):
+            current_prod = 1
+            current_gcd = nums[i]
+            current_lcm = nums[i]
+            
+            for j in range(i, n):
+                val = nums[j]
+                current_prod *= val
+                current_gcd = get_gcd(current_gcd, val)
+                current_lcm = get_lcm(current_lcm, val)
+                
+                # Optimization: Since nums[i] >= 1, current_prod grows quickly.
+                # If current_prod exceeds a reasonable limit (lcm * gcd), 
+                # it might still be equal, but since max nums[i] is 10 and n is 100,
+                # we must be careful about integer overflow in other languages.
+                # In Python, integers are arbitrary precision.
+                
+                if current_prod == current_lcm * current_gcd:
+                    max_len = max(max_len, j - i + 1)
+                
+                # Heuristic: If current_prod becomes significantly larger than 
+                # any possible LCM * GCD for the given constraints, we could break.
+                # However, with N=100, O(N^2) is perfectly fine.
+                
+        return max_len</pre>
+      <div class="card card-accent" style="font-size: 9pt;"><strong>🇮🇳 Hinglish Revision:</strong><br>Problem ko step-by-step simplify karo!</div>
+    </div>
+    <div class="footer"><span>Online Solution Book & Cheat Sheet</span><span>Page 2 of 2</span><span>GitHub Repository</span></div>
+  </div>
+</body>
+</html>

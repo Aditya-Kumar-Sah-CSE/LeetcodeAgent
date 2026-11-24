@@ -1,5 +1,36 @@
 [
   {
+    "id": 3411,
+    "title": "Maximum Subarray With Equal Products",
+    "slug": "maximum-subarray-with-equal-products",
+    "difficulty": "Easy",
+    "tags": [
+      "Array",
+      "Math",
+      "Sliding Window",
+      "Enumeration",
+      "Number Theory"
+    ],
+    "date": "2026-11-24",
+    "url": "https://leetcode.com/problems/maximum-subarray-with-equal-products/",
+    "folder": "2026-11-24-maximum-subarray-with-equal-products",
+    "model_used": "google/gemma-4-31b-it:free",
+    "solved_at": "2026-11-24T08:43:42.390506+00:00",
+    "concept": "Optimal solution using Array, Math",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "You are given an array of positive integers `nums`. An array `arr` is called product equivalent if `prod(arr) == lcm(arr) * gcd(arr)`, where: `prod(arr)` is the product of all elements of `arr`. `gcd(arr)` is the GCD of all elements of `arr`. `lcm(ar",
+    "summary_hinglish": "Maximum Subarray With Equal Products ka simple solution aur logic.",
+    "topics_needed": [
+      "Array",
+      "Math",
+      "Sliding Window",
+      "Enumeration",
+      "Number Theory"
+    ],
+    "code_python": "import math\nfrom typing import List\nfrom functools import reduce\n\nclass Solution:\n    def maxLength(self, nums: List[int]) -> int:\n        \"\"\"\n        A subarray is product equivalent if prod(arr) == lcm(arr) * gcd(arr).\n        \n        Key Insight:\n        For any two numbers a and b, we know that a * b = gcd(a, b) * lcm(a, b).\n        For a subarray of length 1, the condition is trivially true (x = x * x is only true if x=1, \n        but the problem asks for subarrays, and the formula prod = lcm * gcd always holds for length 1).\n        For a subarray of length 2, the condition prod(a, b) = lcm(a, b) * gcd(a, b) is always true.\n        For a subarray of length > 2, the condition prod(a, b, c, ...) = lcm(a, b, c, ...) * gcd(a, b, c, ...)\n        is much stricter. It essentially means that the elements must be pairwise coprime \n        relative to the GCD of the whole set.\n        \n        Given the constraints (nums.length <= 100, nums[i] <= 10), we can use a brute-force \n        approach to check all possible subarrays.\n        \"\"\"\n        \n        def get_gcd(a, b):\n            while b:\n                a, b = b, a % b\n            return a\n\n        def get_lcm(a, b):\n            if a == 0 or b == 0: return 0\n            return abs(a * b) // get_gcd(a, b)\n\n        n = len(nums)\n        max_len = 0\n        \n        for i in range(n):\n            current_prod = 1\n            current_gcd = nums[i]\n            current_lcm = nums[i]\n            \n            for j in range(i, n):\n                val = nums[j]\n                current_prod *= val\n                current_gcd = get_gcd(current_gcd, val)\n                current_lcm = get_lcm(current_lcm, val)\n                \n                # Optimization: Since nums[i] >= 1, current_prod grows quickly.\n                # If current_prod exceeds a reasonable limit (lcm * gcd), \n                # it might still be equal, but since max nums[i] is 10 and n is 100,\n                # we must be careful about integer overflow in other languages.\n                # In Python, integers are arbitrary precision.\n                \n                if current_prod == current_lcm * current_gcd:\n                    max_len = max(max_len, j - i + 1)\n                \n                # Heuristic: If current_prod becomes significantly larger than \n                # any possible LCM * GCD for the given constraints, we could break.\n                # However, with N=100, O(N^2) is perfectly fine.\n                \n        return max_len\n"
+  },
+  {
     "id": 2124,
     "title": "Check if All A's Appears Before All B's",
     "slug": "check-if-all-as-appears-before-all-bs",

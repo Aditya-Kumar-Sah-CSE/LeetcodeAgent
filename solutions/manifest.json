@@ -1,5 +1,30 @@
 [
   {
+    "id": 3360,
+    "title": "Stone Removal Game",
+    "slug": "stone-removal-game",
+    "difficulty": "Easy",
+    "tags": [
+      "Math",
+      "Simulation"
+    ],
+    "date": "2026-11-26",
+    "url": "https://leetcode.com/problems/stone-removal-game/",
+    "folder": "2026-11-26-stone-removal-game",
+    "model_used": "nvidia/nemotron-3.5-super-vl:free",
+    "solved_at": "2026-11-26T07:07:23.750054+00:00",
+    "concept": "Optimal solution using Math, Simulation",
+    "trick_english": "Identify constraints and formulate invariant before coding.",
+    "trick_hinglish": "Problem ko simplify karo aur step by step solve karo.",
+    "summary_english": "Alice and Bob are playing a game where they take turns removing stones from a pile, with Alice going first . Alice starts by removing exactly 10 stones on her first turn. For each subsequent turn, each player removes exactly 1 fewer stone than the pr",
+    "summary_hinglish": "Stone Removal Game ka simple solution aur logic.",
+    "topics_needed": [
+      "Math",
+      "Simulation"
+    ],
+    "code_python": "class Solution:\n    def canAliceWin(self, n: int) -> bool:\n        stones = n\n        remove = 10\n        alice_turn = True\n        \n        # Simulate the game turn by turn.\n        while stones >= remove:\n            stones -= remove\n            remove -= 1\n            alice_turn = not alice_turn\n        \n        # When the loop ends, the player whose turn it is cannot make a move and loses.\n        # If it is Alice's turn, she loses; if it is Bob's turn, Alice wins.\n        return not alice_turn\n"
+  },
+  {
     "id": 3411,
     "title": "Maximum Subarray With Equal Products",
     "slug": "maximum-subarray-with-equal-products",
